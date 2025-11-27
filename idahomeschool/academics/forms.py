@@ -1,8 +1,9 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Column, Layout, Row, Submit
 from django import forms
+from django.forms import modelformset_factory
 
-from .models import Course, CurriculumResource, SchoolYear, Student
+from .models import Course, CourseNote, CurriculumResource, DailyLog, SchoolYear, Student
 
 
 class SchoolYearForm(forms.ModelForm):
@@ -135,3 +136,92 @@ class CurriculumResourceForm(forms.ModelForm):
             "notes",
             Submit("submit", "Save Resource", css_class="btn btn-primary"),
         )
+
+
+class DailyLogForm(forms.ModelForm):
+    """Form for creating and updating DailyLog instances."""
+
+    class Meta:
+        model = DailyLog
+        fields = ["student", "date", "status", "general_notes"]
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date"}),
+            "general_notes": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        # Filter students to only show those belonging to the user
+        if self.user:
+            self.fields["student"].queryset = Student.objects.filter(user=self.user)
+
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.layout = Layout(
+            Row(
+                Column("student", css_class="col-md-6"),
+                Column("date", css_class="col-md-6"),
+            ),
+            "status",
+            "general_notes",
+            Submit("submit", "Save Daily Log", css_class="btn btn-primary"),
+        )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user and not instance.pk:
+            instance.user = self.user
+        if commit:
+            instance.save()
+        return instance
+
+
+class CourseNoteForm(forms.ModelForm):
+    """Form for creating and updating CourseNote instances."""
+
+    class Meta:
+        model = CourseNote
+        fields = ["course", "notes"]
+        widgets = {
+            "notes": forms.Textarea(attrs={"rows": 4, "placeholder": "What did the student work on today?"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        self.student = kwargs.pop("student", None)
+        super().__init__(*args, **kwargs)
+
+        # Filter courses to only show those for the specified student
+        if self.student:
+            self.fields["course"].queryset = Course.objects.filter(student=self.student)
+        elif self.user:
+            self.fields["course"].queryset = Course.objects.filter(student__user=self.user)
+
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.layout = Layout(
+            "course",
+            "notes",
+            Submit("submit", "Save Course Note", css_class="btn btn-primary"),
+        )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user and not instance.pk:
+            instance.user = self.user
+        if commit:
+            instance.save()
+        return instance
+
+
+# Formset for managing multiple course notes at once
+CourseNoteFormSet = modelformset_factory(
+    CourseNote,
+    fields=["course", "notes"],
+    extra=0,
+    can_delete=True,
+    widgets={
+        "notes": forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
+    },
+)

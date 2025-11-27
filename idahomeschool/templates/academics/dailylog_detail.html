@@ -1,0 +1,106 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}Daily Log - {{ daily_log.student.name }} - {{ daily_log.date }}{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Daily Log Details</h1>
+  <div>
+    <a href="{% url 'academics:dailylog_entry_date' daily_log.student.pk daily_log.date|date:'Y-m-d' %}" class="btn btn-primary">Edit</a>
+    <a href="{% url 'academics:dailylog_list' %}" class="btn btn-outline-secondary">Back to List</a>
+  </div>
+</div>
+
+<!-- Daily Log Info -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">{{ daily_log.student.name }} - {{ daily_log.date|date:"l, F j, Y" }}</h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="text-muted">Student:</label><br>
+        <a href="{% url 'academics:student_detail' daily_log.student.pk %}">{{ daily_log.student.name }}</a>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="text-muted">Date:</label><br>
+        {{ daily_log.date|date:"F j, Y (l)" }}
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="text-muted">Status:</label><br>
+        <span class="badge
+          {% if daily_log.status == 'PRESENT' %}bg-success
+          {% elif daily_log.status == 'ABSENT' %}bg-danger
+          {% elif daily_log.status == 'SICK' %}bg-warning
+          {% elif daily_log.status == 'HOLIDAY' %}bg-info
+          {% elif daily_log.status == 'FIELD_TRIP' %}bg-primary
+          {% endif %}">
+          {{ daily_log.get_status_display }}
+        </span>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="text-muted">Instructional Day:</label><br>
+        {% if daily_log.is_instructional_day %}
+          <span class="badge bg-success">Yes</span>
+        {% else %}
+          <span class="badge bg-secondary">No</span>
+        {% endif %}
+      </div>
+      {% if daily_log.general_notes %}
+      <div class="col-12">
+        <label class="text-muted">General Notes:</label>
+        <div class="border rounded p-3 bg-light">
+          {{ daily_log.general_notes|linebreaks }}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Course Notes -->
+{% if course_notes %}
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Course Notes</h5>
+  </div>
+  <div class="card-body">
+    {% for note in course_notes %}
+    <div class="mb-4">
+      <h6>
+        {{ note.course.name }}
+        <span class="badge bg-secondary">{{ note.course.school_year.name }}</span>
+      </h6>
+      <div class="border-start border-4 border-primary ps-3">
+        {{ note.notes|linebreaks }}
+      </div>
+      <small class="text-muted">Last updated: {{ note.updated_at|date:"F j, Y g:i A" }}</small>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+  No course notes for this day.
+  <a href="{% url 'academics:dailylog_entry_date' daily_log.student.pk daily_log.date|date:'Y-m-d' %}" class="alert-link">Add course notes</a>
+</div>
+{% endif %}
+
+<!-- Metadata -->
+<div class="card">
+  <div class="card-body">
+    <small class="text-muted">
+      Created: {{ daily_log.created_at|date:"F j, Y g:i A" }} |
+      Last Updated: {{ daily_log.updated_at|date:"F j, Y g:i A" }}
+    </small>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="mt-4">
+  <a href="{% url 'academics:dailylog_entry_date' daily_log.student.pk daily_log.date|date:'Y-m-d' %}" class="btn btn-primary">Edit</a>
+  <a href="{% url 'academics:dailylog_delete' daily_log.pk %}" class="btn btn-danger">Delete</a>
+  <a href="{% url 'academics:dailylog_list' %}" class="btn btn-outline-secondary">Back to List</a>
+</div>
+{% endblock academics_content %}

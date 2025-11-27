@@ -45,6 +45,35 @@
   </div>
 </div>
 
+<!-- Attendance Summary (if active year exists) -->
+{% if active_year %}
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">Instructional Days</h5>
+        <p class="card-text display-4 text-success">{{ instructional_days|default:0 }}</p>
+        <small class="text-muted">for {{ active_year.name }}</small>
+        <div class="mt-2">
+          <a href="{% url 'academics:attendance_report' %}" class="btn btn-primary btn-sm">View Report</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">Quick Actions</h5>
+        <div class="d-grid gap-2">
+          <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-success">Log Today's Attendance</a>
+          <a href="{% url 'academics:attendance_calendar' %}" class="btn btn-outline-primary">View Calendar</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 {% if active_year and active_courses %}
 <div class="card mb-4">
   <div class="card-header">
@@ -78,7 +107,7 @@
 {% endif %}
 
 <div class="row">
-  <div class="col-md-6">
+  <div class="col-md-4">
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0">Recent Students</h5>
@@ -102,7 +131,7 @@
     </div>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-md-4">
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0">Recent Courses</h5>
@@ -120,6 +149,40 @@
         <div class="list-group-item">
           <p class="mb-0 text-muted">No courses yet.</p>
           <a href="{% url 'academics:course_create' %}" class="btn btn-sm btn-primary mt-2">Add First Course</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Recent Attendance</h5>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for log in recent_daily_logs %}
+        <a href="{% url 'academics:dailylog_detail' log.pk %}" class="list-group-item list-group-item-action">
+          <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">{{ log.student.name }}</h6>
+            <small>
+              <span class="badge
+                {% if log.status == 'PRESENT' %}bg-success
+                {% elif log.status == 'ABSENT' %}bg-danger
+                {% elif log.status == 'SICK' %}bg-warning
+                {% elif log.status == 'HOLIDAY' %}bg-info
+                {% elif log.status == 'FIELD_TRIP' %}bg-primary
+                {% endif %}">
+                {{ log.get_status_display }}
+              </span>
+            </small>
+          </div>
+          <small class="text-muted">{{ log.date|date:"F j, Y" }}</small>
+        </a>
+        {% empty %}
+        <div class="list-group-item">
+          <p class="mb-0 text-muted">No attendance logs yet.</p>
+          <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-sm btn-primary mt-2">Log Attendance</a>
         </div>
         {% endfor %}
       </div>

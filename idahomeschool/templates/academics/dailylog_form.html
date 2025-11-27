@@ -1,0 +1,22 @@
+{% extends "academics/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}{% if object %}Edit Daily Log{% else %}Create Daily Log{% endif %}{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{% if object %}Edit Daily Log{% else %}Create Daily Log{% endif %}</h1>
+  <a href="{% url 'academics:dailylog_list' %}" class="btn btn-outline-secondary">Cancel</a>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <p class="text-muted">
+      <strong>Note:</strong> For a more comprehensive daily log entry with course notes,
+      use the <a href="{% url 'academics:dailylog_entry' %}">Daily Log Entry</a> page.
+    </p>
+    {% crispy form %}
+  </div>
+</div>
+{% endblock academics_content %}

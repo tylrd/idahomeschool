@@ -36,9 +36,9 @@ class SchoolYear(models.Model):
     def save(self, *args, **kwargs):
         # Ensure only one active school year per user
         if self.is_active:
-            SchoolYear.objects.filter(user=self.user, is_active=True).exclude(pk=self.pk).update(
-                is_active=False
-            )
+            SchoolYear.objects.filter(user=self.user, is_active=True).exclude(
+                pk=self.pk
+            ).update(is_active=False)
         super().save(*args, **kwargs)
 
 
@@ -46,6 +46,7 @@ class Student(models.Model):
     """Represents a homeschool student."""
 
     GRADE_CHOICES = [
+        ("PK", "Pre-Kindergarten"),
         ("K", "Kindergarten"),
         ("1", "1st Grade"),
         ("2", "2nd Grade"),
@@ -103,7 +104,10 @@ class Student(models.Model):
         return (
             today.year
             - self.date_of_birth.year
-            - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
+            - (
+                (today.month, today.day)
+                < (self.date_of_birth.month, self.date_of_birth.day)
+            )
         )
 
 
@@ -165,3 +169,96 @@ class CurriculumResource(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.course.name})"
+
+
+class DailyLog(models.Model):
+    """Represents daily attendance for a student."""
+
+    STATUS_CHOICES = [
+        ("PRESENT", "Present"),
+        ("ABSENT", "Absent"),
+        ("SICK", "Sick"),
+        ("HOLIDAY", "Holiday"),
+        ("FIELD_TRIP", "Field Trip"),
+    ]
+
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="daily_logs",
+    )
+    date = models.DateField()
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="PRESENT",
+    )
+    general_notes = models.TextField(
+        blank=True,
+        help_text="Optional notes for the day",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="daily_logs",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date", "student__name"]
+        verbose_name = "Daily Log"
+        verbose_name_plural = "Daily Logs"
+        unique_together = [["student", "date"]]
+        indexes = [
+            models.Index(fields=["date", "student"]),
+            models.Index(fields=["user", "date"]),
+        ]
+
+    def __str__(self):
+        return f"{self.student.name} - {self.date} ({self.get_status_display()})"
+
+    def get_absolute_url(self):
+        return reverse("academics:dailylog_detail", kwargs={"pk": self.pk})
+
+    @property
+    def is_instructional_day(self):
+        """Returns True if this counts as an instructional day (Present or Field Trip)."""
+        return self.status in ["PRESENT", "FIELD_TRIP"]
+
+
+class CourseNote(models.Model):
+    """Represents notes for a specific course on a specific day."""
+
+    daily_log = models.ForeignKey(
+        DailyLog,
+        on_delete=models.CASCADE,
+        related_name="course_notes",
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name="course_notes",
+    )
+    notes = models.TextField(
+        help_text="Notes about what was covered in this course today",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="course_notes",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["course__name"]
+        verbose_name = "Course Note"
+        verbose_name_plural = "Course Notes"
+        unique_together = [["daily_log", "course"]]
+        indexes = [
+            models.Index(fields=["daily_log", "course"]),
+        ]
+
+    def __str__(self):
+        return f"{self.course.name} - {self.daily_log.date}"

@@ -1,0 +1,135 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}Attendance Calendar{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Attendance Calendar</h1>
+  <div>
+    <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-success">Log Attendance</a>
+    <a href="{% url 'academics:attendance_report' %}" class="btn btn-outline-primary">View Report</a>
+  </div>
+</div>
+
+<!-- View Type and Navigation -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row align-items-center">
+      <div class="col-md-4">
+        <div class="btn-group" role="group">
+          <a href="?view=week&date={{ ref_date|date:'Y-m-d' }}" class="btn btn-outline-primary {% if view_type == 'week' %}active{% endif %}">Week</a>
+          <a href="?view=month&date={{ ref_date|date:'Y-m-d' }}" class="btn btn-outline-primary {% if view_type == 'month' %}active{% endif %}">Month</a>
+        </div>
+      </div>
+      <div class="col-md-4 text-center">
+        <h5 class="mb-0">
+          {% if view_type == 'week' %}
+            Week of {{ start_date|date:"F j" }} - {{ end_date|date:"j, Y" }}
+          {% else %}
+            {{ ref_date|date:"F Y" }}
+          {% endif %}
+        </h5>
+      </div>
+      <div class="col-md-4 text-end">
+        <div class="btn-group" role="group">
+          <a href="?view={{ view_type }}&date={{ prev_date }}" class="btn btn-outline-secondary">← Previous</a>
+          <a href="?view={{ view_type }}" class="btn btn-outline-primary">Today</a>
+          <a href="?view={{ view_type }}&date={{ next_date }}" class="btn btn-outline-secondary">Next →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Attendance Grid -->
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover">
+        <thead>
+          <tr>
+            <th>Student</th>
+            {% for d in date_range %}
+              <th class="text-center {% if d == ref_date %}table-primary{% endif %}">
+                <div>{{ d|date:"D" }}</div>
+                <div><small>{{ d|date:"M j" }}</small></div>
+              </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in attendance_grid %}
+          <tr>
+            <td>
+              <strong>{{ row.student.name }}</strong><br>
+              <small class="text-muted">Grade {{ row.student.grade_level }}</small>
+            </td>
+            {% for date_info in row.dates %}
+              <td class="text-center {% if date_info.date == ref_date %}table-light{% endif %}">
+                {% if date_info.log %}
+                  <a href="{% url 'academics:dailylog_entry_date' row.student.id date_info.date|date:'Y-m-d' %}"
+                     class="badge
+                       {% if date_info.log.status == 'PRESENT' %}bg-success
+                       {% elif date_info.log.status == 'ABSENT' %}bg-danger
+                       {% elif date_info.log.status == 'SICK' %}bg-warning
+                       {% elif date_info.log.status == 'HOLIDAY' %}bg-info
+                       {% elif date_info.log.status == 'FIELD_TRIP' %}bg-primary
+                       {% endif %}"
+                     title="{{ date_info.log.get_status_display }}"
+                     style="text-decoration: none; display: block; padding: 8px;">
+                    {% if date_info.log.status == 'PRESENT' %}P
+                    {% elif date_info.log.status == 'ABSENT' %}A
+                    {% elif date_info.log.status == 'SICK' %}S
+                    {% elif date_info.log.status == 'HOLIDAY' %}H
+                    {% elif date_info.log.status == 'FIELD_TRIP' %}F
+                    {% endif %}
+                  </a>
+                {% else %}
+                  <a href="{% url 'academics:dailylog_entry_date' row.student.id date_info.date|date:'Y-m-d' %}"
+                     class="text-muted" title="No log - click to add">-</a>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="{{ date_range|length|add:1 }}" class="text-center">
+              <p class="mb-0 text-muted">No students found.</p>
+              <a href="{% url 'academics:student_create' %}" class="btn btn-sm btn-primary mt-2">Add First Student</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="card mt-3">
+  <div class="card-body">
+    <h6>Legend:</h6>
+    <div class="row">
+      <div class="col-auto">
+        <span class="badge bg-success">P</span> Present
+      </div>
+      <div class="col-auto">
+        <span class="badge bg-danger">A</span> Absent
+      </div>
+      <div class="col-auto">
+        <span class="badge bg-warning">S</span> Sick
+      </div>
+      <div class="col-auto">
+        <span class="badge bg-info">H</span> Holiday
+      </div>
+      <div class="col-auto">
+        <span class="badge bg-primary">F</span> Field Trip
+      </div>
+      <div class="col-auto">
+        <span class="text-muted">-</span> No log
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock academics_content %}

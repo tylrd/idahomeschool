@@ -180,4 +180,5 @@ dependencies = [
     "psycopg[c]==3.2.13",
     "python-slugify==8.0.4",
     "redis==7.1.0",
+    "weasyprint==63.1",
 ]

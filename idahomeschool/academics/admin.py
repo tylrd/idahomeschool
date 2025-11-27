@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Course, CurriculumResource, SchoolYear, Student
+from .models import Course, CourseNote, CurriculumResource, DailyLog, SchoolYear, Student
 
 
 class CurriculumResourceInline(admin.TabularInline):
@@ -124,6 +124,87 @@ class CurriculumResourceAdmin(admin.ModelAdmin):
             "Notes",
             {
                 "fields": ["notes"],
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ["created_at", "updated_at"],
+                "classes": ["collapse"],
+            },
+        ),
+    ]
+
+
+class CourseNoteInline(admin.TabularInline):
+    """Inline admin for course notes."""
+
+    model = CourseNote
+    extra = 0
+    fields = ["course", "notes"]
+    verbose_name = "Course Note"
+    verbose_name_plural = "Course Notes"
+
+
+@admin.register(DailyLog)
+class DailyLogAdmin(admin.ModelAdmin):
+    """Admin for DailyLog model."""
+
+    list_display = ["student", "date", "status", "user", "created_at"]
+    list_filter = ["status", "date", "created_at", "user"]
+    search_fields = ["student__name", "general_notes", "user__name", "user__email"]
+    readonly_fields = ["created_at", "updated_at", "is_instructional_day"]
+    date_hierarchy = "date"
+    inlines = [CourseNoteInline]
+    fieldsets = [
+        (
+            "Attendance Information",
+            {
+                "fields": ["student", "date", "status", "is_instructional_day"],
+            },
+        ),
+        (
+            "Notes",
+            {
+                "fields": ["general_notes"],
+            },
+        ),
+        (
+            "User",
+            {
+                "fields": ["user"],
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ["created_at", "updated_at"],
+                "classes": ["collapse"],
+            },
+        ),
+    ]
+
+
+@admin.register(CourseNote)
+class CourseNoteAdmin(admin.ModelAdmin):
+    """Admin for CourseNote model."""
+
+    list_display = ["course", "daily_log", "user", "created_at"]
+    list_filter = ["created_at", "course__school_year", "user"]
+    search_fields = ["course__name", "notes", "daily_log__student__name"]
+    readonly_fields = ["created_at", "updated_at"]
+    date_hierarchy = "created_at"
+    fieldsets = [
+        (
+            "Course Note Information",
+            {
+                "fields": ["daily_log", "course", "notes"],
+            },
+        ),
+        (
+            "User",
+            {
+                "fields": ["user"],
             },
         ),
         (

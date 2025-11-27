@@ -15,6 +15,15 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 
 ## Implementation Status
 
+**Current Progress:** Phase 1 & 2 Complete ✅ | Phase 3 & 4 Pending
+
+- ✅ **Phase 1: Foundation** - Complete
+- ✅ **Phase 2: Attendance System** - Complete (with course-specific notes)
+- 🔜 **Phase 3: Paperless-NGX Integration** - Next up
+- 📋 **Phase 4: Idaho Compliance Reporting** - Planned
+
+---
+
 ### ✅ Phase 1: Foundation (COMPLETED)
 
 **Models Created** (`idahomeschool/academics/models.py`):
@@ -44,26 +53,70 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 - `/academics/courses/` - Course management
 - `/admin/academics/` - Django admin interface
 
-### 🚧 Phase 2: Attendance System (TODO)
+### ✅ Phase 2: Attendance System (COMPLETED)
 
-**Models to Create:**
-- [ ] **Attendance** model
-  - Fields: student, date, status (Present, Absent, Sick, Holiday, Field Trip)
-  - Link to SchoolYear for reporting
+**Models Created** (`idahomeschool/academics/models.py`):
+- [x] **DailyLog** - Daily attendance tracking for students
+  - Fields: student, date, status (Present, Absent, Sick, Holiday, Field Trip), general_notes, user
+  - Unique constraint: one log per student per day
+  - `is_instructional_day` property for compliance reporting (Present + Field Trip)
 
-**Features to Implement:**
-- [ ] Calendar view dashboard for the current week
-- [ ] Quick toggle for attendance status per student per day
-- [ ] Daily log view
-- [ ] Attendance statistics per school year
-- [ ] Total instructional days calculation
-- [ ] PDF/CSV export for state compliance reporting
-- [ ] Monthly/yearly attendance reports
+- [x] **CourseNote** - Course-specific notes for each day
+  - Fields: daily_log, course, notes, user
+  - Allows tracking what was covered in each course each day
+  - Unique constraint: one note per course per daily log
 
-**Technical Considerations:**
-- Consider using HTMX for dynamic attendance toggling without page reloads
-- Calendar widget selection (FullCalendar.js or Bootstrap calendar)
-- Bulk actions for marking multiple students/days
+**Features Implemented:**
+- [x] **Daily Log Entry View** - Comprehensive attendance entry with course notes
+  - Select student and date (with prev/next navigation)
+  - Mark attendance status
+  - Add notes for ALL enrolled courses
+  - Auto-save and retrieve existing entries
+
+- [x] **Attendance Calendar View** - Visual grid of attendance
+  - Week or month view toggle
+  - All students displayed in grid format
+  - Color-coded status badges (Present=green, Absent=red, Sick=yellow, etc.)
+  - Click any date to quickly add/edit attendance
+
+- [x] **Attendance Report View** - Compliance reporting
+  - Filter by school year and student
+  - Total instructional days calculation (Present + Field Trip)
+  - Breakdown by status type (Present, Absent, Sick, Holiday, Field Trip)
+  - Idaho homeschool compliance notes
+
+- [x] **Daily Log List View** - Filterable list of all logs
+  - Filter by student and date range
+  - Pagination (20 items per page)
+  - Quick actions (View, Edit, Delete)
+
+- [x] **Daily Log Detail View** - Full log display
+  - Shows attendance status and general notes
+  - Displays all course notes for that day
+
+- [x] **Dashboard Integration**
+  - Instructional days counter for active year
+  - Quick action buttons for attendance entry
+  - Recent attendance logs widget
+
+- [x] **Django Admin Integration**
+  - Full admin interface for DailyLog and CourseNote
+  - Inline course note editing within daily logs
+  - Searchable and filterable
+
+**URL Structure:**
+- `/academics/attendance/` - Attendance calendar view
+- `/academics/attendance/entry/` - Daily log entry (with course notes)
+- `/academics/attendance/report/` - Compliance reports
+- `/academics/daily-logs/` - List all daily logs
+- `/academics/daily-logs/<pk>/` - Daily log detail view
+
+**Technical Implementation:**
+- Bootstrap 5 responsive design with color-coded badges
+- User data isolation maintained throughout
+- Crispy forms for all data entry
+- Student and date navigation with JavaScript helpers
+- Optimized queries with select_related and prefetch_related
 
 ### 📋 Phase 3: Paperless-NGX Integration (TODO)
 
@@ -108,24 +161,36 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 ```
 idahomeschool/
 ├── idahomeschool/
-│   ├── academics/          # Phase 1 app (COMPLETED)
+│   ├── academics/          # Phase 1 & 2 (COMPLETED)
 │   │   ├── models.py       # SchoolYear, Student, Course, CurriculumResource
+│   │   │                   # DailyLog, CourseNote (Phase 2)
 │   │   ├── views.py        # All CRUD views + Dashboard
+│   │   │                   # Attendance views (Phase 2)
 │   │   ├── forms.py        # Crispy forms for all models
+│   │   │                   # DailyLogForm, CourseNoteForm (Phase 2)
 │   │   ├── admin.py        # Django admin configuration
 │   │   ├── urls.py         # URL routing
 │   │   └── migrations/
+│   │       ├── 0001_initial.py
+│   │       └── 0002_dailylog_coursenote_and_more.py
 │   │
 │   ├── users/              # Custom user model (pre-existing)
 │   │
 │   ├── templates/
 │   │   ├── academics/      # All academic templates
-│   │   │   ├── base.html   # Base template with sidebar nav
-│   │   │   ├── dashboard.html
+│   │   │   ├── base.html   # Base template with sidebar nav (updated)
+│   │   │   ├── dashboard.html  # Updated with attendance widgets
 │   │   │   ├── schoolyear_*.html
 │   │   │   ├── student_*.html
 │   │   │   ├── course_*.html
-│   │   │   └── curriculumresource_*.html
+│   │   │   ├── curriculumresource_*.html
+│   │   │   ├── attendance_calendar.html    # Phase 2
+│   │   │   ├── attendance_report.html      # Phase 2
+│   │   │   ├── dailylog_entry.html         # Phase 2 (main entry form)
+│   │   │   ├── dailylog_list.html          # Phase 2
+│   │   │   ├── dailylog_detail.html        # Phase 2
+│   │   │   ├── dailylog_form.html          # Phase 2
+│   │   │   └── dailylog_confirm_delete.html # Phase 2
 │   │   └── base.html       # Main site template (navigation updated)
 │   │
 │   └── static/             # Static assets (JS, CSS, images)
@@ -161,11 +226,24 @@ User (1) ──────→ (N) Student ←──────┐
                      │ (1)           │ (1)
                      ↓               │
                   Course ────────────┘
+                     │               │
+                     │ (1)           │
+                     ↓               │
+              CurriculumResource (N) │
+                                     │
+                                     │
+User (1) ──────→ (N) DailyLog ───────┘
+                     │  (1)
                      │
                      │ (1)
                      ↓
-              CurriculumResource (N)
+                 CourseNote (N) ──→ Course (1)
 ```
+
+**Phase 2 Models:**
+- **DailyLog**: One entry per student per day, tracks attendance status
+- **CourseNote**: Multiple notes per daily log, one per course
+- CourseNote connects the daily log to specific courses, allowing detailed tracking
 
 ### User Data Isolation Pattern
 
@@ -216,21 +294,25 @@ uv run coverage html            # Generate coverage report
 
 ## Known Issues / TODOs
 
-### Current Phase 1 Items
+### Phase 1 & 2 Items
 - [ ] Add tests for models, views, and forms
 - [ ] Add form validation (e.g., end_date must be after start_date)
 - [ ] Consider adding "archived" status for old school years
 - [ ] Add bulk delete confirmation with related object counts
 - [ ] Add inline curriculum resource editing on course form
+- [ ] Add PDF/CSV export for attendance reports (compliance)
+- [ ] Consider HTMX for dynamic attendance toggling without page reloads
+- [ ] Add bulk actions for marking multiple students/days
 
 ### Future Considerations
-- [ ] Add export functionality (CSV/PDF) for all models
 - [ ] Add data import capability (CSV upload)
 - [ ] Add image upload for students (profile pictures)
 - [ ] Consider adding "notes" field to Student and SchoolYear
 - [ ] Add activity/audit log for compliance tracking
 - [ ] Multi-year course support (for courses spanning multiple years)
 - [ ] Grade/progress tracking within courses
+- [ ] Email reminders for attendance logging
+- [ ] Mobile app for quick attendance entry
 
 ## Getting Started (Next Session)
 
@@ -250,6 +332,9 @@ just manage showmigrations academics
 - Main site: http://localhost:8000
 - Admin: http://localhost:8000/admin
 - Academic Records: http://localhost:8000/academics/
+- **Attendance Entry**: http://localhost:8000/academics/attendance/entry/
+- **Attendance Calendar**: http://localhost:8000/academics/attendance/
+- **Attendance Reports**: http://localhost:8000/academics/attendance/report/
 
 ### 4. Create Test Data (if needed)
 ```bash
@@ -257,7 +342,8 @@ just manage shell
 ```
 ```python
 from idahomeschool.users.models import User
-from idahomeschool.academics.models import SchoolYear, Student, Course
+from idahomeschool.academics.models import SchoolYear, Student, Course, DailyLog, CourseNote
+from datetime import date
 
 user = User.objects.first()  # or create one
 
@@ -279,36 +365,82 @@ student = Student.objects.create(
 )
 student.school_years.add(year)
 
-# Create course
-course = Course.objects.create(
+# Create courses
+math = Course.objects.create(
     name="Math 4",
     student=student,
     school_year=year,
     description="4th grade mathematics"
 )
+
+science = Course.objects.create(
+    name="Science 4",
+    student=student,
+    school_year=year,
+    description="4th grade science"
+)
+
+# Create daily log with course notes
+daily_log = DailyLog.objects.create(
+    student=student,
+    date=date.today(),
+    status="PRESENT",
+    general_notes="Great day of learning!",
+    user=user
+)
+
+# Add course notes
+CourseNote.objects.create(
+    daily_log=daily_log,
+    course=math,
+    notes="Completed chapter 5 on fractions. Student showed good understanding.",
+    user=user
+)
+
+CourseNote.objects.create(
+    daily_log=daily_log,
+    course=science,
+    notes="Studied the solar system. Built a model of planets.",
+    user=user
+)
 ```
 
-## Next Immediate Steps (Phase 2)
+## Next Immediate Steps (Phase 3)
 
-1. **Create Attendance Model**
-   - Add to `idahomeschool/academics/models.py`
-   - Create migration
-   - Add to admin.py
+Phase 3 will focus on **Paperless-NGX Integration** - the core feature that connects the Django app with Paperless-NGX for document management.
 
-2. **Create Attendance Views**
-   - Calendar view for week/month
-   - Quick toggle interface
-   - Attendance report view
+1. **Research & Planning**
+   - Review Paperless-NGX API documentation
+   - Plan GenericForeignKey implementation for PaperlessLink
+   - Design document selector UI/UX
 
-3. **Update Dashboard**
-   - Add attendance summary
-   - Show today's attendance status
-   - Link to attendance entry
+2. **Create Models**
+   - Add `PaperlessConfig` model for API settings
+   - Add `PaperlessLink` model with GenericForeignKey
+   - Create migrations
 
-4. **Create Templates**
-   - `attendance_calendar.html` - Main calendar view
-   - `attendance_report.html` - Reporting view
-   - Update dashboard with attendance widgets
+3. **Build Paperless API Client**
+   - Create `utils/paperless_client.py`
+   - Implement document search/list functionality
+   - Implement tag management
+   - Add error handling and retry logic
+
+4. **Create Settings Interface**
+   - Settings page for Paperless URL and API token
+   - Token validation
+   - Connection testing
+
+5. **Build Document Selector UI**
+   - Modal/search interface for selecting documents
+   - Thumbnail previews
+   - Search and filter capabilities
+   - Integration into Student and Course detail pages
+
+6. **Implement Document Linking**
+   - Link documents to students (correspondence, admin docs)
+   - Link documents to courses (work samples, tests)
+   - Display linked documents with thumbnails
+   - Tag syncing to Paperless
 
 ## References
 

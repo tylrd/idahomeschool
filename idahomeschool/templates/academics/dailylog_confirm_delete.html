@@ -1,0 +1,47 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}Delete Daily Log{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Delete Daily Log</h1>
+  <a href="{% url 'academics:dailylog_detail' dailylog.pk %}" class="btn btn-outline-secondary">Cancel</a>
+</div>
+
+<div class="card border-danger">
+  <div class="card-header bg-danger text-white">
+    <h5 class="mb-0">Confirm Deletion</h5>
+  </div>
+  <div class="card-body">
+    <p>Are you sure you want to delete the following daily log?</p>
+
+    <div class="border rounded p-3 bg-light mb-3">
+      <strong>Student:</strong> {{ dailylog.student.name }}<br>
+      <strong>Date:</strong> {{ dailylog.date|date:"F j, Y (l)" }}<br>
+      <strong>Status:</strong>
+      <span class="badge
+        {% if dailylog.status == 'PRESENT' %}bg-success
+        {% elif dailylog.status == 'ABSENT' %}bg-danger
+        {% elif dailylog.status == 'SICK' %}bg-warning
+        {% elif dailylog.status == 'HOLIDAY' %}bg-info
+        {% elif dailylog.status == 'FIELD_TRIP' %}bg-primary
+        {% endif %}">
+        {{ dailylog.get_status_display }}
+      </span>
+    </div>
+
+    {% if dailylog.course_notes.exists %}
+    <div class="alert alert-warning">
+      <strong>Warning:</strong> This daily log has {{ dailylog.course_notes.count }} course note(s) that will also be deleted.
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, Delete</button>
+      <a href="{% url 'academics:dailylog_detail' dailylog.pk %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock academics_content %}

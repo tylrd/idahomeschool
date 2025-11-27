@@ -41,4 +41,23 @@ urlpatterns = [
         views.CurriculumResourceDeleteView.as_view(),
         name="resource_delete",
     ),
+    # DailyLog / Attendance URLs
+    path("attendance/", views.AttendanceCalendarView.as_view(), name="attendance_calendar"),
+    path("attendance/report/", views.AttendanceReportView.as_view(), name="attendance_report"),
+    path("attendance/entry/", views.DailyLogEntryView.as_view(), name="dailylog_entry"),
+    path(
+        "attendance/entry/<int:student_pk>/",
+        views.DailyLogEntryView.as_view(),
+        name="dailylog_entry_student",
+    ),
+    path(
+        "attendance/entry/<int:student_pk>/<str:log_date>/",
+        views.DailyLogEntryView.as_view(),
+        name="dailylog_entry_date",
+    ),
+    path("daily-logs/", views.DailyLogListView.as_view(), name="dailylog_list"),
+    path("daily-logs/create/", views.DailyLogCreateView.as_view(), name="dailylog_create"),
+    path("daily-logs/<int:pk>/", views.DailyLogDetailView.as_view(), name="dailylog_detail"),
+    path("daily-logs/<int:pk>/update/", views.DailyLogUpdateView.as_view(), name="dailylog_update"),
+    path("daily-logs/<int:pk>/delete/", views.DailyLogDeleteView.as_view(), name="dailylog_delete"),
 ]

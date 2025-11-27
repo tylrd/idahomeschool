@@ -1,0 +1,137 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}Attendance Report{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Attendance Report</h1>
+  <div>
+    <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-success">Log Attendance</a>
+    <a href="{% url 'academics:attendance_calendar' %}" class="btn btn-outline-secondary">Calendar View</a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3">
+      <div class="col-md-6">
+        <label for="year" class="form-label">School Year:</label>
+        <select name="year" id="year" class="form-select" onchange="this.form.submit()">
+          <option value="">All Years</option>
+          {% for year in school_years %}
+            <option value="{{ year.id }}" {% if school_year and year.id == school_year.id %}selected{% endif %}>
+              {{ year.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label for="student" class="form-label">Student:</label>
+        <select name="student" id="student" class="form-select" onchange="this.form.submit()">
+          <option value="">All Students</option>
+          {% for s in students %}
+            <option value="{{ s.id }}" {% if selected_student_id == s.id %}selected{% endif %}>
+              {{ s.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Report Header -->
+{% if school_year %}
+<div class="alert alert-info">
+  <strong>Report Period:</strong> {{ school_year.name }}
+  ({{ school_year.start_date|date:"F j, Y" }} - {{ school_year.end_date|date:"F j, Y" }})
+</div>
+{% endif %}
+
+<!-- Report Data -->
+{% if report_data %}
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Attendance Statistics</h5>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th class="text-center">Total Days Logged</th>
+            <th class="text-center">Instructional Days</th>
+            <th class="text-center">Present</th>
+            <th class="text-center">Field Trips</th>
+            <th class="text-center">Absent</th>
+            <th class="text-center">Sick</th>
+            <th class="text-center">Holiday</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for data in report_data %}
+          <tr>
+            <td>
+              <strong>{{ data.student.name }}</strong><br>
+              <small class="text-muted">Grade {{ data.student.grade_level }}</small>
+            </td>
+            <td class="text-center">{{ data.total_days }}</td>
+            <td class="text-center">
+              <strong class="text-success">{{ data.instructional_days }}</strong>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-success">{{ data.present_days }}</span>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-primary">{{ data.field_trip_days }}</span>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-danger">{{ data.absent_days }}</span>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-warning">{{ data.sick_days }}</span>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-info">{{ data.holiday_days }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Idaho Compliance Note -->
+<div class="alert alert-light mt-4">
+  <h6>Idaho Homeschool Compliance Note:</h6>
+  <p class="mb-0">
+    <strong>Instructional Days</strong> include days marked as "Present" or "Field Trip".
+    Idaho recommends homeschools provide instruction for a comparable number of days as public schools
+    (typically 150-180 days per school year).
+  </p>
+</div>
+
+{% else %}
+<div class="alert alert-warning">
+  <strong>No attendance data found.</strong>
+  {% if school_year %}
+    Start logging attendance for {{ school_year.name }}.
+  {% else %}
+    Please select a school year and start logging attendance.
+  {% endif %}
+  <a href="{% url 'academics:dailylog_entry' %}" class="alert-link">Log Attendance</a>
+</div>
+{% endif %}
+
+<!-- Export Options (Future Feature) -->
+<div class="card mt-4">
+  <div class="card-body">
+    <h6>Export Options</h6>
+    <p class="text-muted mb-0">Export functionality coming soon (PDF/CSV).</p>
+  </div>
+</div>
+{% endblock academics_content %}

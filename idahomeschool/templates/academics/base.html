@@ -21,6 +21,21 @@
         <a href="{% url 'academics:course_list' %}" class="list-group-item list-group-item-action {% if 'course' in request.resolver_match.url_name %}active{% endif %}">
           Courses
         </a>
+        <div class="list-group-item bg-light">
+          <strong>Attendance</strong>
+        </div>
+        <a href="{% url 'academics:dailylog_entry' %}" class="list-group-item list-group-item-action {% if 'dailylog_entry' in request.resolver_match.url_name %}active{% endif %}">
+          Daily Log Entry
+        </a>
+        <a href="{% url 'academics:attendance_calendar' %}" class="list-group-item list-group-item-action {% if 'attendance_calendar' in request.resolver_match.url_name %}active{% endif %}">
+          Calendar View
+        </a>
+        <a href="{% url 'academics:attendance_report' %}" class="list-group-item list-group-item-action {% if 'attendance_report' in request.resolver_match.url_name %}active{% endif %}">
+          Reports
+        </a>
+        <a href="{% url 'academics:dailylog_list' %}" class="list-group-item list-group-item-action {% if 'dailylog_list' in request.resolver_match.url_name or 'dailylog_detail' in request.resolver_match.url_name %}active{% endif %}">
+          All Logs
+        </a>
       </div>
     </div>
   </div>
