@@ -1,14 +1,13 @@
 /**
  * Attendance Grid Advanced Features
  * - Batch operations (multi-select and bulk update)
- * - Keyboard navigation
+ * - Keyboard shortcuts (Space for batch mode, Esc to close modals)
  */
 
 class AttendanceGrid {
   constructor() {
     this.selectedCells = new Set();
     this.lastSelectedCell = null;
-    this.currentFocusCell = null;
     this.batchMode = false;
 
     this.init();
@@ -16,8 +15,8 @@ class AttendanceGrid {
 
   init() {
     this.setupBatchMode();
-    this.setupKeyboardNavigation();
     this.setupCellSelection();
+    this.setupEscapeKey();
   }
 
   /**
@@ -212,13 +211,16 @@ class AttendanceGrid {
     if (!confirm(confirmMsg)) return;
 
     // Get CSRF token
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-                      document.querySelector('[data-csrf-token]')?.dataset.csrfToken ||
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                      document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
                       getCookie('csrftoken');
 
     // Update each selected cell
     const updates = Array.from(this.selectedCells).map(async (cellKey) => {
-      const [studentId, dateStr] = cellKey.split('-');
+      // Split cellKey properly: "3-2025-11-27" -> studentId="3", dateStr="2025-11-27"
+      const parts = cellKey.split('-');
+      const studentId = parts[0];
+      const dateStr = parts.slice(1).join('-');
       const url = `/academics/attendance/quick-update/${studentId}/${dateStr}/`;
 
       try {
@@ -243,6 +245,10 @@ class AttendanceGrid {
               const oldBadge = cell.querySelector('[id^="cell-"]');
               if (oldBadge) {
                 oldBadge.replaceWith(newBadge);
+                // Tell HTMX to process the new element so hx-* attributes work
+                if (typeof htmx !== 'undefined') {
+                  htmx.process(newBadge);
+                }
               }
             }
           }
@@ -254,34 +260,20 @@ class AttendanceGrid {
 
     await Promise.all(updates);
 
-    // Clear selection after batch update
-    this.clearSelection();
+    // Exit batch mode after successful batch update
+    this.batchMode = false;
+    this.toggleBatchMode();
   }
 
   /**
-   * Setup keyboard navigation
+   * Setup escape key to close modals
    */
-  setupKeyboardNavigation() {
+  setupEscapeKey() {
     document.addEventListener('keydown', (e) => {
-      // Don't intercept if user is typing in an input
-      if (e.target.matches('input, textarea, select')) return;
-
-      // Don't intercept if modal is open
-      if (document.querySelector('.modal.show')) return;
-
-      const grid = document.querySelector('.table-bordered');
-      if (!grid) return;
-
-      // Arrow key navigation
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        e.preventDefault();
-        this.navigateGrid(e.key);
-      }
-
-      // Number keys for quick status setting (1-5)
-      if (!this.batchMode && e.key >= '1' && e.key <= '5' && this.currentFocusCell) {
-        e.preventDefault();
-        this.quickSetStatus(e.key);
+      // Escape to close modals
+      if (e.key === 'Escape') {
+        document.getElementById('status-selector-container').innerHTML = '';
+        document.getElementById('course-notes-modal-container').innerHTML = '';
       }
 
       // Space to toggle batch mode
@@ -290,134 +282,7 @@ class AttendanceGrid {
         const toggleBtn = document.getElementById('toggle-batch-mode');
         if (toggleBtn) toggleBtn.click();
       }
-
-      // Escape to close dropdowns/modals
-      if (e.key === 'Escape') {
-        document.getElementById('status-selector-container').innerHTML = '';
-        document.getElementById('course-notes-modal-container').innerHTML = '';
-      }
     });
-
-    // Set initial focus
-    const firstCell = document.querySelector('.attendance-cell');
-    if (firstCell) {
-      this.setFocusCell(firstCell);
-    }
-  }
-
-  /**
-   * Navigate grid with arrow keys
-   */
-  navigateGrid(direction) {
-    if (!this.currentFocusCell) {
-      const firstCell = document.querySelector('.attendance-cell');
-      if (firstCell) this.setFocusCell(firstCell);
-      return;
-    }
-
-    const allCells = Array.from(document.querySelectorAll('.attendance-cell'));
-    const currentIndex = allCells.indexOf(this.currentFocusCell);
-    const row = this.currentFocusCell.closest('tr');
-    const cellsInRow = Array.from(row.querySelectorAll('.attendance-cell'));
-    const columnIndex = cellsInRow.indexOf(this.currentFocusCell);
-
-    let newCell = null;
-
-    switch (direction) {
-      case 'ArrowLeft':
-        newCell = allCells[currentIndex - 1];
-        break;
-      case 'ArrowRight':
-        newCell = allCells[currentIndex + 1];
-        break;
-      case 'ArrowUp':
-        newCell = this.getCellAbove(row, columnIndex);
-        break;
-      case 'ArrowDown':
-        newCell = this.getCellBelow(row, columnIndex);
-        break;
-    }
-
-    if (newCell) {
-      this.setFocusCell(newCell);
-      newCell.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
-  }
-
-  /**
-   * Get cell above current cell
-   */
-  getCellAbove(currentRow, columnIndex) {
-    const prevRow = currentRow.previousElementSibling;
-    if (!prevRow) return null;
-    const cellsInPrevRow = Array.from(prevRow.querySelectorAll('.attendance-cell'));
-    return cellsInPrevRow[columnIndex] || null;
-  }
-
-  /**
-   * Get cell below current cell
-   */
-  getCellBelow(currentRow, columnIndex) {
-    const nextRow = currentRow.nextElementSibling;
-    if (!nextRow || nextRow.querySelector('td[colspan]')) return null;
-    const cellsInNextRow = Array.from(nextRow.querySelectorAll('.attendance-cell'));
-    return cellsInNextRow[columnIndex] || null;
-  }
-
-  /**
-   * Set focus to a cell
-   */
-  setFocusCell(cell) {
-    if (this.currentFocusCell) {
-      this.currentFocusCell.classList.remove('keyboard-focus');
-    }
-    this.currentFocusCell = cell;
-    cell.classList.add('keyboard-focus');
-  }
-
-  /**
-   * Quick set status using number keys
-   * 1 = Present, 2 = Absent, 3 = Sick, 4 = Holiday, 5 = Field Trip
-   */
-  quickSetStatus(keyNumber) {
-    const statusMap = {
-      '1': 'PRESENT',
-      '2': 'ABSENT',
-      '3': 'SICK',
-      '4': 'HOLIDAY',
-      '5': 'FIELD_TRIP',
-    };
-
-    const status = statusMap[keyNumber];
-    if (!status || !this.currentFocusCell) return;
-
-    const studentId = this.currentFocusCell.dataset.studentId;
-    const dateStr = this.currentFocusCell.dataset.date;
-
-    // Trigger the quick update
-    const badge = this.currentFocusCell.querySelector('[id^="cell-"]');
-    if (badge) {
-      // Simulate a status update via fetch
-      const csrfToken = getCookie('csrftoken');
-      fetch(`/academics/attendance/quick-update/${studentId}/${dateStr}/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': csrfToken,
-        },
-        body: `status=${status}`,
-      })
-        .then(response => response.text())
-        .then(html => {
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = html;
-          const newBadge = tempDiv.querySelector('[id^="cell-"]');
-          if (newBadge) {
-            badge.replaceWith(newBadge);
-          }
-        })
-        .catch(error => console.error('Error updating status:', error));
-    }
   }
 }
 

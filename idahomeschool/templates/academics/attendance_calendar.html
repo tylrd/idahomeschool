@@ -88,7 +88,7 @@
   </div>
 </div>
 
-<!-- Legend and Keyboard Shortcuts -->
+<!-- Legend and Help -->
 <div class="row mt-3">
   <div class="col-md-6">
     <div class="card">
@@ -120,15 +120,16 @@
   <div class="col-md-6">
     <div class="card">
       <div class="card-body">
-        <h6>Keyboard Shortcuts:</h6>
-        <div class="keyboard-shortcuts">
-          <div><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> Navigate grid</div>
-          <div><kbd>1</kbd>-<kbd>5</kbd> Quick set status (Present/Absent/Sick/Holiday/Field Trip)</div>
-          <div><kbd>Space</kbd> Toggle batch mode</div>
-          <div><kbd>Esc</kbd> Close dropdown/modal</div>
-          <div class="mt-2 small text-muted">
-            <strong>Batch Mode:</strong> Click to select, Shift+Click for range, Ctrl/Cmd+Click to toggle
-          </div>
+        <h6>Batch Mode:</h6>
+        <div class="small">
+          <div class="mb-2">Enable batch mode to quickly update multiple cells at once:</div>
+          <ul class="mb-0">
+            <li><strong>Click</strong> to select cells</li>
+            <li><strong>Shift+Click</strong> to select a range</li>
+            <li><strong>Ctrl/Cmd+Click</strong> to toggle individual cells</li>
+            <li><kbd>Space</kbd> Toggle batch mode on/off</li>
+            <li><kbd>Esc</kbd> Close modals</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -136,29 +137,35 @@
 </div>
 
 <!-- HTMX Containers -->
-<div id="status-selector-container" style="position: fixed; z-index: 1060;"></div>
+<div id="status-selector-container"></div>
 <div id="course-notes-modal-container"></div>
 
 <!-- HTMX Event Handlers -->
 <script>
-  // Close dropdown when closeDropdown event is triggered
+  // Close modal when closeDropdown event is triggered
   document.body.addEventListener('closeDropdown', function() {
     document.getElementById('status-selector-container').innerHTML = '';
   });
 
-  // Position status selector dropdown next to clicked badge
-  document.body.addEventListener('htmx:beforeSwap', function(event) {
-    if (event.detail.target.id === 'status-selector-container') {
-      // Get the clicked element position
-      const clickedElement = event.detail.requestConfig.elt;
-      const rect = clickedElement.getBoundingClientRect();
-      const container = document.getElementById('status-selector-container');
+  // Open course notes modal from status selector modal
+  function openCourseNotesFromModal(button) {
+    const url = button.dataset.courseNotesUrl;
 
-      // Position dropdown near the clicked badge
-      container.style.left = (rect.left + window.scrollX) + 'px';
-      container.style.top = (rect.bottom + window.scrollY + 5) + 'px';
-    }
-  });
+    // Close the status selector modal first
+    document.getElementById('status-selector-container').innerHTML = '';
+
+    // Fetch and display course notes modal
+    fetch(url)
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('course-notes-modal-container').innerHTML = html;
+        // Process HTMX attributes in the loaded content
+        if (typeof htmx !== 'undefined') {
+          htmx.process(document.getElementById('course-notes-modal-container'));
+        }
+      })
+      .catch(error => console.error('Error loading course notes:', error));
+  }
 </script>
 
 <!-- Attendance Grid Advanced Features -->

@@ -15,11 +15,13 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 
 ## Implementation Status
 
-**Current Progress:** Phase 1 & 2 Complete ✅ | Phase 3 & 4 Pending
+**Current Progress:** Phase 1, 2, & 2.5 Complete ✅ | Phase 3 & 4 Pending
 
 - ✅ **Phase 1: Foundation** - Complete
 - ✅ **Phase 2: Attendance System** - Complete (with course-specific notes)
-- 🔜 **Phase 3: Paperless-NGX Integration** - Next up
+- ✅ **Phase 2.5: HTMX Dynamic Attendance** - Complete
+- 🔜 **Phase 2.6: Multi-Year Course Support** - Planned (next up)
+- 🔜 **Phase 3: Paperless-NGX Integration** - Planned
 - 📋 **Phase 4: Idaho Compliance Reporting** - Planned
 
 ---
@@ -126,6 +128,311 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
   - Added system dependencies to Dockerfile (libpango, libgdk-pixbuf, etc.)
   - Professional PDF formatting with page breaks and styled tables
   - Report data chunked into groups of 3 students per table for readability
+
+### ✅ Phase 2.5: HTMX Dynamic Attendance (COMPLETED)
+
+**Overview:**
+Enhanced the attendance calendar with HTMX for dynamic, real-time updates without page reloads. This dramatically improves the user experience for daily attendance logging.
+
+**Dependencies Added:**
+- [x] `django-htmx==1.26.0` - Django middleware for HTMX integration
+- [x] `htmx.org` (via npm) - Frontend HTMX library bundled with Webpack
+- [x] Bootstrap Icons CDN - For UI icons
+
+**Features Implemented:**
+
+- [x] **Quick Status Toggle**
+  - Click any attendance badge to show inline dropdown
+  - Status options appear instantly without page reload
+  - Auto-closes after selection
+  - Supports: Present, Absent, Sick, Holiday, Field Trip
+
+- [x] **Inline Course Notes Modal**
+  - Click note icon to open modal with all course notes
+  - Edit multiple course notes in one place
+  - Modal closes dropdown automatically
+  - Shows general notes and course-specific notes
+
+- [x] **Batch Operations**
+  - Toggle batch mode with dedicated button or Space key
+  - Single-click to select individual cells
+  - Shift+Click to select range of cells
+  - Ctrl/Cmd+Click to toggle individual cells
+  - Visual selection indicators (blue highlight + checkmark)
+  - Apply status to all selected cells at once
+  - Auto-exits batch mode after applying changes
+
+- [x] **Keyboard Navigation**
+  - Arrow keys (↑↓←→) to navigate grid
+  - Number keys (1-5) for quick status setting
+    - 1 = Present, 2 = Absent, 3 = Sick, 4 = Holiday, 5 = Field Trip
+  - Space bar to toggle batch mode
+  - Escape to close dropdowns/modals
+  - Visual keyboard focus indicator (only shown when using keyboard)
+  - Help card with keyboard shortcuts displayed on calendar
+
+- [x] **Delete Attendance Log**
+  - Delete button in status dropdown
+  - Confirmation prompt before deletion
+  - Returns cell to empty state after deletion
+
+**Technical Implementation:**
+
+**Backend (Django):**
+- Added 5 new HTMX endpoint views in `views.py`:
+  - `attendance_quick_toggle()` - Returns status selector dropdown HTML
+  - `attendance_quick_update()` - Updates status and returns new badge HTML
+  - `attendance_quick_delete()` - Deletes log and returns empty badge HTML
+  - `attendance_course_notes()` - Returns course notes modal HTML
+  - `attendance_save_course_notes()` - Saves notes and closes modal
+- Added URL patterns for HTMX endpoints in `urls.py`
+- CSRF token handling via `X-CSRFToken` header and meta tag
+- Partial template rendering for dynamic updates
+
+**Frontend (JavaScript/CSS):**
+- Created `attendance-grid.js` (445 lines) - Batch operations & keyboard navigation
+  - AttendanceGrid class with full state management
+  - Batch mode with multi-select and bulk update
+  - Keyboard navigation with arrow keys and shortcuts
+  - CSRF token integration for fetch requests
+  - HTMX.process() integration for dynamically inserted elements
+- Created `attendance-grid.scss` - Styling for dynamic features
+  - Batch mode visual indicators
+  - Keyboard focus styling
+  - Selection highlights and animations
+  - User-select prevention in batch mode
+- Updated `project.js` to expose HTMX globally for script access
+
+**Partial Templates Created:**
+- `partials/status_badge.html` - Reusable badge component with HTMX attributes
+- `partials/status_selector.html` - Dropdown status selector
+- `partials/course_notes_modal.html` - Modal for course notes editing
+
+**Template Tags Created:**
+- `academics/templatetags/academics_extras.py`
+  - `get_item` filter for dictionary access in templates
+
+**URL Structure:**
+- `/academics/attendance/quick-toggle/<student_pk>/<date>/` - Get status dropdown
+- `/academics/attendance/quick-update/<student_pk>/<date>/` - Update status
+- `/academics/attendance/quick-delete/<student_pk>/<date>/` - Delete log
+- `/academics/attendance/course-notes/<student_pk>/<date>/` - Get course notes modal
+- `/academics/attendance/save-course-notes/<student_pk>/<date>/` - Save course notes
+
+**Configuration:**
+- HTMX middleware added to `MIDDLEWARE` in `config/settings/base.py`
+- CSRF token meta tag added to `templates/base.html`
+- HTMX global event listener for automatic CSRF token injection
+- Bootstrap Icons CDN for note and UI icons
+
+**Bug Fixes Applied:**
+- Fixed duplicate note icons by wrapping badge and button in container div
+- Fixed delete button not working by adding explicit CSRF header
+- Fixed dropdown not closing when modal opens
+- Fixed text selection during shift-click by preventing default and CSS user-select
+- Fixed keyboard focus showing on page load by tracking `keyboardActive` state
+- Fixed keyboard shortcuts (1-5) not working by setting initial focus cell
+- Fixed batch update breaking HTMX by calling `htmx.process()` on new elements
+- Fixed date parsing in batch mode (split on `-` correctly for YYYY-MM-DD format)
+
+**Performance Optimizations:**
+- Attendance grid view uses `prefetch_related('course_notes')` to check for notes
+- Batch operations use concurrent async fetch requests
+- Dropdown positioning calculated dynamically based on click position
+
+**User Experience Improvements:**
+- Reduced attendance logging from 3-4 page loads to instant updates
+- Batch mode enables marking entire week in seconds
+- Keyboard shortcuts for power users
+- Visual feedback for all interactions (animations, highlights, badges)
+- Progressive enhancement - links still work without JavaScript
+
+### 🔜 Phase 2.6: Multi-Year Course Support (PLANNED)
+
+**Overview:**
+Implement comprehensive multi-year course support using the Course Template Model (Option 2). This allows courses like "Algebra 1" or "Latin" that span multiple school years to be tracked as a single educational unit while maintaining year-by-year enrollment and progress tracking.
+
+**Goals:**
+- Support courses that span multiple school years (e.g., 2-year Algebra program)
+- Eliminate duplicate course creation and manual tracking across years
+- Enable aggregate reporting across all years of a course
+- Share curriculum resources across all enrollments of the same course
+- Track progress and completion status per year and overall
+
+**Database Schema Changes:**
+
+**New Models to Create:**
+
+1. **CourseTemplate** - Defines a course independent of school year
+   ```python
+   class CourseTemplate(models.Model):
+       user = models.ForeignKey(User, on_delete=models.CASCADE)
+       name = models.CharField(max_length=200)  # "Algebra 1"
+       description = models.TextField(blank=True)
+       created_at = models.DateTimeField(auto_now_add=True)
+       updated_at = models.DateTimeField(auto_now=True)
+   ```
+
+2. **CourseEnrollment** - Links student to course template for specific period
+   ```python
+   class CourseEnrollment(models.Model):
+       user = models.ForeignKey(User, on_delete=models.CASCADE)
+       student = models.ForeignKey(Student, on_delete=models.CASCADE)
+       course_template = models.ForeignKey(CourseTemplate, on_delete=models.CASCADE)
+       school_year = models.ForeignKey(SchoolYear, on_delete=models.CASCADE)
+
+       # Optional date tracking within year
+       started_date = models.DateField(null=True, blank=True)
+       completed_date = models.DateField(null=True, blank=True)
+
+       # Status tracking
+       status = models.CharField(
+           max_length=20,
+           choices=[
+               ('IN_PROGRESS', 'In Progress'),
+               ('COMPLETED', 'Completed'),
+               ('PAUSED', 'Paused'),
+           ],
+           default='IN_PROGRESS'
+       )
+
+       # Optional: grade/completion percentage
+       final_grade = models.CharField(max_length=5, blank=True)
+       completion_percentage = models.IntegerField(null=True, blank=True)
+
+       class Meta:
+           unique_together = [["student", "course_template", "school_year"]]
+           ordering = ['school_year__start_date', 'course_template__name']
+   ```
+
+**Models to Update:**
+
+1. **CurriculumResource** - Move from Course to CourseTemplate
+   ```python
+   class CurriculumResource(models.Model):
+       course_template = models.ForeignKey(CourseTemplate, ...)  # CHANGED from Course
+       # All other fields remain the same
+   ```
+
+2. **CourseNote** - Update to reference CourseEnrollment
+   ```python
+   class CourseNote(models.Model):
+       course_enrollment = models.ForeignKey(CourseEnrollment, ...)  # CHANGED from course
+       # All other fields remain the same
+   ```
+
+3. **Course** (Legacy) - Keep temporarily for data migration, mark as deprecated
+
+**Migration Strategy:**
+
+**Phase 1: Create New Models**
+- Create CourseTemplate and CourseEnrollment models
+- Run migration to create tables
+- Do NOT delete old Course model yet
+
+**Phase 2: Data Migration**
+- Create data migration to convert existing Course records:
+  ```python
+  # For each existing Course:
+  # 1. Create or get CourseTemplate with same name
+  # 2. Create CourseEnrollment linking student + template + school_year
+  # 3. Copy over any additional data
+  # 4. Update CurriculumResource foreign keys
+  # 5. Update CourseNote foreign keys
+  ```
+
+**Phase 3: Update Application Code**
+- Create new forms: `CourseTemplateForm`, `CourseEnrollmentForm`
+- Create new views for CRUD operations on both models
+- Update dashboard and reporting views
+- Update Django admin
+- Update all templates
+
+**Phase 4: Cleanup**
+- Verify all data migrated correctly
+- Remove old Course model and related code
+- Remove old migrations after squashing
+
+**Features to Implement:**
+
+**1. Course Template Management**
+- CRUD views for course templates
+- List view showing all course templates with enrollment count
+- Detail view showing all enrollments across years
+- Curriculum resource management (shared across enrollments)
+
+**2. Course Enrollment Management**
+- CRUD views for enrollments
+- "Enroll Student" workflow:
+  - Select student
+  - Select course template (or create new)
+  - Select school year
+  - Set status (in progress/completed/paused)
+- "Continue Course" button to enroll same student in next year
+- "Clone & Continue" to copy settings to new enrollment
+
+**3. Reporting & Visualization**
+- Course lineage view showing progression across years
+- Aggregate statistics (total instructional days across all years)
+- Completion tracking and status indicators
+- Multi-year progress reports
+
+**4. Dashboard Integration**
+- Active enrollments widget
+- Course completion status
+- Multi-year course alerts (e.g., "Algebra 1 entering year 2")
+
+**URL Structure:**
+```
+/academics/course-templates/                    # List all templates
+/academics/course-templates/create/             # Create new template
+/academics/course-templates/<pk>/               # Template detail
+/academics/course-templates/<pk>/update/        # Edit template
+/academics/course-templates/<pk>/delete/        # Delete template
+
+/academics/enrollments/                         # List all enrollments
+/academics/enrollments/create/                  # New enrollment
+/academics/enrollments/<pk>/                    # Enrollment detail
+/academics/enrollments/<pk>/update/             # Edit enrollment
+/academics/enrollments/<pk>/delete/             # Delete enrollment
+/academics/enrollments/<pk>/continue/           # Continue to next year
+```
+
+**Updated Model Relationships:**
+```
+User (1) ──────→ (N) CourseTemplate
+                        │
+                        │ (N)
+                        ↓
+User (1) ──────→ (N) CourseEnrollment ←────┐
+                        │                    │
+                        ├──→ (1) Student     │
+                        ├──→ (1) SchoolYear  │
+                        └──→ (1) CourseTemplate
+                        │
+                        │ (1)
+                        ↓
+                  CurriculumResource (N)
+
+User (1) ──────→ (N) DailyLog
+                        │
+                        │ (1)
+                        ↓
+                  CourseNote (N) ──→ CourseEnrollment (1)
+```
+
+**Benefits:**
+- ✅ One course definition, multiple year enrollments
+- ✅ Shared curriculum resources across years
+- ✅ Clear progress tracking and status management
+- ✅ Aggregate reporting across multiple years
+- ✅ Support for pausing and resuming courses
+- ✅ Better reflects real-world homeschooling patterns
+
+**Backward Compatibility:**
+- Data migration preserves all existing course data
+- Old URLs can redirect to new structure
+- Existing reports continue to work during transition
 
 ### 📋 Phase 3: Paperless-NGX Integration (TODO)
 
@@ -315,18 +622,31 @@ uv run coverage html            # Generate coverage report
   - Includes flipped table structure (statuses as rows, max 3 students per table)
   - Includes detailed course and curriculum information
 - [ ] Add CSV export for attendance reports (optional)
-- [ ] Consider HTMX for dynamic attendance toggling without page reloads
-- [ ] Add bulk actions for marking multiple students/days
+- [x] HTMX for dynamic attendance toggling without page reloads - ✅ COMPLETED (Phase 2.5)
+  - Quick status toggle with inline dropdown
+  - Batch operations for multi-cell updates
+  - Keyboard navigation and shortcuts
+  - Inline course notes modal
+  - Delete attendance logs
+
+### Phase 2.6 Items (Multi-Year Courses)
+- [ ] Create CourseTemplate and CourseEnrollment models
+- [ ] Create data migration for existing Course records
+- [ ] Implement course template management views
+- [ ] Implement course enrollment management views
+- [ ] Update dashboard with multi-year course widgets
+- [ ] Update reporting to show aggregate statistics
+- [ ] Add "Continue Course" workflow for next year
 
 ### Future Considerations
 - [ ] Add data import capability (CSV upload)
 - [ ] Add image upload for students (profile pictures)
 - [ ] Consider adding "notes" field to Student and SchoolYear
 - [ ] Add activity/audit log for compliance tracking
-- [ ] Multi-year course support (for courses spanning multiple years)
 - [ ] Grade/progress tracking within courses
 - [ ] Email reminders for attendance logging
 - [ ] Mobile app for quick attendance entry
+- [ ] Assignment tracking and grading
 
 ## Getting Started (Next Session)
 
@@ -419,42 +739,49 @@ CourseNote.objects.create(
 )
 ```
 
-## Next Immediate Steps (Phase 3)
+## Next Immediate Steps (Phase 2.6)
 
-Phase 3 will focus on **Paperless-NGX Integration** - the core feature that connects the Django app with Paperless-NGX for document management.
+Phase 2.6 will focus on **Multi-Year Course Support** - enabling courses to span multiple school years with shared curriculum and aggregate tracking.
 
-1. **Research & Planning**
-   - Review Paperless-NGX API documentation
-   - Plan GenericForeignKey implementation for PaperlessLink
-   - Design document selector UI/UX
+1. **Create New Models** (Migration Phase 1)
+   - Add `CourseTemplate` model for course definitions
+   - Add `CourseEnrollment` model for student enrollments
+   - Create migration to add new tables
+   - Keep existing `Course` model temporarily for data migration
 
-2. **Create Models**
-   - Add `PaperlessConfig` model for API settings
-   - Add `PaperlessLink` model with GenericForeignKey
-   - Create migrations
+2. **Data Migration** (Migration Phase 2)
+   - Write data migration script to convert existing `Course` records:
+     - Create `CourseTemplate` for each unique course name per user
+     - Create `CourseEnrollment` for each existing Course record
+     - Link to appropriate student, school_year, and course_template
+   - Update `CurriculumResource` foreign keys to point to CourseTemplate
+   - Update `CourseNote` foreign keys to point to CourseEnrollment
+   - Verify all data migrated correctly
 
-3. **Build Paperless API Client**
-   - Create `utils/paperless_client.py`
-   - Implement document search/list functionality
-   - Implement tag management
-   - Add error handling and retry logic
+3. **Create Forms and Views**
+   - Create `CourseTemplateForm` and `CourseEnrollmentForm`
+   - Implement CRUD views for CourseTemplate
+   - Implement CRUD views for CourseEnrollment
+   - Add "Continue Course" action for next year enrollment
+   - Update Django admin for new models
 
-4. **Create Settings Interface**
-   - Settings page for Paperless URL and API token
-   - Token validation
-   - Connection testing
+4. **Update Templates**
+   - Create course template list/detail/form templates
+   - Create course enrollment list/detail/form templates
+   - Update dashboard to show active enrollments
+   - Add course lineage visualization (showing multi-year progression)
 
-5. **Build Document Selector UI**
-   - Modal/search interface for selecting documents
-   - Thumbnail previews
-   - Search and filter capabilities
-   - Integration into Student and Course detail pages
+5. **Update Reporting**
+   - Modify attendance reports to show aggregate days across enrollments
+   - Add course completion status to reports
+   - Create multi-year progress view
 
-6. **Implement Document Linking**
-   - Link documents to students (correspondence, admin docs)
-   - Link documents to courses (work samples, tests)
-   - Display linked documents with thumbnails
-   - Tag syncing to Paperless
+6. **Testing and Cleanup**
+   - Test all CRUD operations
+   - Test data migration with sample data
+   - Verify backward compatibility
+   - Remove old `Course` model and related code
+   - Update documentation
 
 ## References
 

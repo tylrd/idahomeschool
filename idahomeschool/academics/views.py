@@ -902,6 +902,7 @@ def attendance_quick_toggle(request, student_pk, log_date):
 
     context = {
         "student": student,
+        "date": date_obj,
         "date_str": log_date,
         "current_status": daily_log.status if daily_log else None,
     }
@@ -1069,8 +1070,28 @@ def attendance_save_course_notes(request, student_pk, log_date):
             # Delete course note if text is empty
             CourseNote.objects.filter(daily_log=daily_log, course=course).delete()
 
-    # Return empty response to close modal and trigger badge update
-    response = HttpResponse("")
-    response["HX-Trigger"] = f"courseNotesSaved, updateBadge-{student_pk}-{log_date}"
+    # Check if there are any course notes for this log
+    has_notes = CourseNote.objects.filter(daily_log=daily_log).exists()
 
-    return response
+    # Render updated badge with out-of-band swap to update the cell
+    # The badge template already has the wrapper div with id, so we need to add hx-swap-oob to it
+    badge_html = render_to_string(
+        "academics/partials/status_badge.html",
+        {
+            "student": student,
+            "date_str": log_date,
+            "log": daily_log,
+            "has_notes": has_notes,
+        },
+    )
+
+    # Add hx-swap-oob attribute to the badge HTML
+    # The badge template starts with <div id="cell-...">
+    badge_html_with_oob = badge_html.replace(
+        f'<div id="cell-{student_pk}-{log_date}"',
+        f'<div id="cell-{student_pk}-{log_date}" hx-swap-oob="true"',
+        1
+    )
+
+    # Return updated badge HTML with OOB swap to update the badge, and closes modal
+    return HttpResponse(badge_html_with_oob)
