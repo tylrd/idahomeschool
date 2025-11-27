@@ -1,0 +1,108 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}{{ student.name }}{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{{ student.name }}</h1>
+  <div>
+    <a href="{% url 'academics:student_update' student.pk %}" class="btn btn-primary">Edit</a>
+    <a href="{% url 'academics:student_delete' student.pk %}" class="btn btn-danger">Delete</a>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Student Information</h5>
+      </div>
+      <div class="card-body">
+        <dl class="row">
+          <dt class="col-sm-4">Name:</dt>
+          <dd class="col-sm-8">{{ student.name }}</dd>
+
+          <dt class="col-sm-4">Date of Birth:</dt>
+          <dd class="col-sm-8">{{ student.date_of_birth }}</dd>
+
+          <dt class="col-sm-4">Age:</dt>
+          <dd class="col-sm-8">{{ student.age }}</dd>
+
+          <dt class="col-sm-4">Grade Level:</dt>
+          <dd class="col-sm-8">{{ student.get_grade_level_display }}</dd>
+
+          {% if student.paperless_tag_id %}
+          <dt class="col-sm-4">Paperless Tag ID:</dt>
+          <dd class="col-sm-8">{{ student.paperless_tag_id }}</dd>
+          {% endif %}
+
+          <dt class="col-sm-4">Created:</dt>
+          <dd class="col-sm-8">{{ student.created_at|date:"F d, Y" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Enrollment</h5>
+      </div>
+      <div class="card-body">
+        {% if school_years %}
+          <h6>Enrolled School Years:</h6>
+          <ul class="list-unstyled">
+            {% for year in school_years %}
+            <li>
+              <a href="{% url 'academics:schoolyear_detail' year.pk %}">{{ year.name }}</a>
+              {% if year.is_active %}<span class="badge bg-success">Active</span>{% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">Not enrolled in any school years yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Courses</h5>
+    <a href="{% url 'academics:course_create' %}" class="btn btn-sm btn-success">Add Course</a>
+  </div>
+  <div class="card-body">
+    {% if courses %}
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Course Name</th>
+              <th>School Year</th>
+              <th>Resources</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for course in courses %}
+            <tr>
+              <td><a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a></td>
+              <td><a href="{% url 'academics:schoolyear_detail' course.school_year.pk %}">{{ course.school_year.name }}</a></td>
+              <td>{{ course.resources.count }}</td>
+              <td>
+                <a href="{% url 'academics:course_update' course.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">No courses yet.</p>
+      <a href="{% url 'academics:course_create' %}" class="btn btn-primary">Add First Course</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock academics_content %}

@@ -1,0 +1,97 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}{{ course.name }}{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{{ course.name }}</h1>
+  <div>
+    <a href="{% url 'academics:course_update' course.pk %}" class="btn btn-primary">Edit</a>
+    <a href="{% url 'academics:course_delete' course.pk %}" class="btn btn-danger">Delete</a>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Course Information</h5>
+      </div>
+      <div class="card-body">
+        <dl class="row">
+          <dt class="col-sm-3">Course Name:</dt>
+          <dd class="col-sm-9">{{ course.name }}</dd>
+
+          <dt class="col-sm-3">Student:</dt>
+          <dd class="col-sm-9">
+            <a href="{% url 'academics:student_detail' course.student.pk %}">{{ course.student.name }}</a>
+          </dd>
+
+          <dt class="col-sm-3">School Year:</dt>
+          <dd class="col-sm-9">
+            <a href="{% url 'academics:schoolyear_detail' course.school_year.pk %}">{{ course.school_year.name }}</a>
+          </dd>
+
+          {% if course.description %}
+          <dt class="col-sm-3">Description:</dt>
+          <dd class="col-sm-9">{{ course.description }}</dd>
+          {% endif %}
+
+          <dt class="col-sm-3">Created:</dt>
+          <dd class="col-sm-9">{{ course.created_at|date:"F d, Y" }}</dd>
+
+          <dt class="col-sm-3">Last Updated:</dt>
+          <dd class="col-sm-9">{{ course.updated_at|date:"F d, Y g:i A" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Curriculum Resources</h5>
+    <a href="{% url 'academics:resource_create' course.pk %}" class="btn btn-sm btn-success">Add Resource</a>
+  </div>
+  <div class="card-body">
+    {% if resources %}
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Publisher</th>
+              <th>ISBN</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for resource in resources %}
+            <tr>
+              <td>{{ resource.title }}</td>
+              <td>{{ resource.author|default:"-" }}</td>
+              <td>{{ resource.publisher|default:"-" }}</td>
+              <td>{{ resource.isbn|default:"-" }}</td>
+              <td>
+                <a href="{% url 'academics:resource_update' resource.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <a href="{% url 'academics:resource_delete' resource.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+              </td>
+            </tr>
+            {% if resource.notes %}
+            <tr>
+              <td colspan="5" class="text-muted"><small><strong>Notes:</strong> {{ resource.notes }}</small></td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">No curriculum resources added yet.</p>
+      <a href="{% url 'academics:resource_create' course.pk %}" class="btn btn-primary">Add First Resource</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock academics_content %}

@@ -1,0 +1,128 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}{{ school_year.name }}{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{{ school_year.name }}</h1>
+  <div>
+    <a href="{% url 'academics:schoolyear_update' school_year.pk %}" class="btn btn-primary">Edit</a>
+    <a href="{% url 'academics:schoolyear_delete' school_year.pk %}" class="btn btn-danger">Delete</a>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">School Year Details</h5>
+      </div>
+      <div class="card-body">
+        <dl class="row">
+          <dt class="col-sm-4">Name:</dt>
+          <dd class="col-sm-8">{{ school_year.name }}</dd>
+
+          <dt class="col-sm-4">Start Date:</dt>
+          <dd class="col-sm-8">{{ school_year.start_date }}</dd>
+
+          <dt class="col-sm-4">End Date:</dt>
+          <dd class="col-sm-8">{{ school_year.end_date }}</dd>
+
+          <dt class="col-sm-4">Status:</dt>
+          <dd class="col-sm-8">
+            {% if school_year.is_active %}
+              <span class="badge bg-success">Active</span>
+            {% else %}
+              <span class="badge bg-secondary">Inactive</span>
+            {% endif %}
+          </dd>
+
+          <dt class="col-sm-4">Created:</dt>
+          <dd class="col-sm-8">{{ school_year.created_at|date:"F d, Y" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Statistics</h5>
+      </div>
+      <div class="card-body">
+        <dl class="row">
+          <dt class="col-sm-6">Enrolled Students:</dt>
+          <dd class="col-sm-6">{{ students.count }}</dd>
+
+          <dt class="col-sm-6">Total Courses:</dt>
+          <dd class="col-sm-6">{{ courses.count }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Enrolled Students</h5>
+  </div>
+  <div class="card-body">
+    {% if students %}
+      <div class="row">
+        {% for student in students %}
+        <div class="col-md-6 mb-3">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="card-title">
+                <a href="{% url 'academics:student_detail' student.pk %}">{{ student.name }}</a>
+              </h6>
+              <p class="card-text">
+                <small class="text-muted">Grade {{ student.grade_level }} | Age {{ student.age }}</small>
+              </p>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted">No students enrolled in this school year yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Courses</h5>
+  </div>
+  <div class="card-body">
+    {% if courses %}
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Course Name</th>
+              <th>Student</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for course in courses %}
+            <tr>
+              <td><a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a></td>
+              <td><a href="{% url 'academics:student_detail' course.student.pk %}">{{ course.student.name }}</a></td>
+              <td>
+                <a href="{% url 'academics:course_update' course.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">No courses for this school year yet.</p>
+      <a href="{% url 'academics:course_create' %}" class="btn btn-primary">Add Course</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock academics_content %}

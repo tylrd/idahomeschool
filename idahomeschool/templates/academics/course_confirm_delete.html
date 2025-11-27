@@ -1,0 +1,28 @@
+{% extends "academics/base.html" %}
+
+{% block title %}Delete Course{% endblock %}
+
+{% block academics_content %}
+<div class="card">
+  <div class="card-header bg-danger text-white">
+    <h3 class="mb-0">Delete Course</h3>
+  </div>
+  <div class="card-body">
+    <p class="lead">Are you sure you want to delete "{{ object.name }}"?</p>
+    <p class="text-muted">
+      Student: {{ object.student.name }}<br>
+      School Year: {{ object.school_year.name }}
+    </p>
+    <p class="text-danger">
+      <strong>Warning:</strong> This will also delete all associated curriculum resources.
+      This action cannot be undone.
+    </p>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, Delete</button>
+      <a href="{% url 'academics:course_detail' object.pk %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock academics_content %}

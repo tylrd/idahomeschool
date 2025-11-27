@@ -1,0 +1,93 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}Students{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Students</h1>
+  <a href="{% url 'academics:student_create' %}" class="btn btn-success">Add Student</a>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-3">
+      <div class="col-auto">
+        <input type="text" name="search" class="form-control" placeholder="Search students..." value="{{ request.GET.search }}">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Search</button>
+        {% if request.GET.search %}
+          <a href="{% url 'academics:student_list' %}" class="btn btn-secondary">Clear</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if students %}
+<div class="row">
+  {% for student in students %}
+  <div class="col-md-6 col-lg-4 mb-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">
+          <a href="{% url 'academics:student_detail' student.pk %}">{{ student.name }}</a>
+        </h5>
+        <p class="card-text">
+          <strong>Grade:</strong> {{ student.get_grade_level_display }}<br>
+          <strong>Age:</strong> {{ student.age }}<br>
+          <strong>Date of Birth:</strong> {{ student.date_of_birth }}<br>
+          <strong>Courses:</strong> {{ student.course_count }}
+        </p>
+      </div>
+      <div class="card-footer">
+        <a href="{% url 'academics:student_update' student.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+        <a href="{% url 'academics:student_delete' student.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-3">
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">First</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+      </li>
+    {% endif %}
+
+    <li class="page-item active">
+      <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    </li>
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Last</a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">
+  <h4>No students found</h4>
+  {% if request.GET.search %}
+    <p>No students match your search criteria.</p>
+    <a href="{% url 'academics:student_list' %}" class="btn btn-secondary">Clear Search</a>
+  {% else %}
+    <p>Get started by adding your first student.</p>
+    <a href="{% url 'academics:student_create' %}" class="btn btn-primary">Add Student</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock academics_content %}

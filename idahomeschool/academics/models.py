@@ -1,0 +1,167 @@
+from django.conf import settings
+from django.db import models
+from django.urls import reverse
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+
+class SchoolYear(models.Model):
+    """Represents an academic school year (e.g., 2024-2025)."""
+
+    name = models.CharField(max_length=50, unique=True, help_text="e.g., '2024-2025'")
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_active = models.BooleanField(
+        default=False,
+        help_text="Only one school year should be active at a time",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="school_years",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-start_date"]
+        verbose_name = "School Year"
+        verbose_name_plural = "School Years"
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("academics:schoolyear_detail", kwargs={"pk": self.pk})
+
+    def save(self, *args, **kwargs):
+        # Ensure only one active school year per user
+        if self.is_active:
+            SchoolYear.objects.filter(user=self.user, is_active=True).exclude(pk=self.pk).update(
+                is_active=False
+            )
+        super().save(*args, **kwargs)
+
+
+class Student(models.Model):
+    """Represents a homeschool student."""
+
+    GRADE_CHOICES = [
+        ("K", "Kindergarten"),
+        ("1", "1st Grade"),
+        ("2", "2nd Grade"),
+        ("3", "3rd Grade"),
+        ("4", "4th Grade"),
+        ("5", "5th Grade"),
+        ("6", "6th Grade"),
+        ("7", "7th Grade"),
+        ("8", "8th Grade"),
+        ("9", "9th Grade"),
+        ("10", "10th Grade"),
+        ("11", "11th Grade"),
+        ("12", "12th Grade"),
+    ]
+
+    name = models.CharField(max_length=100)
+    date_of_birth = models.DateField()
+    grade_level = models.CharField(max_length=2, choices=GRADE_CHOICES)
+    paperless_tag_id = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Paperless-NGX tag ID for this student",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="students",
+    )
+    school_years = models.ManyToManyField(
+        SchoolYear,
+        related_name="students",
+        blank=True,
+        help_text="School years this student is enrolled in",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Student"
+        verbose_name_plural = "Students"
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("academics:student_detail", kwargs={"pk": self.pk})
+
+    @property
+    def age(self):
+        """Calculate student's current age."""
+        from datetime import date
+
+        today = date.today()
+        return (
+            today.year
+            - self.date_of_birth.year
+            - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
+        )
+
+
+class Course(models.Model):
+    """Represents a course for a student in a specific school year."""
+
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="courses",
+    )
+    school_year = models.ForeignKey(
+        SchoolYear,
+        on_delete=models.CASCADE,
+        related_name="courses",
+    )
+    name = models.CharField(max_length=100, help_text="e.g., 'Math 5', 'Idaho History'")
+    description = models.TextField(blank=True, help_text="Optional course description")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["school_year", "student", "name"]
+        verbose_name = "Course"
+        verbose_name_plural = "Courses"
+        unique_together = [["student", "school_year", "name"]]
+
+    def __str__(self):
+        return f"{self.name} - {self.student.name} ({self.school_year.name})"
+
+    def get_absolute_url(self):
+        return reverse("academics:course_detail", kwargs={"pk": self.pk})
+
+
+class CurriculumResource(models.Model):
+    """Represents a textbook or workbook used for a course."""
+
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name="resources",
+    )
+    title = models.CharField(max_length=200)
+    author = models.CharField(max_length=200, blank=True)
+    publisher = models.CharField(max_length=200, blank=True)
+    isbn = models.CharField(
+        max_length=13,
+        blank=True,
+        help_text="ISBN-10 or ISBN-13",
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name = "Curriculum Resource"
+        verbose_name_plural = "Curriculum Resources"
+
+    def __str__(self):
+        return f"{self.title} ({self.course.name})"

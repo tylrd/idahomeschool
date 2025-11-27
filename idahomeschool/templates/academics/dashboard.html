@@ -1,0 +1,129 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard - Academic Records{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Dashboard</h1>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">Students</h5>
+        <p class="card-text display-4">{{ total_students }}</p>
+        <a href="{% url 'academics:student_list' %}" class="btn btn-primary btn-sm">View All</a>
+        <a href="{% url 'academics:student_create' %}" class="btn btn-success btn-sm">Add New</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">School Years</h5>
+        <p class="card-text display-4">{{ total_school_years }}</p>
+        <a href="{% url 'academics:schoolyear_list' %}" class="btn btn-primary btn-sm">View All</a>
+        <a href="{% url 'academics:schoolyear_create' %}" class="btn btn-success btn-sm">Add New</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title">Active School Year</h5>
+        {% if active_year %}
+          <p class="card-text h4">{{ active_year.name }}</p>
+          <small class="text-muted">{{ active_year.start_date }} to {{ active_year.end_date }}</small>
+        {% else %}
+          <p class="card-text text-muted">No active year</p>
+          <a href="{% url 'academics:schoolyear_create' %}" class="btn btn-success btn-sm">Create One</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if active_year and active_courses %}
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Active Courses ({{ active_year.name }})</h5>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Student</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in active_courses %}
+          <tr>
+            <td><a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a></td>
+            <td><a href="{% url 'academics:student_detail' course.student.pk %}">{{ course.student.name }}</a></td>
+            <td>
+              <a href="{% url 'academics:course_update' course.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Recent Students</h5>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for student in recent_students %}
+        <a href="{% url 'academics:student_detail' student.pk %}" class="list-group-item list-group-item-action">
+          <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">{{ student.name }}</h6>
+            <small>Grade {{ student.grade_level }}</small>
+          </div>
+          <small class="text-muted">Age {{ student.age }}</small>
+        </a>
+        {% empty %}
+        <div class="list-group-item">
+          <p class="mb-0 text-muted">No students yet.</p>
+          <a href="{% url 'academics:student_create' %}" class="btn btn-sm btn-primary mt-2">Add First Student</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Recent Courses</h5>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for course in recent_courses %}
+        <a href="{% url 'academics:course_detail' course.pk %}" class="list-group-item list-group-item-action">
+          <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">{{ course.name }}</h6>
+            <small>{{ course.school_year.name }}</small>
+          </div>
+          <small class="text-muted">{{ course.student.name }}</small>
+        </a>
+        {% empty %}
+        <div class="list-group-item">
+          <p class="mb-0 text-muted">No courses yet.</p>
+          <a href="{% url 'academics:course_create' %}" class="btn btn-sm btn-primary mt-2">Add First Course</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock academics_content %}
