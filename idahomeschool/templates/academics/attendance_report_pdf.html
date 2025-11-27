@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Attendance Report{% if school_year %} - {{ school_year.name }}{% endif %}</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 1in;
+    }
+
+    body {
+      font-family: 'Helvetica', 'Arial', sans-serif;
+      font-size: 11pt;
+      line-height: 1.5;
+      color: #000;
+    }
+
+    h1 {
+      font-size: 20pt;
+      margin-bottom: 10pt;
+      text-align: center;
+      border-bottom: 2pt solid #333;
+      padding-bottom: 10pt;
+    }
+
+    h2 {
+      font-size: 14pt;
+      margin-top: 20pt;
+      margin-bottom: 10pt;
+      border-bottom: 1pt solid #666;
+    }
+
+    .header-info {
+      text-align: center;
+      margin-bottom: 20pt;
+      font-size: 10pt;
+      color: #666;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20pt;
+    }
+
+    th, td {
+      border: 1pt solid #333;
+      padding: 8pt;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    td {
+      text-align: center;
+    }
+
+    td.student-name {
+      text-align: left;
+      font-weight: bold;
+    }
+
+    .summary-box {
+      background-color: #f9f9f9;
+      border: 1pt solid #666;
+      padding: 10pt;
+      margin-bottom: 20pt;
+    }
+
+    .summary-box h3 {
+      margin-top: 0;
+      font-size: 12pt;
+    }
+
+    .compliance-note {
+      background-color: #fff9e6;
+      border: 1pt solid #cc9900;
+      padding: 10pt;
+      margin-top: 20pt;
+      font-size: 9pt;
+    }
+
+    .footer {
+      margin-top: 30pt;
+      text-align: center;
+      font-size: 9pt;
+      color: #666;
+      border-top: 1pt solid #ccc;
+      padding-top: 10pt;
+    }
+
+    .highlight {
+      background-color: #e8f5e9;
+      font-weight: bold;
+    }
+
+    h3 {
+      font-size: 12pt;
+      margin-top: 15pt;
+      margin-bottom: 8pt;
+    }
+
+    h4 {
+      font-size: 11pt;
+      margin-top: 10pt;
+      margin-bottom: 5pt;
+      color: #333;
+    }
+
+    .course-section {
+      margin-bottom: 20pt;
+      page-break-inside: avoid;
+    }
+
+    ul {
+      margin: 5pt 0;
+      padding-left: 20pt;
+    }
+
+    li {
+      margin-bottom: 3pt;
+    }
+  </style>
+</head>
+<body>
+  <h1>Homeschool Attendance Report</h1>
+
+  <div class="header-info">
+    {% if school_year %}
+      <strong>School Year:</strong> {{ school_year.name }}<br>
+      <strong>Period:</strong> {{ school_year.start_date|date:"F j, Y" }} - {{ school_year.end_date|date:"F j, Y" }}<br>
+    {% else %}
+      <strong>All School Years</strong><br>
+    {% endif %}
+    <strong>Generated:</strong> {{ generated_date|date:"F j, Y" }}
+  </div>
+
+  {% if report_data %}
+    <h2>Attendance Summary</h2>
+
+    {% for chunk in report_data_chunks %}
+      <table style="margin-bottom: 15pt;">
+        <thead>
+          <tr>
+            <th style="width: 40%; text-align: left;">Status</th>
+            {% for data in chunk %}
+              <th style="width: 20%;">
+                {{ data.student.name }}<br>
+                <small style="font-weight: normal;">Grade {{ data.student.grade_level }}</small>
+              </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align: left; font-weight: bold;">Total Days Logged</td>
+            {% for data in chunk %}
+              <td>{{ data.total_days }}</td>
+            {% endfor %}
+          </tr>
+          <tr class="highlight">
+            <td style="text-align: left; font-weight: bold;">Instructional Days</td>
+            {% for data in chunk %}
+              <td><strong>{{ data.instructional_days }}</strong></td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td style="text-align: left;">Present</td>
+            {% for data in chunk %}
+              <td>{{ data.present_days }}</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td style="text-align: left;">Field Trips</td>
+            {% for data in chunk %}
+              <td>{{ data.field_trip_days }}</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td style="text-align: left;">Absent</td>
+            {% for data in chunk %}
+              <td>{{ data.absent_days }}</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td style="text-align: left;">Sick</td>
+            {% for data in chunk %}
+              <td>{{ data.sick_days }}</td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td style="text-align: left;">Holiday</td>
+            {% for data in chunk %}
+              <td>{{ data.holiday_days }}</td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    {% endfor %}
+
+    <div class="summary-box">
+      <h3>Summary</h3>
+      <p>
+        This attendance report documents homeschool instructional days for compliance purposes.
+        <strong>Instructional Days</strong> include days marked as "Present" or "Field Trip".
+      </p>
+      {% if school_year %}
+      <p>
+        <strong>School Year:</strong> {{ school_year.name }}<br>
+        <strong>Total Students:</strong> {{ report_data|length }}
+      </p>
+      {% endif %}
+    </div>
+
+    <!-- Course and Curriculum Details -->
+    <h2 style="page-break-before: always;">Course and Curriculum Details</h2>
+
+    {% for data in report_data %}
+      <div class="course-section">
+        <h3>{{ data.student.name }} - Grade {{ data.student.grade_level }}</h3>
+
+        {% if data.courses %}
+          {% for course in data.courses %}
+            <h4>{{ course.name }}</h4>
+            {% if course.description %}
+              <p><em>{{ course.description }}</em></p>
+            {% endif %}
+
+            {% if course.resources.all %}
+              <p><strong>Curriculum Resources:</strong></p>
+              <ul>
+                {% for resource in course.resources.all %}
+                  <li>
+                    {{ resource.title }}
+                    {% if resource.author %} by {{ resource.author }}{% endif %}
+                    {% if resource.publisher %} ({{ resource.publisher }}){% endif %}
+                    {% if resource.isbn %} - ISBN: {{ resource.isbn }}{% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p><em>No curriculum resources specified.</em></p>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p><em>No courses enrolled for this period.</em></p>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+  {% else %}
+    <div class="summary-box">
+      <h3>No Data Available</h3>
+      <p>
+        No attendance records found for the selected criteria.
+        {% if school_year %}
+        Please log attendance for {{ school_year.name }} to generate a report.
+        {% else %}
+        Please create a school year and log attendance to generate a report.
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+
+  <div class="footer">
+    <p>
+      Generated by OpenHomeSchool on {{ generated_date|date:"F j, Y" }}<br>
+      This is an official attendance record for homeschool compliance purposes.
+    </p>
+  </div>
+</body>
+</html>

@@ -18,7 +18,13 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   # psycopg dependencies
   libpq-dev \
   gettext \
-  wait-for-it
+  wait-for-it \
+  # WeasyPrint dependencies
+  libpango-1.0-0 \
+  libpangocairo-1.0-0 \
+  libgdk-pixbuf-2.0-0 \
+  libffi-dev \
+  shared-mime-info
 
 COPY pyproject.toml uv.lock ./
 

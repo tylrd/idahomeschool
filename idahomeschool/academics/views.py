@@ -821,6 +821,11 @@ class AttendanceReportPDFView(LoginRequiredMixin, View):
             holiday_days = logs_query.filter(status="HOLIDAY").count()
             instructional_days = present_days + field_trip_days
 
+            # Get courses for this student in the school year
+            courses_query = Course.objects.filter(student=student).prefetch_related("resources")
+            if school_year:
+                courses_query = courses_query.filter(school_year=school_year)
+
             report_data.append(
                 {
                     "student": student,
@@ -831,13 +836,20 @@ class AttendanceReportPDFView(LoginRequiredMixin, View):
                     "absent_days": absent_days,
                     "sick_days": sick_days,
                     "holiday_days": holiday_days,
+                    "courses": courses_query,
                 }
             )
+
+        # Chunk report_data into groups of 3 for table layout
+        report_data_chunks = []
+        for i in range(0, len(report_data), 3):
+            report_data_chunks.append(report_data[i : i + 3])
 
         # Prepare context for PDF template
         context = {
             "school_year": school_year,
             "report_data": report_data,
+            "report_data_chunks": report_data_chunks,
             "user": user,
             "generated_date": date.today(),
         }

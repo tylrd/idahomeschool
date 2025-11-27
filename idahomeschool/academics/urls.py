@@ -44,6 +44,7 @@ urlpatterns = [
     # DailyLog / Attendance URLs
     path("attendance/", views.AttendanceCalendarView.as_view(), name="attendance_calendar"),
     path("attendance/report/", views.AttendanceReportView.as_view(), name="attendance_report"),
+    path("attendance/report/pdf/", views.AttendanceReportPDFView.as_view(), name="attendance_report_pdf"),
     path("attendance/entry/", views.DailyLogEntryView.as_view(), name="dailylog_entry"),
     path(
         "attendance/entry/<int:student_pk>/",

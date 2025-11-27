@@ -84,6 +84,10 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
   - Total instructional days calculation (Present + Field Trip)
   - Breakdown by status type (Present, Absent, Sick, Holiday, Field Trip)
   - Idaho homeschool compliance notes
+  - PDF export functionality with professional formatting
+    - Flipped table structure (statuses as rows, max 3 students per table)
+    - Detailed course and curriculum information section
+    - WeasyPrint integration for PDF generation
 
 - [x] **Daily Log List View** - Filterable list of all logs
   - Filter by student and date range
@@ -108,6 +112,7 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 - `/academics/attendance/` - Attendance calendar view
 - `/academics/attendance/entry/` - Daily log entry (with course notes)
 - `/academics/attendance/report/` - Compliance reports
+- `/academics/attendance/report/pdf/` - PDF export of attendance report
 - `/academics/daily-logs/` - List all daily logs
 - `/academics/daily-logs/<pk>/` - Daily log detail view
 
@@ -117,6 +122,10 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 - Crispy forms for all data entry
 - Student and date navigation with JavaScript helpers
 - Optimized queries with select_related and prefetch_related
+- WeasyPrint for PDF generation
+  - Added system dependencies to Dockerfile (libpango, libgdk-pixbuf, etc.)
+  - Professional PDF formatting with page breaks and styled tables
+  - Report data chunked into groups of 3 students per table for readability
 
 ### 📋 Phase 3: Paperless-NGX Integration (TODO)
 
@@ -186,6 +195,7 @@ idahomeschool/
 │   │   │   ├── curriculumresource_*.html
 │   │   │   ├── attendance_calendar.html    # Phase 2
 │   │   │   ├── attendance_report.html      # Phase 2
+│   │   │   ├── attendance_report_pdf.html  # Phase 2 (PDF export)
 │   │   │   ├── dailylog_entry.html         # Phase 2 (main entry form)
 │   │   │   ├── dailylog_list.html          # Phase 2
 │   │   │   ├── dailylog_detail.html        # Phase 2
@@ -300,7 +310,11 @@ uv run coverage html            # Generate coverage report
 - [ ] Consider adding "archived" status for old school years
 - [ ] Add bulk delete confirmation with related object counts
 - [ ] Add inline curriculum resource editing on course form
-- [ ] Add PDF/CSV export for attendance reports (compliance)
+- [x] Add PDF export for attendance reports (compliance) - ✅ COMPLETED
+  - Implemented with WeasyPrint
+  - Includes flipped table structure (statuses as rows, max 3 students per table)
+  - Includes detailed course and curriculum information
+- [ ] Add CSV export for attendance reports (optional)
 - [ ] Consider HTMX for dynamic attendance toggling without page reloads
 - [ ] Add bulk actions for marking multiple students/days
 

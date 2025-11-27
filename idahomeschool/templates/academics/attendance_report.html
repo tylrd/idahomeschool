@@ -9,6 +9,13 @@
   <div>
     <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-success">Log Attendance</a>
     <a href="{% url 'academics:attendance_calendar' %}" class="btn btn-outline-secondary">Calendar View</a>
+    {% if report_data %}
+      <a href="{% url 'academics:attendance_report_pdf' %}?{% if school_year %}year={{ school_year.id }}{% endif %}{% if selected_student_id %}&student={{ selected_student_id }}{% endif %}"
+         class="btn btn-primary"
+         target="_blank">
+        <i class="bi bi-file-earmark-pdf"></i> Export PDF
+      </a>
+    {% endif %}
   </div>
 </div>
 
@@ -127,11 +134,21 @@
 </div>
 {% endif %}
 
-<!-- Export Options (Future Feature) -->
+<!-- Export Options -->
+{% if report_data %}
 <div class="card mt-4">
   <div class="card-body">
     <h6>Export Options</h6>
-    <p class="text-muted mb-0">Export functionality coming soon (PDF/CSV).</p>
+    <p class="text-muted">Download this attendance report for your records or compliance documentation.</p>
+    <a href="{% url 'academics:attendance_report_pdf' %}?{% if school_year %}year={{ school_year.id }}{% endif %}{% if selected_student_id %}&student={{ selected_student_id }}{% endif %}"
+       class="btn btn-primary"
+       target="_blank">
+      <i class="bi bi-file-earmark-pdf"></i> Download PDF Report
+    </a>
+    <p class="text-muted mt-3 mb-0">
+      <small>CSV export functionality coming soon.</small>
+    </p>
   </div>
 </div>
+{% endif %}
 {% endblock academics_content %}
