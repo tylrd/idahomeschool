@@ -1,0 +1,61 @@
+{% comment %}
+Partial template for a single attendance status badge with HTMX attributes
+Variables expected:
+- student: Student object
+- date_str: Date as string (Y-m-d format)
+- log: DailyLog object (can be None)
+- has_notes: Boolean indicating if course notes exist
+{% endcomment %}
+
+<div id="cell-{{ student.id }}-{{ date_str }}" class="d-inline-block">
+  {% if log %}
+    <span class="badge
+            {% if log.status == 'PRESENT' %}bg-success
+            {% elif log.status == 'ABSENT' %}bg-danger
+            {% elif log.status == 'SICK' %}bg-warning text-dark
+            {% elif log.status == 'HOLIDAY' %}bg-info
+            {% elif log.status == 'FIELD_TRIP' %}bg-primary
+            {% endif %} position-relative"
+          hx-get="{% url 'academics:attendance_quick_toggle' student.id date_str %}"
+          hx-target="#status-selector-container"
+          hx-swap="innerHTML"
+          style="cursor: pointer; display: inline-block; padding: 8px; min-width: 40px;"
+          title="{{ log.get_status_display }} - Click to change">
+      {% if log.status == 'PRESENT' %}P
+      {% elif log.status == 'ABSENT' %}A
+      {% elif log.status == 'SICK' %}S
+      {% elif log.status == 'HOLIDAY' %}H
+      {% elif log.status == 'FIELD_TRIP' %}F
+      {% endif %}
+      {% if has_notes %}
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" style="font-size: 0.6em;">
+          <i class="bi bi-pencil-fill"></i>
+          <span class="visually-hidden">Has notes</span>
+        </span>
+      {% endif %}
+    </span>
+  {% else %}
+    <span class="badge bg-light text-muted position-relative"
+          hx-get="{% url 'academics:attendance_quick_toggle' student.id date_str %}"
+          hx-target="#status-selector-container"
+          hx-swap="innerHTML"
+          style="cursor: pointer; display: inline-block; padding: 8px; min-width: 40px;"
+          title="No log - Click to add">
+      -
+    </span>
+  {% endif %}
+
+  {% comment %}
+  Note icon for adding/viewing course notes - shown on hover or always
+  {% endcomment %}
+  <button type="button"
+          class="btn btn-sm btn-link text-muted p-0 ms-1"
+          hx-get="{% url 'academics:attendance_course_notes' student.id date_str %}"
+          hx-target="#course-notes-modal-container"
+          hx-swap="innerHTML"
+          onclick="document.getElementById('status-selector-container').innerHTML = '';"
+          title="Add/view course notes"
+          style="font-size: 0.8em; vertical-align: middle;">
+    <i class="bi bi-journal-text"></i>
+  </button>
+</div>

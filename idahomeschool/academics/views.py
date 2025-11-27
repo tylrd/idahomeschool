@@ -1,12 +1,14 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
+from django.views.decorators.http import require_http_methods
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 from django.views import View
 from weasyprint import HTML
@@ -696,14 +698,19 @@ class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
             user=user,
             date__gte=start_date,
             date__lte=end_date,
-        ).select_related("student")
+        ).select_related("student").prefetch_related("course_notes")
 
-        # Organize logs by student and date
+        # Organize logs by student and date, and track which logs have course notes
         logs_by_student_date = {}
+        logs_with_notes = set()
         for log in daily_logs:
             if log.student_id not in logs_by_student_date:
                 logs_by_student_date[log.student_id] = {}
             logs_by_student_date[log.student_id][log.date.isoformat()] = log
+
+            # Check if this log has any course notes
+            if log.course_notes.exists():
+                logs_with_notes.add(log.id)
 
         # Build attendance grid
         attendance_grid = []
@@ -711,7 +718,8 @@ class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
             row = {"student": student, "dates": []}
             for d in date_range:
                 log = logs_by_student_date.get(student.id, {}).get(d.isoformat())
-                row["dates"].append({"date": d, "log": log})
+                has_notes = log.id in logs_with_notes if log else False
+                row["dates"].append({"date": d, "log": log, "has_notes": has_notes})
             attendance_grid.append(row)
 
         context["view_type"] = view_type
@@ -867,3 +875,202 @@ class AttendanceReportPDFView(LoginRequiredMixin, View):
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
         return response
+
+
+# =============================================================================
+# HTMX Attendance Quick Actions
+# =============================================================================
+
+
+@require_http_methods(["GET"])
+@login_required
+def attendance_quick_toggle(request, student_pk, log_date):
+    """
+    HTMX endpoint: Show status selector dropdown for a specific student/date.
+    Returns HTML fragment for status selection.
+    """
+    student = get_object_or_404(Student, pk=student_pk, user=request.user)
+
+    # Parse date
+    try:
+        date_obj = datetime.strptime(log_date, "%Y-%m-%d").date()
+    except ValueError:
+        return HttpResponse("Invalid date format", status=400)
+
+    # Get existing log if any
+    daily_log = DailyLog.objects.filter(student=student, date=date_obj).first()
+
+    context = {
+        "student": student,
+        "date_str": log_date,
+        "current_status": daily_log.status if daily_log else None,
+    }
+
+    return render(request, "academics/partials/status_selector.html", context)
+
+
+@require_http_methods(["POST"])
+@login_required
+def attendance_quick_update(request, student_pk, log_date):
+    """
+    HTMX endpoint: Update attendance status for a specific student/date.
+    Returns updated badge HTML fragment.
+    """
+    student = get_object_or_404(Student, pk=student_pk, user=request.user)
+
+    # Parse date
+    try:
+        date_obj = datetime.strptime(log_date, "%Y-%m-%d").date()
+    except ValueError:
+        return HttpResponse("Invalid date format", status=400)
+
+    # Get new status from form
+    new_status = request.POST.get("status")
+    if new_status not in ["PRESENT", "ABSENT", "SICK", "HOLIDAY", "FIELD_TRIP"]:
+        return HttpResponse("Invalid status", status=400)
+
+    # Update or create daily log
+    daily_log, created = DailyLog.objects.update_or_create(
+        student=student, date=date_obj, defaults={"status": new_status, "user": request.user}
+    )
+
+    # Check if there are any course notes for this log
+    has_notes = CourseNote.objects.filter(daily_log=daily_log).exists()
+
+    context = {
+        "student": student,
+        "date_str": log_date,
+        "log": daily_log,
+        "has_notes": has_notes,
+    }
+
+    # Return updated badge
+    response = render(request, "academics/partials/status_badge.html", context)
+
+    # Close the dropdown by also clearing the selector container
+    response["HX-Trigger"] = "closeDropdown"
+
+    return response
+
+
+@require_http_methods(["DELETE"])
+@login_required
+def attendance_quick_delete(request, student_pk, log_date):
+    """
+    HTMX endpoint: Delete attendance log for a specific student/date.
+    Returns empty badge HTML fragment.
+    """
+    student = get_object_or_404(Student, pk=student_pk, user=request.user)
+
+    # Parse date
+    try:
+        date_obj = datetime.strptime(log_date, "%Y-%m-%d").date()
+    except ValueError:
+        return HttpResponse("Invalid date format", status=400)
+
+    # Delete daily log if exists (cascade will delete course notes)
+    DailyLog.objects.filter(student=student, date=date_obj, user=request.user).delete()
+
+    context = {
+        "student": student,
+        "date_str": log_date,
+        "log": None,
+        "has_notes": False,
+    }
+
+    return render(request, "academics/partials/status_badge.html", context)
+
+
+@require_http_methods(["GET"])
+@login_required
+def attendance_course_notes(request, student_pk, log_date):
+    """
+    HTMX endpoint: Show course notes modal for a specific student/date.
+    Returns modal HTML fragment.
+    """
+    student = get_object_or_404(Student, pk=student_pk, user=request.user)
+
+    # Parse date
+    try:
+        date_obj = datetime.strptime(log_date, "%Y-%m-%d").date()
+    except ValueError:
+        return HttpResponse("Invalid date format", status=400)
+
+    # Get existing log if any
+    daily_log = DailyLog.objects.filter(student=student, date=date_obj).first()
+
+    # Get active school year
+    active_year = SchoolYear.objects.filter(user=request.user, is_active=True).first()
+
+    # Get courses for this student in the active school year
+    courses = Course.objects.filter(student=student)
+    if active_year:
+        courses = courses.filter(school_year=active_year)
+    courses = courses.select_related("school_year").order_by("name")
+
+    # Get existing course notes if log exists
+    course_notes = {}
+    if daily_log:
+        notes_qs = CourseNote.objects.filter(daily_log=daily_log).select_related("course")
+        course_notes = {note.course.id: note.notes for note in notes_qs}
+
+    context = {
+        "student": student,
+        "date": date_obj,
+        "date_str": log_date,
+        "daily_log": daily_log,
+        "courses": courses,
+        "course_notes": course_notes,
+    }
+
+    return render(request, "academics/partials/course_notes_modal.html", context)
+
+
+@require_http_methods(["POST"])
+@login_required
+def attendance_save_course_notes(request, student_pk, log_date):
+    """
+    HTMX endpoint: Save course notes for a specific student/date.
+    Returns success message or closes modal.
+    """
+    student = get_object_or_404(Student, pk=student_pk, user=request.user)
+
+    # Parse date
+    try:
+        date_obj = datetime.strptime(log_date, "%Y-%m-%d").date()
+    except ValueError:
+        return HttpResponse("Invalid date format", status=400)
+
+    # Get or create daily log
+    daily_log, created = DailyLog.objects.get_or_create(
+        student=student, date=date_obj, defaults={"status": "PRESENT", "user": request.user}
+    )
+
+    # Get active school year
+    active_year = SchoolYear.objects.filter(user=request.user, is_active=True).first()
+
+    # Get courses for this student
+    courses = Course.objects.filter(student=student)
+    if active_year:
+        courses = courses.filter(school_year=active_year)
+
+    # Save course notes
+    saved_count = 0
+    for course in courses:
+        note_text = request.POST.get(f"course_{course.id}", "").strip()
+
+        if note_text:
+            # Create or update course note
+            CourseNote.objects.update_or_create(
+                daily_log=daily_log, course=course, defaults={"notes": note_text, "user": request.user}
+            )
+            saved_count += 1
+        else:
+            # Delete course note if text is empty
+            CourseNote.objects.filter(daily_log=daily_log, course=course).delete()
+
+    # Return empty response to close modal and trigger badge update
+    response = HttpResponse("")
+    response["HX-Trigger"] = f"courseNotesSaved, updateBadge-{student_pk}-{log_date}"
+
+    return response

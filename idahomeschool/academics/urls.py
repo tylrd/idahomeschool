@@ -56,6 +56,32 @@ urlpatterns = [
         views.DailyLogEntryView.as_view(),
         name="dailylog_entry_date",
     ),
+    # HTMX Quick Actions
+    path(
+        "attendance/quick-toggle/<int:student_pk>/<str:log_date>/",
+        views.attendance_quick_toggle,
+        name="attendance_quick_toggle",
+    ),
+    path(
+        "attendance/quick-update/<int:student_pk>/<str:log_date>/",
+        views.attendance_quick_update,
+        name="attendance_quick_update",
+    ),
+    path(
+        "attendance/quick-delete/<int:student_pk>/<str:log_date>/",
+        views.attendance_quick_delete,
+        name="attendance_quick_delete",
+    ),
+    path(
+        "attendance/course-notes/<int:student_pk>/<str:log_date>/",
+        views.attendance_course_notes,
+        name="attendance_course_notes",
+    ),
+    path(
+        "attendance/save-course-notes/<int:student_pk>/<str:log_date>/",
+        views.attendance_save_course_notes,
+        name="attendance_save_course_notes",
+    ),
     path("daily-logs/", views.DailyLogListView.as_view(), name="dailylog_list"),
     path("daily-logs/create/", views.DailyLogCreateView.as_view(), name="dailylog_create"),
     path("daily-logs/<int:pk>/", views.DailyLogDetailView.as_view(), name="dailylog_detail"),

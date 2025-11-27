@@ -1,0 +1,115 @@
+{% load academics_extras %}
+{% comment %}
+Partial template for course notes modal
+Variables expected:
+- student: Student object
+- date: Date object
+- date_str: Date as string (Y-m-d format)
+- daily_log: DailyLog object (can be None)
+- courses: List of courses for the student
+- course_notes: Dict mapping course_id to CourseNote object
+{% endcomment %}
+
+<!-- Modal backdrop and container -->
+<div class="modal fade show"
+     id="courseNotesModal"
+     tabindex="-1"
+     style="display: block; background-color: rgba(0,0,0,0.5);"
+     aria-modal="true"
+     role="dialog">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Course Notes - {{ student.name }}</h5>
+        <button type="button"
+                class="btn-close"
+                onclick="document.getElementById('course-notes-modal-container').innerHTML = ''"
+                aria-label="Close"></button>
+      </div>
+
+      <form hx-post="{% url 'academics:attendance_save_course_notes' student.id date_str %}"
+            hx-target="#course-notes-modal-container"
+            hx-swap="innerHTML">
+        {% csrf_token %}
+
+        <div class="modal-body">
+          <p class="text-muted mb-3">
+            <i class="bi bi-calendar3"></i> {{ date|date:"l, F j, Y" }}
+          </p>
+
+          {% if not daily_log %}
+          <div class="alert alert-warning mb-3">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>No attendance log yet.</strong> You can add course notes, but remember to mark attendance status too.
+          </div>
+          {% endif %}
+
+          {% if daily_log and daily_log.general_notes %}
+          <div class="mb-3">
+            <label class="form-label fw-bold">General Notes:</label>
+            <p class="text-muted">{{ daily_log.general_notes }}</p>
+          </div>
+          <hr>
+          {% endif %}
+
+          {% if courses %}
+            <h6 class="mb-3">Course-Specific Notes:</h6>
+            {% for course in courses %}
+              <div class="mb-4">
+                <label for="course-{{ course.id }}" class="form-label">
+                  <strong>{{ course.name }}</strong>
+                  {% if course.description %}
+                    <small class="text-muted d-block">{{ course.description|truncatewords:15 }}</small>
+                  {% endif %}
+                </label>
+                <textarea class="form-control"
+                          id="course-{{ course.id }}"
+                          name="course_{{ course.id }}"
+                          rows="3"
+                          placeholder="What did {{ student.name|truncatewords:1 }} work on in {{ course.name }}?">{% if course_notes|get_item:course.id %}{{ course_notes|get_item:course.id }}{% endif %}</textarea>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i>
+              <strong>No courses found</strong> for {{ student.name }} in the active school year.
+              <a href="{% url 'academics:course_create' %}" class="alert-link">Add a course</a> to start logging course-specific notes.
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="modal-footer">
+          <button type="button"
+                  class="btn btn-secondary"
+                  onclick="document.getElementById('course-notes-modal-container').innerHTML = ''">
+            Cancel
+          </button>
+          {% if courses %}
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Save Course Notes
+          </button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Close modal on backdrop click
+  document.getElementById('courseNotesModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+      document.getElementById('course-notes-modal-container').innerHTML = '';
+    }
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      const container = document.getElementById('course-notes-modal-container');
+      if (container && container.innerHTML.trim() !== '') {
+        container.innerHTML = '';
+      }
+    }
+  });
+</script>

@@ -66,29 +66,11 @@
               <small class="text-muted">Grade {{ row.student.grade_level }}</small>
             </td>
             {% for date_info in row.dates %}
-              <td class="text-center {% if date_info.date == ref_date %}table-light{% endif %}">
-                {% if date_info.log %}
-                  <a href="{% url 'academics:dailylog_entry_date' row.student.id date_info.date|date:'Y-m-d' %}"
-                     class="badge
-                       {% if date_info.log.status == 'PRESENT' %}bg-success
-                       {% elif date_info.log.status == 'ABSENT' %}bg-danger
-                       {% elif date_info.log.status == 'SICK' %}bg-warning
-                       {% elif date_info.log.status == 'HOLIDAY' %}bg-info
-                       {% elif date_info.log.status == 'FIELD_TRIP' %}bg-primary
-                       {% endif %}"
-                     title="{{ date_info.log.get_status_display }}"
-                     style="text-decoration: none; display: block; padding: 8px;">
-                    {% if date_info.log.status == 'PRESENT' %}P
-                    {% elif date_info.log.status == 'ABSENT' %}A
-                    {% elif date_info.log.status == 'SICK' %}S
-                    {% elif date_info.log.status == 'HOLIDAY' %}H
-                    {% elif date_info.log.status == 'FIELD_TRIP' %}F
-                    {% endif %}
-                  </a>
-                {% else %}
-                  <a href="{% url 'academics:dailylog_entry_date' row.student.id date_info.date|date:'Y-m-d' %}"
-                     class="text-muted" title="No log - click to add">-</a>
-                {% endif %}
+              <td class="text-center attendance-cell {% if date_info.date == ref_date %}table-light{% endif %}"
+                  data-student-id="{{ row.student.id }}"
+                  data-date="{{ date_info.date|date:'Y-m-d' }}"
+                  style="position: relative;">
+                {% include "academics/partials/status_badge.html" with student=row.student date_str=date_info.date|date:'Y-m-d' log=date_info.log has_notes=date_info.has_notes %}
               </td>
             {% endfor %}
           </tr>
@@ -106,30 +88,83 @@
   </div>
 </div>
 
-<!-- Legend -->
-<div class="card mt-3">
-  <div class="card-body">
-    <h6>Legend:</h6>
-    <div class="row">
-      <div class="col-auto">
-        <span class="badge bg-success">P</span> Present
+<!-- Legend and Keyboard Shortcuts -->
+<div class="row mt-3">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h6>Legend:</h6>
+        <div class="row">
+          <div class="col-auto">
+            <span class="badge bg-success">P</span> Present
+          </div>
+          <div class="col-auto">
+            <span class="badge bg-danger">A</span> Absent
+          </div>
+          <div class="col-auto">
+            <span class="badge bg-warning">S</span> Sick
+          </div>
+          <div class="col-auto">
+            <span class="badge bg-info">H</span> Holiday
+          </div>
+          <div class="col-auto">
+            <span class="badge bg-primary">F</span> Field Trip
+          </div>
+          <div class="col-auto">
+            <span class="text-muted">-</span> No log
+          </div>
+        </div>
       </div>
-      <div class="col-auto">
-        <span class="badge bg-danger">A</span> Absent
-      </div>
-      <div class="col-auto">
-        <span class="badge bg-warning">S</span> Sick
-      </div>
-      <div class="col-auto">
-        <span class="badge bg-info">H</span> Holiday
-      </div>
-      <div class="col-auto">
-        <span class="badge bg-primary">F</span> Field Trip
-      </div>
-      <div class="col-auto">
-        <span class="text-muted">-</span> No log
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h6>Keyboard Shortcuts:</h6>
+        <div class="keyboard-shortcuts">
+          <div><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> Navigate grid</div>
+          <div><kbd>1</kbd>-<kbd>5</kbd> Quick set status (Present/Absent/Sick/Holiday/Field Trip)</div>
+          <div><kbd>Space</kbd> Toggle batch mode</div>
+          <div><kbd>Esc</kbd> Close dropdown/modal</div>
+          <div class="mt-2 small text-muted">
+            <strong>Batch Mode:</strong> Click to select, Shift+Click for range, Ctrl/Cmd+Click to toggle
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- HTMX Containers -->
+<div id="status-selector-container" style="position: fixed; z-index: 1060;"></div>
+<div id="course-notes-modal-container"></div>
+
+<!-- HTMX Event Handlers -->
+<script>
+  // Close dropdown when closeDropdown event is triggered
+  document.body.addEventListener('closeDropdown', function() {
+    document.getElementById('status-selector-container').innerHTML = '';
+  });
+
+  // Position status selector dropdown next to clicked badge
+  document.body.addEventListener('htmx:beforeSwap', function(event) {
+    if (event.detail.target.id === 'status-selector-container') {
+      // Get the clicked element position
+      const clickedElement = event.detail.requestConfig.elt;
+      const rect = clickedElement.getBoundingClientRect();
+      const container = document.getElementById('status-selector-container');
+
+      // Position dropdown near the clicked badge
+      container.style.left = (rect.left + window.scrollX) + 'px';
+      container.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+    }
+  });
+</script>
+
+<!-- Attendance Grid Advanced Features -->
+<script src="{% static 'js/attendance-grid.js' %}" defer></script>
+
+<!-- Bootstrap Icons CDN for note icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
 {% endblock academics_content %}

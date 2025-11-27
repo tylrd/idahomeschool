@@ -18,6 +18,7 @@
         content="A simple application for homeschooling parents" />
   <meta name="author"
         content="Taylor Daugherty" />
+  <meta name="csrf-token" content="{{ csrf_token }}" />
   <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
   {% block css %}
 <!-- Your stuff: Third-party CSS libraries go here -->
@@ -37,11 +38,24 @@
 <!-- Vendor dependencies bundled as one file -->
 {% render_bundle 'vendors' 'js' attrs='defer' %}
 
-
 <!-- place project specific Javascript in this file -->
+<!-- Note: HTMX is bundled in project.js via npm -->
 
 
 {% render_bundle 'project' 'js' attrs='defer' %}
+
+<!-- HTMX CSRF Configuration -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Configure HTMX to include CSRF token in all requests
+    document.body.addEventListener('htmx:configRequest', function(event) {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      if (csrfToken) {
+        event.detail.headers['X-CSRFToken'] = csrfToken;
+      }
+    });
+  });
+</script>
 
 
 {% endblock javascript %}

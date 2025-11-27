@@ -1,0 +1,108 @@
+{% comment %}
+Partial template for status dropdown selector (shown when clicking a badge)
+Variables expected:
+- student: Student object
+- date_str: Date as string (Y-m-d format)
+- current_status: Current status string (or None)
+{% endcomment %}
+
+<div class="position-absolute bg-white border rounded shadow-lg p-3"
+     style="z-index: 1050; min-width: 200px;"
+     id="status-dropdown">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 class="mb-0">{{ student.name }}</h6>
+    <button type="button"
+            class="btn-close"
+            onclick="document.getElementById('status-selector-container').innerHTML = ''"
+            aria-label="Close"></button>
+  </div>
+  <p class="small text-muted mb-2">{{ date_str|date:"F j, Y" }}</p>
+
+  <form hx-post="{% url 'academics:attendance_quick_update' student.id date_str %}"
+        hx-target="#cell-{{ student.id }}-{{ date_str }}"
+        hx-swap="outerHTML">
+    {% csrf_token %}
+
+    <div class="d-grid gap-2">
+      <button type="submit"
+              name="status"
+              value="PRESENT"
+              class="btn btn-sm {% if current_status == 'PRESENT' %}btn-success{% else %}btn-outline-success{% endif %}">
+        <strong>P</strong> Present
+      </button>
+
+      <button type="submit"
+              name="status"
+              value="ABSENT"
+              class="btn btn-sm {% if current_status == 'ABSENT' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+        <strong>A</strong> Absent
+      </button>
+
+      <button type="submit"
+              name="status"
+              value="SICK"
+              class="btn btn-sm {% if current_status == 'SICK' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+        <strong>S</strong> Sick
+      </button>
+
+      <button type="submit"
+              name="status"
+              value="HOLIDAY"
+              class="btn btn-sm {% if current_status == 'HOLIDAY' %}btn-info{% else %}btn-outline-info{% endif %}">
+        <strong>H</strong> Holiday
+      </button>
+
+      <button type="submit"
+              name="status"
+              value="FIELD_TRIP"
+              class="btn btn-sm {% if current_status == 'FIELD_TRIP' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        <strong>F</strong> Field Trip
+      </button>
+    </div>
+
+    {% if current_status %}
+    <hr class="my-2">
+    <div class="d-grid">
+      <button type="button"
+              hx-delete="{% url 'academics:attendance_quick_delete' student.id date_str %}"
+              hx-target="#cell-{{ student.id }}-{{ date_str }}"
+              hx-swap="outerHTML"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-confirm="Delete this attendance log?"
+              onclick="setTimeout(() => document.getElementById('status-selector-container').innerHTML = '', 100);"
+              class="btn btn-sm btn-outline-secondary">
+        Delete Log
+      </button>
+    </div>
+    {% endif %}
+  </form>
+
+  <hr class="my-2">
+
+  <button type="button"
+          class="btn btn-sm btn-outline-primary w-100"
+          hx-get="{% url 'academics:attendance_course_notes' student.id date_str %}"
+          hx-target="#course-notes-modal-container"
+          hx-swap="innerHTML"
+          onclick="document.getElementById('status-selector-container').innerHTML = '';">
+    <i class="bi bi-journal-text"></i> Add Course Notes
+  </button>
+
+  <div class="mt-2">
+    <a href="{% url 'academics:dailylog_entry_date' student.id date_str %}"
+       class="btn btn-sm btn-link w-100">
+      Full Entry Form →
+    </a>
+  </div>
+</div>
+
+<script>
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('status-dropdown');
+    const container = document.getElementById('status-selector-container');
+    if (dropdown && !dropdown.contains(event.target) && !event.target.closest('[hx-target="#status-selector-container"]')) {
+      container.innerHTML = '';
+    }
+  });
+</script>
