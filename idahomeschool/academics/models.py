@@ -163,44 +163,114 @@ class Resource(models.Model):
         return reverse("academics:resource_detail", kwargs={"pk": self.pk})
 
 
-class Course(models.Model):
-    """Represents a course for a student in a specific school year."""
+class CourseTemplate(models.Model):
+    """Represents a reusable course template with suggested resources."""
 
-    student = models.ForeignKey(
-        Student,
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="courses",
+        related_name="course_templates",
     )
-    school_year = models.ForeignKey(
-        SchoolYear,
-        on_delete=models.CASCADE,
-        related_name="courses",
+    name = models.CharField(max_length=200, help_text="e.g., 'Algebra 1', 'Latin'")
+    description = models.TextField(
+        blank=True,
+        help_text="Optional description of the course",
     )
-    name = models.CharField(max_length=100, help_text="e.g., 'Math 5', 'Idaho History'")
-    description = models.TextField(blank=True, help_text="Optional course description")
+    suggested_resources = models.ManyToManyField(
+        Resource,
+        blank=True,
+        related_name="course_templates",
+        help_text="Suggested resources for this course template",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["school_year", "student", "name"]
-        verbose_name = "Course"
-        verbose_name_plural = "Courses"
-        unique_together = [["student", "school_year", "name"]]
+        ordering = ["name"]
+        verbose_name = "Course Template"
+        verbose_name_plural = "Course Templates"
+        indexes = [
+            models.Index(fields=["user", "name"]),
+        ]
 
     def __str__(self):
-        return f"{self.name} - {self.student.name} ({self.school_year.name})"
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("academics:coursetemplate_detail", kwargs={"pk": self.pk})
+
+
+class Course(models.Model):
+    """Represents a course that can span multiple school years."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="courses",
+        null=True,
+        blank=True,
+    )
+    name = models.CharField(max_length=200, help_text="e.g., 'Algebra 1', 'Latin'")
+    description = models.TextField(
+        blank=True,
+        help_text="Optional course description",
+    )
+    course_template = models.ForeignKey(
+        CourseTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="courses",
+        help_text="Template this course was created from (if any)",
+    )
+    resources = models.ManyToManyField(
+        Resource,
+        blank=True,
+        related_name="courses",
+        help_text="Resources for this course",
+    )
+    # OLD FIELDS - Keep temporarily for migration, will be removed later
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="old_courses",
+        null=True,
+        blank=True,
+    )
+    school_year = models.ForeignKey(
+        SchoolYear,
+        on_delete=models.CASCADE,
+        related_name="old_courses",
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Course"
+        verbose_name_plural = "Courses"
+        indexes = [
+            models.Index(fields=["user", "name"]),
+        ]
+
+    def __str__(self):
+        return self.name
 
     def get_absolute_url(self):
         return reverse("academics:course_detail", kwargs={"pk": self.pk})
 
 
 class CurriculumResource(models.Model):
-    """Represents a textbook or workbook used for a course."""
+    """DEPRECATED - use Resource instead. Textbook or workbook used for a course."""
 
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
-        related_name="resources",
+        related_name="old_curriculum_resources",
+        null=True,
+        blank=True,
     )
     title = models.CharField(max_length=200)
     author = models.CharField(max_length=200, blank=True)
@@ -220,7 +290,86 @@ class CurriculumResource(models.Model):
         verbose_name_plural = "Curriculum Resources"
 
     def __str__(self):
-        return f"{self.title} ({self.course.name})"
+        if self.course:
+            return f"{self.title} ({self.course.name})"
+        return self.title
+
+
+class CourseEnrollment(models.Model):
+    """Represents a student's enrollment in a course for a specific school year."""
+
+    STATUS_CHOICES = [
+        ("IN_PROGRESS", "In Progress"),
+        ("COMPLETED", "Completed"),
+        ("PAUSED", "Paused"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="course_enrollments",
+    )
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="course_enrollments",
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name="enrollments",
+    )
+    school_year = models.ForeignKey(
+        SchoolYear,
+        on_delete=models.CASCADE,
+        related_name="course_enrollments",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="IN_PROGRESS",
+    )
+    started_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Date the student started this course",
+    )
+    completed_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Date the student completed this course",
+    )
+    final_grade = models.CharField(
+        max_length=5,
+        blank=True,
+        help_text="Final grade (e.g., 'A', '95%', 'Pass')",
+    )
+    completion_percentage = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Completion percentage (0-100)",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["school_year__start_date", "course__name"]
+        verbose_name = "Course Enrollment"
+        verbose_name_plural = "Course Enrollments"
+        unique_together = [["student", "course", "school_year"]]
+        indexes = [
+            models.Index(fields=["student", "school_year"]),
+            models.Index(fields=["course", "school_year"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.student.name} - {self.course.name} "
+            f"({self.school_year.name})"
+        )
+
+    def get_absolute_url(self):
+        return reverse("academics:courseenrollment_detail", kwargs={"pk": self.pk})
 
 
 class DailyLog(models.Model):
@@ -280,17 +429,27 @@ class DailyLog(models.Model):
 
 
 class CourseNote(models.Model):
-    """Represents notes for a specific course on a specific day."""
+    """Represents notes for a specific course enrollment on a specific day."""
 
     daily_log = models.ForeignKey(
         DailyLog,
         on_delete=models.CASCADE,
         related_name="course_notes",
     )
+    course_enrollment = models.ForeignKey(
+        CourseEnrollment,
+        on_delete=models.CASCADE,
+        related_name="course_notes",
+        null=True,
+        blank=True,
+    )
+    # OLD FIELD - Keep temporarily for migration, will be removed later
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
-        related_name="course_notes",
+        related_name="old_course_notes",
+        null=True,
+        blank=True,
     )
     notes = models.TextField(
         help_text="Notes about what was covered in this course today",
@@ -304,13 +463,20 @@ class CourseNote(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["course__name"]
+        ordering = ["course_enrollment__course__name"]
         verbose_name = "Course Note"
         verbose_name_plural = "Course Notes"
-        unique_together = [["daily_log", "course"]]
         indexes = [
-            models.Index(fields=["daily_log", "course"]),
+            models.Index(fields=["daily_log", "course_enrollment"]),
+            models.Index(fields=["daily_log", "course"]),  # Keep for migration
         ]
 
     def __str__(self):
-        return f"{self.course.name} - {self.daily_log.date}"
+        if self.course_enrollment:
+            return (
+                f"{self.course_enrollment.course.name} - "
+                f"{self.daily_log.date}"
+            )
+        if self.course:
+            return f"{self.course.name} - {self.daily_log.date}"
+        return f"CourseNote {self.pk}"
