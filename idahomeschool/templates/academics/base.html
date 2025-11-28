@@ -2,47 +2,6 @@
 {% load static %}
 
 {% block content %}
-<div class="row">
-  <div class="col-md-3 col-lg-2 mb-4">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Academic Records</h5>
-      </div>
-      <div class="list-group list-group-flush">
-        <a href="{% url 'academics:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-          Dashboard
-        </a>
-        <a href="{% url 'academics:schoolyear_list' %}" class="list-group-item list-group-item-action {% if 'schoolyear' in request.resolver_match.url_name %}active{% endif %}">
-          School Years
-        </a>
-        <a href="{% url 'academics:student_list' %}" class="list-group-item list-group-item-action {% if 'student' in request.resolver_match.url_name %}active{% endif %}">
-          Students
-        </a>
-        <a href="{% url 'academics:course_list' %}" class="list-group-item list-group-item-action {% if 'course' in request.resolver_match.url_name %}active{% endif %}">
-          Courses
-        </a>
-        <div class="list-group-item bg-light">
-          <strong>Attendance</strong>
-        </div>
-        <a href="{% url 'academics:dailylog_entry' %}" class="list-group-item list-group-item-action {% if 'dailylog_entry' in request.resolver_match.url_name %}active{% endif %}">
-          Daily Log Entry
-        </a>
-        <a href="{% url 'academics:attendance_calendar' %}" class="list-group-item list-group-item-action {% if 'attendance_calendar' in request.resolver_match.url_name %}active{% endif %}">
-          Calendar View
-        </a>
-        <a href="{% url 'academics:attendance_report' %}" class="list-group-item list-group-item-action {% if 'attendance_report' in request.resolver_match.url_name %}active{% endif %}">
-          Reports
-        </a>
-        <a href="{% url 'academics:dailylog_list' %}" class="list-group-item list-group-item-action {% if 'dailylog_list' in request.resolver_match.url_name or 'dailylog_detail' in request.resolver_match.url_name %}active{% endif %}">
-          All Logs
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-9 col-lg-10">
-    {% block academics_content %}
-    {% endblock academics_content %}
-  </div>
-</div>
+{% block academics_content %}
+{% endblock academics_content %}
 {% endblock content %}

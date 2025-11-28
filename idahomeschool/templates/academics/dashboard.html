@@ -12,26 +12,6 @@
   <div class="col-md-4">
     <div class="card text-center">
       <div class="card-body">
-        <h5 class="card-title">Students</h5>
-        <p class="card-text display-4">{{ total_students }}</p>
-        <a href="{% url 'academics:student_list' %}" class="btn btn-primary btn-sm">View All</a>
-        <a href="{% url 'academics:student_create' %}" class="btn btn-success btn-sm">Add New</a>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card text-center">
-      <div class="card-body">
-        <h5 class="card-title">School Years</h5>
-        <p class="card-text display-4">{{ total_school_years }}</p>
-        <a href="{% url 'academics:schoolyear_list' %}" class="btn btn-primary btn-sm">View All</a>
-        <a href="{% url 'academics:schoolyear_create' %}" class="btn btn-success btn-sm">Add New</a>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card text-center">
-      <div class="card-body">
         <h5 class="card-title">Active School Year</h5>
         {% if active_year %}
           <p class="card-text h4">{{ active_year.name }}</p>
@@ -43,23 +23,7 @@
       </div>
     </div>
   </div>
-</div>
-
-<!-- Attendance Summary (if active year exists) -->
-{% if active_year %}
-<div class="row mb-4">
-  <div class="col-md-6">
-    <div class="card text-center">
-      <div class="card-body">
-        <h5 class="card-title">Instructional Days</h5>
-        <p class="card-text display-4 text-success">{{ instructional_days|default:0 }}</p>
-        <small class="text-muted">for {{ active_year.name }}</small>
-        <div class="mt-2">
-          <a href="{% url 'academics:attendance_report' %}" class="btn btn-primary btn-sm">View Report</a>
-        </div>
-      </div>
-    </div>
-  </div>
+  {% if active_year %}
   <div class="col-md-6">
     <div class="card text-center">
       <div class="card-body">
@@ -71,8 +35,8 @@
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
-{% endif %}
 
 {% if active_year and active_courses %}
 <div class="card mb-4">

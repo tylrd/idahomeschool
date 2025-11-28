@@ -15,11 +15,12 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 
 ## Implementation Status
 
-**Current Progress:** Phase 1, 2, & 2.5 Complete ✅ | Phase 3 & 4 Pending
+**Current Progress:** Phase 1, 2, 2.5, & 2.7 Complete ✅ | Phase 2.6, 3 & 4 Pending
 
 - ✅ **Phase 1: Foundation** - Complete
 - ✅ **Phase 2: Attendance System** - Complete (with course-specific notes)
 - ✅ **Phase 2.5: HTMX Dynamic Attendance** - Complete
+- ✅ **Phase 2.7: Navigation & UX Restructuring** - Complete
 - 🔜 **Phase 2.6: Multi-Year Course Support** - Planned (next up)
 - 🔜 **Phase 3: Paperless-NGX Integration** - Planned
 - 📋 **Phase 4: Idaho Compliance Reporting** - Planned
@@ -433,6 +434,97 @@ User (1) ──────→ (N) DailyLog
 - Data migration preserves all existing course data
 - Old URLs can redirect to new structure
 - Existing reports continue to work during transition
+
+### ✅ Phase 2.7: Navigation & UX Restructuring (COMPLETED)
+
+**Overview:**
+Based on customer feedback, restructure the navigation to provide a cleaner, more focused user experience with a persistent sidebar and direct access to the dashboard.
+
+**UX Requirements:**
+- ✅ Remove top header navigation completely
+- ✅ Remove Home/About pages - root URL redirects directly to dashboard
+- ✅ Persistent collapsible sidebar pinned to left side across all pages
+- ✅ Expandable main sections in sidebar with subsections
+- ✅ Clean, focused interface for homeschooling parents
+
+**Navigation Structure:**
+```
+Desktop/Tablet Sidebar:
+├─ 📊 Dashboard
+├─ 🏫 School Management (expandable)
+│  ├─ 📅 School Years
+│  ├─ 👥 Students
+│  └─ 📚 Courses
+├─ 📅 Attendance (expandable)
+│  ├─ ✏️ Daily Log Entry
+│  ├─ 📆 Calendar View
+│  ├─ 📄 Reports
+│  └─ 📋 All Logs
+└─ 👤 User Settings (expandable)
+   ├─ 👤 My Profile
+   └─ 🚪 Sign Out
+
+Mobile: ☰ Hamburger → Slide-out menu (same structure)
+```
+
+**Technical Implementation:**
+
+**Frontend Changes:**
+- [x] Update `templates/base.html` - Remove navbar, add sidebar layout
+- [x] Create `static/sass/sidebar.scss` - Responsive sidebar styles
+- [x] Add sidebar JavaScript to `static/js/project.js` - Collapse/expand functionality
+- [x] Update `academics/base.html` - Remove duplicate sidebar
+- [x] Sidebar state persists using localStorage (desktop only)
+- [x] Add Bootstrap Icons for all navigation items
+- [x] Mobile header bar with hamburger button
+- [x] X close button on mobile sidebar
+- [x] Fixed CSS specificity issues for mobile collapse
+
+**Backend Changes:**
+- [x] Update `config/urls.py` - Root URL goes directly to DashboardView
+- [x] Remove Home and About template views
+- [x] Dashboard already has LoginRequiredMixin
+
+**Responsive Design:**
+- **Desktop (>768px):**
+  - Sidebar always visible (280px width)
+  - Click "Collapse" button → Icon-only mode (70px width)
+  - Icons remain visible and clickable when collapsed
+  - State saved in localStorage
+
+- **Tablet (769-992px):**
+  - Sidebar visible by default (240px width)
+  - Can be collapsed to icon-only mode
+
+- **Mobile (≤768px):**
+  - Fixed header bar with app title
+  - Hamburger menu (☰) button in top-left
+  - Sidebar hidden by default
+  - Tap hamburger → Slide-in sidebar (90% width, max 500px)
+  - Full text + icons always visible on mobile
+  - X button to close sidebar
+  - Dark overlay when open
+  - Tap overlay or X to close
+
+**Key Technical Challenges Solved:**
+1. **CSS Specificity Conflict:** Desktop `#wrapper.toggled` (collapsed) conflicted with mobile `#wrapper.toggled` (open). Fixed by wrapping desktop collapsed styles in `@media (min-width: 769px)`.
+2. **Bootstrap Collapse on Mobile:** Desktop was hiding all `.collapse` divs. Fixed by scoping desktop rules to prevent interference.
+3. **Icon Visibility:** Ensured icons display properly in both collapsed (desktop) and mobile modes.
+4. **Chevron Rotation:** Added JavaScript listeners for Bootstrap collapse events to rotate chevron arrows.
+
+**Files Modified:**
+- `templates/base.html` - New sidebar structure with mobile header
+- `static/sass/sidebar.scss` - Complete responsive sidebar styles
+- `static/js/project.js` - Toggle logic and chevron rotation
+- `templates/academics/base.html` - Simplified (removed old sidebar)
+- `config/urls.py` - Direct dashboard routing
+
+**Future Enhancements:**
+- Consider adding tooltips to collapsed sidebar icons on desktop
+- Add keyboard shortcuts (Cmd+B to toggle sidebar)
+- Add smooth scroll to active nav item on mobile
+- Consider adding breadcrumbs for deep navigation
+
 
 ### 📋 Phase 3: Paperless-NGX Integration (TODO)
 
