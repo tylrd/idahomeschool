@@ -1,20 +1,41 @@
-from datetime import date, datetime, timedelta
+from datetime import date
+from datetime import datetime
+from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Count, Q
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.db.models import Count
+from django.db.models import Q
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
+from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
-from django.views.decorators.http import require_http_methods
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 from django.views import View
+from django.views.decorators.http import require_http_methods
+from django.views.generic import CreateView
+from django.views.generic import DeleteView
+from django.views.generic import DetailView
+from django.views.generic import ListView
+from django.views.generic import TemplateView
+from django.views.generic import UpdateView
 from weasyprint import HTML
 
-from .forms import CourseForm, CourseNoteForm, CurriculumResourceForm, DailyLogForm, SchoolYearForm, StudentForm
-from .models import Course, CourseNote, CurriculumResource, DailyLog, SchoolYear, Student
+from .forms import CourseForm
+from .forms import CourseNoteForm
+from .forms import CurriculumResourceForm
+from .forms import DailyLogForm
+from .forms import SchoolYearForm
+from .forms import StudentForm
+from .models import Course
+from .models import CourseNote
+from .models import CurriculumResource
+from .models import DailyLog
+from .models import SchoolYear
+from .models import Student
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -28,10 +49,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         # Get active school year
         active_year = SchoolYear.objects.filter(user=user, is_active=True).first()
-
         context["active_year"] = active_year
-        context["total_students"] = Student.objects.filter(user=user).count()
-        context["total_school_years"] = SchoolYear.objects.filter(user=user).count()
 
         if active_year:
             context["active_courses"] = Course.objects.filter(
@@ -46,14 +64,20 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 date__lte=active_year.end_date,
             )
             context["total_attendance_days"] = logs_in_year.count()
-            context["instructional_days"] = logs_in_year.filter(status__in=["PRESENT", "FIELD_TRIP"]).count()
+            context["instructional_days"] = logs_in_year.filter(
+                status__in=["PRESENT", "FIELD_TRIP"]
+            ).count()
 
         # Recent daily logs
         context["recent_daily_logs"] = (
-            DailyLog.objects.filter(user=user).select_related("student").order_by("-date")[:5]
+            DailyLog.objects.filter(user=user)
+            .select_related("student")
+            .order_by("-date")[:5]
         )
 
-        context["recent_students"] = Student.objects.filter(user=user).order_by("-created_at")[:5]
+        context["recent_students"] = Student.objects.filter(user=user).order_by(
+            "-created_at"
+        )[:5]
         context["recent_courses"] = (
             Course.objects.filter(student__user=user)
             .select_related("student", "school_year")
@@ -112,7 +136,9 @@ class SchoolYearCreateView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
-        messages.success(self.request, f"School year '{form.instance.name}' created successfully!")
+        messages.success(
+            self.request, f"School year '{form.instance.name}' created successfully!"
+        )
         return super().form_valid(form)
 
 
@@ -132,7 +158,9 @@ class SchoolYearUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
-        messages.success(self.request, f"School year '{form.instance.name}' updated successfully!")
+        messages.success(
+            self.request, f"School year '{form.instance.name}' updated successfully!"
+        )
         return super().form_valid(form)
 
 
@@ -206,7 +234,9 @@ class StudentCreateView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
-        messages.success(self.request, f"Student '{form.instance.name}' created successfully!")
+        messages.success(
+            self.request, f"Student '{form.instance.name}' created successfully!"
+        )
         return super().form_valid(form)
 
 
@@ -226,7 +256,9 @@ class StudentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
-        messages.success(self.request, f"Student '{form.instance.name}' updated successfully!")
+        messages.success(
+            self.request, f"Student '{form.instance.name}' updated successfully!"
+        )
         return super().form_valid(form)
 
 
@@ -255,9 +287,9 @@ class CourseListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = Course.objects.filter(student__user=self.request.user).select_related(
-            "student", "school_year"
-        )
+        queryset = Course.objects.filter(
+            student__user=self.request.user
+        ).select_related("student", "school_year")
 
         # Filter by school year if specified
         year_id = self.request.GET.get("year")
@@ -310,7 +342,9 @@ class CourseCreateView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
-        messages.success(self.request, f"Course '{form.instance.name}' created successfully!")
+        messages.success(
+            self.request, f"Course '{form.instance.name}' created successfully!"
+        )
         return super().form_valid(form)
 
 
@@ -330,7 +364,9 @@ class CourseUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
-        messages.success(self.request, f"Course '{form.instance.name}' updated successfully!")
+        messages.success(
+            self.request, f"Course '{form.instance.name}' updated successfully!"
+        )
         return super().form_valid(form)
 
 
@@ -364,11 +400,15 @@ class CurriculumResourceCreateView(LoginRequiredMixin, UserPassesTestMixin, Crea
     def form_valid(self, form):
         course = get_object_or_404(Course, pk=self.kwargs["course_pk"])
         form.instance.course = course
-        messages.success(self.request, f"Resource '{form.instance.title}' added successfully!")
+        messages.success(
+            self.request, f"Resource '{form.instance.title}' added successfully!"
+        )
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy("academics:course_detail", kwargs={"pk": self.kwargs["course_pk"]})
+        return reverse_lazy(
+            "academics:course_detail", kwargs={"pk": self.kwargs["course_pk"]}
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -387,7 +427,9 @@ class CurriculumResourceUpdateView(LoginRequiredMixin, UserPassesTestMixin, Upda
         return self.get_object().course.student.user == self.request.user
 
     def form_valid(self, form):
-        messages.success(self.request, f"Resource '{form.instance.title}' updated successfully!")
+        messages.success(
+            self.request, f"Resource '{form.instance.title}' updated successfully!"
+        )
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -421,7 +463,9 @@ class DailyLogListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = DailyLog.objects.filter(user=self.request.user).select_related("student")
+        queryset = DailyLog.objects.filter(user=self.request.user).select_related(
+            "student"
+        )
 
         # Filter by student if specified
         student_id = self.request.GET.get("student")
@@ -562,7 +606,9 @@ class DailyLogEntryView(LoginRequiredMixin, View):
             daily_log = None
 
         # Get student's courses for the active school year
-        active_year = SchoolYear.objects.filter(user=request.user, is_active=True).first()
+        active_year = SchoolYear.objects.filter(
+            user=request.user, is_active=True
+        ).first()
         courses = Course.objects.filter(student=student)
         if active_year:
             courses = courses.filter(school_year=active_year)
@@ -570,7 +616,9 @@ class DailyLogEntryView(LoginRequiredMixin, View):
         # Get existing course notes (if daily log exists)
         existing_notes = {}
         if daily_log:
-            existing_notes = {note.course_id: note for note in daily_log.course_notes.all()}
+            existing_notes = {
+                note.course_id: note for note in daily_log.course_notes.all()
+            }
 
         # Prepare course notes data
         course_notes_data = []
@@ -628,7 +676,9 @@ class DailyLogEntryView(LoginRequiredMixin, View):
 
         # Process course notes
         courses = Course.objects.filter(student=student)
-        active_year = SchoolYear.objects.filter(user=request.user, is_active=True).first()
+        active_year = SchoolYear.objects.filter(
+            user=request.user, is_active=True
+        ).first()
         if active_year:
             courses = courses.filter(school_year=active_year)
 
@@ -651,7 +701,11 @@ class DailyLogEntryView(LoginRequiredMixin, View):
         )
 
         # Redirect back to the entry form
-        return redirect("academics:dailylog_entry_date", student_pk=student.pk, log_date=entry_date.isoformat())
+        return redirect(
+            "academics:dailylog_entry_date",
+            student_pk=student.pk,
+            log_date=entry_date.isoformat(),
+        )
 
 
 class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
@@ -685,20 +739,31 @@ class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
             # Calculate the start and end of the month
             start_date = ref_date.replace(day=1)
             if ref_date.month == 12:
-                end_date = ref_date.replace(year=ref_date.year + 1, month=1, day=1) - timedelta(days=1)
+                end_date = ref_date.replace(
+                    year=ref_date.year + 1, month=1, day=1
+                ) - timedelta(days=1)
             else:
-                end_date = ref_date.replace(month=ref_date.month + 1, day=1) - timedelta(days=1)
-            date_range = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+                end_date = ref_date.replace(
+                    month=ref_date.month + 1, day=1
+                ) - timedelta(days=1)
+            date_range = [
+                start_date + timedelta(days=i)
+                for i in range((end_date - start_date).days + 1)
+            ]
 
         # Get students
         students = Student.objects.filter(user=user).prefetch_related("daily_logs")
 
         # Get daily logs for the date range
-        daily_logs = DailyLog.objects.filter(
-            user=user,
-            date__gte=start_date,
-            date__lte=end_date,
-        ).select_related("student").prefetch_related("course_notes")
+        daily_logs = (
+            DailyLog.objects.filter(
+                user=user,
+                date__gte=start_date,
+                date__lte=end_date,
+            )
+            .select_related("student")
+            .prefetch_related("course_notes")
+        )
 
         # Organize logs by student and date, and track which logs have course notes
         logs_by_student_date = {}
@@ -728,7 +793,9 @@ class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
         context["end_date"] = end_date
         context["date_range"] = date_range
         context["attendance_grid"] = attendance_grid
-        context["prev_date"] = (start_date - timedelta(days=7 if view_type == "week" else 30)).isoformat()
+        context["prev_date"] = (
+            start_date - timedelta(days=7 if view_type == "week" else 30)
+        ).isoformat()
         context["next_date"] = (end_date + timedelta(days=1)).isoformat()
 
         return context
@@ -762,7 +829,9 @@ class AttendanceReportView(LoginRequiredMixin, TemplateView):
             # Get daily logs for this student in the school year
             logs_query = DailyLog.objects.filter(student=student)
             if school_year:
-                logs_query = logs_query.filter(date__gte=school_year.start_date, date__lte=school_year.end_date)
+                logs_query = logs_query.filter(
+                    date__gte=school_year.start_date, date__lte=school_year.end_date
+                )
 
             total_days = logs_query.count()
             present_days = logs_query.filter(status="PRESENT").count()
@@ -819,7 +888,9 @@ class AttendanceReportPDFView(LoginRequiredMixin, View):
         for student in students_queryset:
             logs_query = DailyLog.objects.filter(student=student)
             if school_year:
-                logs_query = logs_query.filter(date__gte=school_year.start_date, date__lte=school_year.end_date)
+                logs_query = logs_query.filter(
+                    date__gte=school_year.start_date, date__lte=school_year.end_date
+                )
 
             total_days = logs_query.count()
             present_days = logs_query.filter(status="PRESENT").count()
@@ -830,7 +901,9 @@ class AttendanceReportPDFView(LoginRequiredMixin, View):
             instructional_days = present_days + field_trip_days
 
             # Get courses for this student in the school year
-            courses_query = Course.objects.filter(student=student).prefetch_related("resources")
+            courses_query = Course.objects.filter(student=student).prefetch_related(
+                "resources"
+            )
             if school_year:
                 courses_query = courses_query.filter(school_year=school_year)
 
@@ -932,7 +1005,9 @@ def attendance_quick_update(request, student_pk, log_date):
 
     # Update or create daily log
     daily_log, created = DailyLog.objects.update_or_create(
-        student=student, date=date_obj, defaults={"status": new_status, "user": request.user}
+        student=student,
+        date=date_obj,
+        defaults={"status": new_status, "user": request.user},
     )
 
     # Check if there are any course notes for this log
@@ -1012,7 +1087,9 @@ def attendance_course_notes(request, student_pk, log_date):
     # Get existing course notes if log exists
     course_notes = {}
     if daily_log:
-        notes_qs = CourseNote.objects.filter(daily_log=daily_log).select_related("course")
+        notes_qs = CourseNote.objects.filter(daily_log=daily_log).select_related(
+            "course"
+        )
         course_notes = {note.course.id: note.notes for note in notes_qs}
 
     context = {
@@ -1044,7 +1121,9 @@ def attendance_save_course_notes(request, student_pk, log_date):
 
     # Get or create daily log
     daily_log, created = DailyLog.objects.get_or_create(
-        student=student, date=date_obj, defaults={"status": "PRESENT", "user": request.user}
+        student=student,
+        date=date_obj,
+        defaults={"status": "PRESENT", "user": request.user},
     )
 
     # Get active school year
@@ -1063,7 +1142,9 @@ def attendance_save_course_notes(request, student_pk, log_date):
         if note_text:
             # Create or update course note
             CourseNote.objects.update_or_create(
-                daily_log=daily_log, course=course, defaults={"notes": note_text, "user": request.user}
+                daily_log=daily_log,
+                course=course,
+                defaults={"notes": note_text, "user": request.user},
             )
             saved_count += 1
         else:
@@ -1090,7 +1171,7 @@ def attendance_save_course_notes(request, student_pk, log_date):
     badge_html_with_oob = badge_html.replace(
         f'<div id="cell-{student_pk}-{log_date}"',
         f'<div id="cell-{student_pk}-{log_date}" hx-swap-oob="true"',
-        1
+        1,
     )
 
     # Return updated badge HTML with OOB swap to update the badge, and closes modal

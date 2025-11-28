@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import Course, CourseNote, CurriculumResource, DailyLog, SchoolYear, Student
+from .models import (
+    Course,
+    CourseNote,
+    CurriculumResource,
+    DailyLog,
+    SchoolYear,
+    Student,
+)
 
 
 class CurriculumResourceInline(admin.TabularInline):

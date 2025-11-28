@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Create test users for development."""
+
 import os
 import sys
 import django
@@ -8,6 +9,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 django.setup()
 
 from idahomeschool.users.models import User
+
 
 def create_user(username, email, password, is_superuser=False):
     """Create a user if it doesn't exist."""
@@ -32,15 +34,13 @@ def create_user(username, email, password, is_superuser=False):
 
     return user
 
+
 # Create test users
 print("Creating test users for development...\n")
 
 # Admin/superuser
 admin = create_user(
-    username="admin",
-    email="admin@example.com",
-    password="admin123",
-    is_superuser=True
+    username="admin", email="admin@example.com", password="admin123", is_superuser=True
 )
 
 # Regular test user
@@ -48,12 +48,12 @@ test_user = create_user(
     username="testuser",
     email="test@example.com",
     password="test123",
-    is_superuser=False
+    is_superuser=False,
 )
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("Test Accounts Created:")
-print("="*60)
+print("=" * 60)
 print("\n1. ADMIN ACCOUNT (Superuser)")
 print("   Username: admin")
 print("   Password: admin123")
@@ -68,6 +68,6 @@ print("   Email:    test@example.com")
 print("   Access:   Regular user access")
 print("   URL:      http://localhost:8000/accounts/login/")
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("Note: Email verification is disabled in local development")
-print("="*60)
+print("=" * 60)

@@ -3,7 +3,14 @@ from crispy_forms.layout import Column, Layout, Row, Submit
 from django import forms
 from django.forms import modelformset_factory
 
-from .models import Course, CourseNote, CurriculumResource, DailyLog, SchoolYear, Student
+from .models import (
+    Course,
+    CourseNote,
+    CurriculumResource,
+    DailyLog,
+    SchoolYear,
+    Student,
+)
 
 
 class SchoolYearForm(forms.ModelForm):
@@ -46,7 +53,13 @@ class StudentForm(forms.ModelForm):
 
     class Meta:
         model = Student
-        fields = ["name", "date_of_birth", "grade_level", "school_years", "paperless_tag_id"]
+        fields = [
+            "name",
+            "date_of_birth",
+            "grade_level",
+            "school_years",
+            "paperless_tag_id",
+        ]
         widgets = {
             "date_of_birth": forms.DateInput(attrs={"type": "date"}),
         }
@@ -56,7 +69,9 @@ class StudentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Filter school_years to only show those belonging to the user
         if self.user:
-            self.fields["school_years"].queryset = SchoolYear.objects.filter(user=self.user)
+            self.fields["school_years"].queryset = SchoolYear.objects.filter(
+                user=self.user
+            )
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
@@ -97,7 +112,9 @@ class CourseForm(forms.ModelForm):
         # Filter students and school_years to only show those belonging to the user
         if self.user:
             self.fields["student"].queryset = Student.objects.filter(user=self.user)
-            self.fields["school_year"].queryset = SchoolYear.objects.filter(user=self.user)
+            self.fields["school_year"].queryset = SchoolYear.objects.filter(
+                user=self.user
+            )
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
@@ -184,7 +201,9 @@ class CourseNoteForm(forms.ModelForm):
         model = CourseNote
         fields = ["course", "notes"]
         widgets = {
-            "notes": forms.Textarea(attrs={"rows": 4, "placeholder": "What did the student work on today?"}),
+            "notes": forms.Textarea(
+                attrs={"rows": 4, "placeholder": "What did the student work on today?"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -196,7 +215,9 @@ class CourseNoteForm(forms.ModelForm):
         if self.student:
             self.fields["course"].queryset = Course.objects.filter(student=self.student)
         elif self.user:
-            self.fields["course"].queryset = Course.objects.filter(student__user=self.user)
+            self.fields["course"].queryset = Course.objects.filter(
+                student__user=self.user
+            )
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
