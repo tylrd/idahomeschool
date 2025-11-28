@@ -111,6 +111,58 @@ class Student(models.Model):
         )
 
 
+class Resource(models.Model):
+    """Represents a curriculum resource in the central library."""
+
+    RESOURCE_TYPE_CHOICES = [
+        ("BOOK", "Book"),
+        ("WORKBOOK", "Workbook"),
+        ("ONLINE", "Online Course"),
+        ("VIDEO", "Video Course"),
+        ("SOFTWARE", "Software"),
+        ("OTHER", "Other"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="resources",
+    )
+    title = models.CharField(max_length=200)
+    author = models.CharField(max_length=200, blank=True)
+    publisher = models.CharField(max_length=200, blank=True)
+    isbn = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="ISBN-10 or ISBN-13",
+    )
+    resource_type = models.CharField(
+        max_length=20,
+        choices=RESOURCE_TYPE_CHOICES,
+        default="BOOK",
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Optional description or notes",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name = "Resource"
+        verbose_name_plural = "Resources"
+        indexes = [
+            models.Index(fields=["user", "title"]),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse("academics:resource_detail", kwargs={"pk": self.pk})
+
+
 class Course(models.Model):
     """Represents a course for a student in a specific school year."""
 

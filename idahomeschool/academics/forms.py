@@ -8,6 +8,7 @@ from .models import (
     CourseNote,
     CurriculumResource,
     DailyLog,
+    Resource,
     SchoolYear,
     Student,
 )
@@ -37,6 +38,48 @@ class SchoolYearForm(forms.ModelForm):
             ),
             "is_active",
             Submit("submit", "Save School Year", css_class="btn btn-primary"),
+        )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user and not instance.pk:
+            instance.user = self.user
+        if commit:
+            instance.save()
+        return instance
+
+
+class ResourceForm(forms.ModelForm):
+    """Form for creating and updating Resource instances."""
+
+    class Meta:
+        model = Resource
+        fields = [
+            "title",
+            "author",
+            "publisher",
+            "isbn",
+            "resource_type",
+            "description",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.layout = Layout(
+            "title",
+            Row(
+                Column("author", css_class="col-md-6"),
+                Column("publisher", css_class="col-md-6"),
+            ),
+            Row(
+                Column("isbn", css_class="col-md-6"),
+                Column("resource_type", css_class="col-md-6"),
+            ),
+            "description",
+            Submit("submit", "Save Resource", css_class="btn btn-primary"),
         )
 
     def save(self, commit=True):

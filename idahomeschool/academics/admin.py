@@ -5,6 +5,7 @@ from .models import (
     CourseNote,
     CurriculumResource,
     DailyLog,
+    Resource,
     SchoolYear,
     Student,
 )
@@ -32,6 +33,38 @@ class SchoolYearAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": ["name", "start_date", "end_date", "is_active", "user"],
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ["created_at", "updated_at"],
+                "classes": ["collapse"],
+            },
+        ),
+    ]
+
+
+@admin.register(Resource)
+class ResourceAdmin(admin.ModelAdmin):
+    """Admin for Resource model."""
+
+    list_display = ["title", "author", "publisher", "resource_type", "user", "created_at"]
+    list_filter = ["resource_type", "created_at", "user"]
+    search_fields = ["title", "author", "publisher", "isbn", "description"]
+    readonly_fields = ["created_at", "updated_at"]
+    date_hierarchy = "created_at"
+    fieldsets = [
+        (
+            "Resource Information",
+            {
+                "fields": ["user", "title", "author", "publisher", "isbn", "resource_type"],
+            },
+        ),
+        (
+            "Description",
+            {
+                "fields": ["description"],
             },
         ),
         (

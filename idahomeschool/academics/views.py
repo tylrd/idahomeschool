@@ -28,12 +28,14 @@ from .forms import CourseForm
 from .forms import CourseNoteForm
 from .forms import CurriculumResourceForm
 from .forms import DailyLogForm
+from .forms import ResourceForm
 from .forms import SchoolYearForm
 from .forms import StudentForm
 from .models import Course
 from .models import CourseNote
 from .models import CurriculumResource
 from .models import DailyLog
+from .models import Resource
 from .models import SchoolYear
 from .models import Student
 
@@ -176,6 +178,112 @@ class SchoolYearDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "School year deleted successfully!")
+        return super().delete(request, *args, **kwargs)
+
+
+# Resource Views
+class ResourceListView(LoginRequiredMixin, ListView):
+    """List all resources in the library for the current user."""
+
+    model = Resource
+    template_name = "academics/resource_list.html"
+    context_object_name = "resources"
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = Resource.objects.filter(user=self.request.user)
+
+        # Search functionality
+        search_query = self.request.GET.get("search", "")
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query)
+                | Q(author__icontains=search_query)
+                | Q(publisher__icontains=search_query)
+                | Q(isbn__icontains=search_query),
+            )
+
+        # Filter by resource type
+        resource_type = self.request.GET.get("resource_type", "")
+        if resource_type:
+            queryset = queryset.filter(resource_type=resource_type)
+
+        return queryset.order_by("title")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["search_query"] = self.request.GET.get("search", "")
+        context["selected_resource_type"] = self.request.GET.get("resource_type", "")
+        context["resource_types"] = Resource.RESOURCE_TYPE_CHOICES
+        return context
+
+
+class ResourceDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """Detail view for a resource."""
+
+    model = Resource
+    template_name = "academics/resource_detail.html"
+    context_object_name = "resource"
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+
+class ResourceCreateView(LoginRequiredMixin, CreateView):
+    """Create a new resource."""
+
+    model = Resource
+    form_class = ResourceForm
+    template_name = "academics/resource_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            f"Resource '{form.instance.title}' created successfully!",
+        )
+        return super().form_valid(form)
+
+
+class ResourceUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """Update an existing resource."""
+
+    model = Resource
+    form_class = ResourceForm
+    template_name = "academics/resource_form.html"
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            f"Resource '{form.instance.title}' updated successfully!",
+        )
+        return super().form_valid(form)
+
+
+class ResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Delete a resource."""
+
+    model = Resource
+    template_name = "academics/resource_confirm_delete.html"
+    success_url = reverse_lazy("academics:resource_list")
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Resource deleted successfully!")
         return super().delete(request, *args, **kwargs)
 
 

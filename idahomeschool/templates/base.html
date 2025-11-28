@@ -142,6 +142,12 @@
           </a>
         </div>
 
+        <!-- Resource Library -->
+        <a href="{% url 'academics:resource_list' %}"
+           class="list-group-item list-group-item-action bg-light {% if 'resource' in request.resolver_match.url_name or 'library' in request.resolver_match.url_name %}active{% endif %}">
+          <span><i class="bi bi-collection me-2"></i><span class="nav-text">Resource Library</span></span>
+        </a>
+
         <!-- User Settings Section -->
         <a href="#userSubmenu"
            class="list-group-item list-group-item-action bg-light sidebar-section-toggle collapsed"
