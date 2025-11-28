@@ -2,7 +2,9 @@ from django.contrib import admin
 
 from .models import (
     Course,
+    CourseEnrollment,
     CourseNote,
+    CourseTemplate,
     CurriculumResource,
     DailyLog,
     Resource,
@@ -65,6 +67,93 @@ class ResourceAdmin(admin.ModelAdmin):
             "Description",
             {
                 "fields": ["description"],
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ["created_at", "updated_at"],
+                "classes": ["collapse"],
+            },
+        ),
+    ]
+
+
+@admin.register(CourseTemplate)
+class CourseTemplateAdmin(admin.ModelAdmin):
+    """Admin for CourseTemplate model."""
+
+    list_display = ["name", "user", "created_at"]
+    list_filter = ["created_at", "user"]
+    search_fields = ["name", "description"]
+    filter_horizontal = ["suggested_resources"]
+    readonly_fields = ["created_at", "updated_at"]
+    date_hierarchy = "created_at"
+    fieldsets = [
+        (
+            "Template Information",
+            {
+                "fields": ["user", "name", "description"],
+            },
+        ),
+        (
+            "Suggested Resources",
+            {
+                "fields": ["suggested_resources"],
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ["created_at", "updated_at"],
+                "classes": ["collapse"],
+            },
+        ),
+    ]
+
+
+@admin.register(CourseEnrollment)
+class CourseEnrollmentAdmin(admin.ModelAdmin):
+    """Admin for CourseEnrollment model."""
+
+    list_display = [
+        "student",
+        "course",
+        "school_year",
+        "status",
+        "user",
+        "created_at",
+    ]
+    list_filter = ["status", "school_year", "created_at", "user"]
+    search_fields = [
+        "student__name",
+        "course__name",
+        "school_year__name",
+    ]
+    readonly_fields = ["created_at", "updated_at"]
+    date_hierarchy = "created_at"
+    fieldsets = [
+        (
+            "Enrollment Information",
+            {
+                "fields": [
+                    "user",
+                    "student",
+                    "course",
+                    "school_year",
+                    "status",
+                ],
+            },
+        ),
+        (
+            "Dates and Progress",
+            {
+                "fields": [
+                    "started_date",
+                    "completed_date",
+                    "completion_percentage",
+                    "final_grade",
+                ],
             },
         ),
         (

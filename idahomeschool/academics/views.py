@@ -24,15 +24,19 @@ from django.views.generic import TemplateView
 from django.views.generic import UpdateView
 from weasyprint import HTML
 
+from .forms import CourseEnrollmentForm
 from .forms import CourseForm
 from .forms import CourseNoteForm
+from .forms import CourseTemplateForm
 from .forms import CurriculumResourceForm
 from .forms import DailyLogForm
 from .forms import ResourceForm
 from .forms import SchoolYearForm
 from .forms import StudentForm
 from .models import Course
+from .models import CourseEnrollment
 from .models import CourseNote
+from .models import CourseTemplate
 from .models import CurriculumResource
 from .models import DailyLog
 from .models import Resource
@@ -284,6 +288,214 @@ class ResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Resource deleted successfully!")
+        return super().delete(request, *args, **kwargs)
+
+
+# CourseTemplate Views
+class CourseTemplateListView(LoginRequiredMixin, ListView):
+    """List all course templates for the current user."""
+
+    model = CourseTemplate
+    template_name = "academics/coursetemplate_list.html"
+    context_object_name = "course_templates"
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = CourseTemplate.objects.filter(user=self.request.user).annotate(
+            course_count=Count("courses", distinct=True)
+        )
+
+        # Search functionality
+        search_query = self.request.GET.get("search", "")
+        if search_query:
+            queryset = queryset.filter(Q(name__icontains=search_query))
+
+        return queryset.order_by("name")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["search_query"] = self.request.GET.get("search", "")
+        return context
+
+
+class CourseTemplateDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """Detail view for a course template."""
+
+    model = CourseTemplate
+    template_name = "academics/coursetemplate_detail.html"
+    context_object_name = "course_template"
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        template = self.get_object()
+        context["courses"] = template.courses.all()
+        context["suggested_resources"] = template.suggested_resources.all()
+        return context
+
+
+class CourseTemplateCreateView(LoginRequiredMixin, CreateView):
+    """Create a new course template."""
+
+    model = CourseTemplate
+    form_class = CourseTemplateForm
+    template_name = "academics/coursetemplate_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            f"Course template '{form.instance.name}' created successfully!",
+        )
+        return super().form_valid(form)
+
+
+class CourseTemplateUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """Update an existing course template."""
+
+    model = CourseTemplate
+    form_class = CourseTemplateForm
+    template_name = "academics/coursetemplate_form.html"
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            f"Course template '{form.instance.name}' updated successfully!",
+        )
+        return super().form_valid(form)
+
+
+class CourseTemplateDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Delete a course template."""
+
+    model = CourseTemplate
+    template_name = "academics/coursetemplate_confirm_delete.html"
+    success_url = reverse_lazy("academics:coursetemplate_list")
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Course template deleted successfully!")
+        return super().delete(request, *args, **kwargs)
+
+
+# CourseEnrollment Views
+class CourseEnrollmentListView(LoginRequiredMixin, ListView):
+    """List all course enrollments for the current user."""
+
+    model = CourseEnrollment
+    template_name = "academics/courseenrollment_list.html"
+    context_object_name = "enrollments"
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = CourseEnrollment.objects.filter(
+            user=self.request.user,
+        ).select_related("student", "course", "school_year")
+
+        # Filter by student
+        student_id = self.request.GET.get("student")
+        if student_id:
+            queryset = queryset.filter(student_id=student_id)
+
+        # Filter by school year
+        school_year_id = self.request.GET.get("school_year")
+        if school_year_id:
+            queryset = queryset.filter(school_year_id=school_year_id)
+
+        # Filter by status
+        status = self.request.GET.get("status")
+        if status:
+            queryset = queryset.filter(status=status)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["students"] = Student.objects.filter(user=self.request.user)
+        context["school_years"] = SchoolYear.objects.filter(user=self.request.user)
+        context["statuses"] = CourseEnrollment.STATUS_CHOICES
+        context["selected_student"] = self.request.GET.get("student", "")
+        context["selected_school_year"] = self.request.GET.get("school_year", "")
+        context["selected_status"] = self.request.GET.get("status", "")
+        return context
+
+
+class CourseEnrollmentDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """Detail view for a course enrollment."""
+
+    model = CourseEnrollment
+    template_name = "academics/courseenrollment_detail.html"
+    context_object_name = "enrollment"
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+
+class CourseEnrollmentCreateView(LoginRequiredMixin, CreateView):
+    """Create a new course enrollment."""
+
+    model = CourseEnrollment
+    form_class = CourseEnrollmentForm
+    template_name = "academics/courseenrollment_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Course enrollment created successfully!")
+        return super().form_valid(form)
+
+
+class CourseEnrollmentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """Update an existing course enrollment."""
+
+    model = CourseEnrollment
+    form_class = CourseEnrollmentForm
+    template_name = "academics/courseenrollment_form.html"
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Course enrollment updated successfully!")
+        return super().form_valid(form)
+
+
+class CourseEnrollmentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Delete a course enrollment."""
+
+    model = CourseEnrollment
+    template_name = "academics/courseenrollment_confirm_delete.html"
+    success_url = reverse_lazy("academics:courseenrollment_list")
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Course enrollment deleted successfully!")
         return super().delete(request, *args, **kwargs)
 
 

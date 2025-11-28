@@ -109,8 +109,16 @@
             <span><i class="bi bi-people me-2"></i><span class="nav-text">Students</span></span>
           </a>
           <a href="{% url 'academics:course_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'course' in request.resolver_match.url_name %}active{% endif %}">
+             class="list-group-item list-group-item-action bg-light {% if 'course' in request.resolver_match.url_name and 'template' not in request.resolver_match.url_name and 'enrollment' not in request.resolver_match.url_name %}active{% endif %}">
             <span><i class="bi bi-book me-2"></i><span class="nav-text">Courses</span></span>
+          </a>
+          <a href="{% url 'academics:coursetemplate_list' %}"
+             class="list-group-item list-group-item-action bg-light {% if 'coursetemplate' in request.resolver_match.url_name %}active{% endif %}">
+            <span><i class="bi bi-file-earmark-text me-2"></i><span class="nav-text">Course Templates</span></span>
+          </a>
+          <a href="{% url 'academics:courseenrollment_list' %}"
+             class="list-group-item list-group-item-action bg-light {% if 'courseenrollment' in request.resolver_match.url_name %}active{% endif %}">
+            <span><i class="bi bi-journal-check me-2"></i><span class="nav-text">Enrollments</span></span>
           </a>
         </div>
 

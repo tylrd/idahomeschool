@@ -1,0 +1,132 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}Course Enrollments{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Course Enrollments</h1>
+  <a href="{% url 'academics:courseenrollment_create' %}" class="btn btn-success">Add Enrollment</a>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="row g-3">
+      <div class="col-md-4">
+        <select name="student" class="form-select">
+          <option value="">All Students</option>
+          {% for student in students %}
+            <option value="{{ student.pk }}" {% if selected_student == student.pk|stringformat:"s" %}selected{% endif %}>{{ student.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="school_year" class="form-select">
+          <option value="">All School Years</option>
+          {% for year in school_years %}
+            <option value="{{ year.pk }}" {% if selected_school_year == year.pk|stringformat:"s" %}selected{% endif %}>{{ year.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select">
+          <option value="">All Statuses</option>
+          {% for value, label in statuses %}
+            <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Filter</button>
+      </div>
+      {% if selected_student or selected_school_year or selected_status %}
+      <div class="col-12">
+        <a href="{% url 'academics:courseenrollment_list' %}" class="btn btn-secondary">Clear Filters</a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+{% if enrollments %}
+<div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Course</th>
+        <th>School Year</th>
+        <th>Status</th>
+        <th>Progress</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for enrollment in enrollments %}
+      <tr>
+        <td><a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a></td>
+        <td><a href="{% url 'academics:course_detail' enrollment.course.pk %}">{{ enrollment.course.name }}</a></td>
+        <td><a href="{% url 'academics:schoolyear_detail' enrollment.school_year.pk %}">{{ enrollment.school_year.name }}</a></td>
+        <td>
+          {% if enrollment.status == 'COMPLETED' %}
+            <span class="badge bg-success">{{ enrollment.get_status_display }}</span>
+          {% elif enrollment.status == 'PAUSED' %}
+            <span class="badge bg-warning">{{ enrollment.get_status_display }}</span>
+          {% else %}
+            <span class="badge bg-primary">{{ enrollment.get_status_display }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if enrollment.completion_percentage %}{{ enrollment.completion_percentage }}%{% else %}-{% endif %}
+        </td>
+        <td>
+          <a href="{% url 'academics:courseenrollment_detail' enrollment.pk %}" class="btn btn-sm btn-outline-info">View</a>
+          <a href="{% url 'academics:courseenrollment_update' enrollment.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-3">
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page=1{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">First</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Previous</a>
+      </li>
+    {% endif %}
+
+    <li class="page-item active">
+      <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    </li>
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Next</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">Last</a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">
+  <h4>No course enrollments found</h4>
+  {% if selected_student or selected_school_year or selected_status %}
+    <p>No enrollments match your filters.</p>
+    <a href="{% url 'academics:courseenrollment_list' %}" class="btn btn-secondary">Clear Filters</a>
+  {% else %}
+    <p>Get started by enrolling a student in a course.</p>
+    <a href="{% url 'academics:courseenrollment_create' %}" class="btn btn-primary">Add Enrollment</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock academics_content %}

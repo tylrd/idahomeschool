@@ -43,6 +43,58 @@ urlpatterns = [
         views.ResourceDeleteView.as_view(),
         name="library_delete",
     ),
+    # CourseTemplate URLs
+    path(
+        "course-templates/",
+        views.CourseTemplateListView.as_view(),
+        name="coursetemplate_list",
+    ),
+    path(
+        "course-templates/create/",
+        views.CourseTemplateCreateView.as_view(),
+        name="coursetemplate_create",
+    ),
+    path(
+        "course-templates/<int:pk>/",
+        views.CourseTemplateDetailView.as_view(),
+        name="coursetemplate_detail",
+    ),
+    path(
+        "course-templates/<int:pk>/update/",
+        views.CourseTemplateUpdateView.as_view(),
+        name="coursetemplate_update",
+    ),
+    path(
+        "course-templates/<int:pk>/delete/",
+        views.CourseTemplateDeleteView.as_view(),
+        name="coursetemplate_delete",
+    ),
+    # CourseEnrollment URLs
+    path(
+        "enrollments/",
+        views.CourseEnrollmentListView.as_view(),
+        name="courseenrollment_list",
+    ),
+    path(
+        "enrollments/create/",
+        views.CourseEnrollmentCreateView.as_view(),
+        name="courseenrollment_create",
+    ),
+    path(
+        "enrollments/<int:pk>/",
+        views.CourseEnrollmentDetailView.as_view(),
+        name="courseenrollment_detail",
+    ),
+    path(
+        "enrollments/<int:pk>/update/",
+        views.CourseEnrollmentUpdateView.as_view(),
+        name="courseenrollment_update",
+    ),
+    path(
+        "enrollments/<int:pk>/delete/",
+        views.CourseEnrollmentDeleteView.as_view(),
+        name="courseenrollment_delete",
+    ),
     # Student URLs
     path("students/", views.StudentListView.as_view(), name="student_list"),
     path("students/create/", views.StudentCreateView.as_view(), name="student_create"),

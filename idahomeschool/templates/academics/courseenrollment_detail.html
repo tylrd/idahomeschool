@@ -1,0 +1,77 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}{{ enrollment.student.name }} - {{ enrollment.course.name }}{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{{ enrollment.student.name }} - {{ enrollment.course.name }}</h1>
+  <div>
+    <a href="{% url 'academics:courseenrollment_update' enrollment.pk %}" class="btn btn-primary">Edit</a>
+    <a href="{% url 'academics:courseenrollment_delete' enrollment.pk %}" class="btn btn-danger">Delete</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Enrollment Details</h5>
+  </div>
+  <div class="card-body">
+    <dl class="row">
+      <dt class="col-sm-3">Student:</dt>
+      <dd class="col-sm-9"><a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a></dd>
+
+      <dt class="col-sm-3">Course:</dt>
+      <dd class="col-sm-9"><a href="{% url 'academics:course_detail' enrollment.course.pk %}">{{ enrollment.course.name }}</a></dd>
+
+      <dt class="col-sm-3">School Year:</dt>
+      <dd class="col-sm-9"><a href="{% url 'academics:schoolyear_detail' enrollment.school_year.pk %}">{{ enrollment.school_year.name }}</a></dd>
+
+      <dt class="col-sm-3">Status:</dt>
+      <dd class="col-sm-9">
+        {% if enrollment.status == 'COMPLETED' %}
+          <span class="badge bg-success">{{ enrollment.get_status_display }}</span>
+        {% elif enrollment.status == 'PAUSED' %}
+          <span class="badge bg-warning">{{ enrollment.get_status_display }}</span>
+        {% else %}
+          <span class="badge bg-primary">{{ enrollment.get_status_display }}</span>
+        {% endif %}
+      </dd>
+
+      {% if enrollment.started_date %}
+      <dt class="col-sm-3">Started Date:</dt>
+      <dd class="col-sm-9">{{ enrollment.started_date|date:"F d, Y" }}</dd>
+      {% endif %}
+
+      {% if enrollment.completed_date %}
+      <dt class="col-sm-3">Completed Date:</dt>
+      <dd class="col-sm-9">{{ enrollment.completed_date|date:"F d, Y" }}</dd>
+      {% endif %}
+
+      {% if enrollment.completion_percentage %}
+      <dt class="col-sm-3">Progress:</dt>
+      <dd class="col-sm-9">
+        <div class="progress">
+          <div class="progress-bar" role="progressbar" style="width: {{ enrollment.completion_percentage }}%" aria-valuenow="{{ enrollment.completion_percentage }}" aria-valuemin="0" aria-valuemax="100">{{ enrollment.completion_percentage }}%</div>
+        </div>
+      </dd>
+      {% endif %}
+
+      {% if enrollment.final_grade %}
+      <dt class="col-sm-3">Final Grade:</dt>
+      <dd class="col-sm-9">{{ enrollment.final_grade }}</dd>
+      {% endif %}
+
+      <dt class="col-sm-3">Created:</dt>
+      <dd class="col-sm-9">{{ enrollment.created_at|date:"F d, Y" }}</dd>
+
+      <dt class="col-sm-3">Last Updated:</dt>
+      <dd class="col-sm-9">{{ enrollment.updated_at|date:"F d, Y" }}</dd>
+    </dl>
+  </div>
+</div>
+
+<div class="mt-3">
+  <a href="{% url 'academics:courseenrollment_list' %}" class="btn btn-secondary">Back to Enrollments</a>
+</div>
+{% endblock academics_content %}

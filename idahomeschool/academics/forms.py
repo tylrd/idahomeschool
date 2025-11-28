@@ -5,7 +5,9 @@ from django.forms import modelformset_factory
 
 from .models import (
     Course,
+    CourseEnrollment,
     CourseNote,
+    CourseTemplate,
     CurriculumResource,
     DailyLog,
     Resource,
@@ -139,12 +141,12 @@ class StudentForm(forms.ModelForm):
         return instance
 
 
-class CourseForm(forms.ModelForm):
-    """Form for creating and updating Course instances."""
+class CourseTemplateForm(forms.ModelForm):
+    """Form for creating and updating CourseTemplate instances."""
 
     class Meta:
-        model = Course
-        fields = ["student", "school_year", "name", "description"]
+        model = CourseTemplate
+        fields = ["name", "description", "suggested_resources"]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
         }
@@ -152,9 +154,98 @@ class CourseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        # Filter students and school_years to only show those belonging to the user
+        # Filter resources to only show those belonging to the user
+        if self.user:
+            self.fields["suggested_resources"].queryset = Resource.objects.filter(
+                user=self.user
+            )
+
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.layout = Layout(
+            "name",
+            "description",
+            "suggested_resources",
+            Submit("submit", "Save Course Template", css_class="btn btn-primary"),
+        )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user and not instance.pk:
+            instance.user = self.user
+        if commit:
+            instance.save()
+            self.save_m2m()  # Save many-to-many relationships
+        return instance
+
+
+class CourseForm(forms.ModelForm):
+    """Form for creating and updating Course instances."""
+
+    class Meta:
+        model = Course
+        fields = ["name", "description", "course_template", "resources"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        # Filter course_templates and resources to only show those belonging to the user
+        if self.user:
+            self.fields["course_template"].queryset = CourseTemplate.objects.filter(
+                user=self.user
+            )
+            self.fields["resources"].queryset = Resource.objects.filter(user=self.user)
+
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.layout = Layout(
+            "name",
+            "course_template",
+            "description",
+            "resources",
+            Submit("submit", "Save Course", css_class="btn btn-primary"),
+        )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user and not instance.pk:
+            instance.user = self.user
+        if commit:
+            instance.save()
+            self.save_m2m()  # Save many-to-many relationships
+        return instance
+
+
+class CourseEnrollmentForm(forms.ModelForm):
+    """Form for creating and updating CourseEnrollment instances."""
+
+    class Meta:
+        model = CourseEnrollment
+        fields = [
+            "student",
+            "course",
+            "school_year",
+            "status",
+            "started_date",
+            "completed_date",
+            "final_grade",
+            "completion_percentage",
+        ]
+        widgets = {
+            "started_date": forms.DateInput(attrs={"type": "date"}),
+            "completed_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        # Filter students, courses, and school_years to only show those belonging to the user
         if self.user:
             self.fields["student"].queryset = Student.objects.filter(user=self.user)
+            self.fields["course"].queryset = Course.objects.filter(user=self.user)
             self.fields["school_year"].queryset = SchoolYear.objects.filter(
                 user=self.user
             )
@@ -164,12 +255,30 @@ class CourseForm(forms.ModelForm):
         self.helper.layout = Layout(
             Row(
                 Column("student", css_class="col-md-6"),
-                Column("school_year", css_class="col-md-6"),
+                Column("course", css_class="col-md-6"),
             ),
-            "name",
-            "description",
-            Submit("submit", "Save Course", css_class="btn btn-primary"),
+            Row(
+                Column("school_year", css_class="col-md-6"),
+                Column("status", css_class="col-md-6"),
+            ),
+            Row(
+                Column("started_date", css_class="col-md-6"),
+                Column("completed_date", css_class="col-md-6"),
+            ),
+            Row(
+                Column("final_grade", css_class="col-md-6"),
+                Column("completion_percentage", css_class="col-md-6"),
+            ),
+            Submit("submit", "Save Enrollment", css_class="btn btn-primary"),
         )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user and not instance.pk:
+            instance.user = self.user
+        if commit:
+            instance.save()
+        return instance
 
 
 class CurriculumResourceForm(forms.ModelForm):
