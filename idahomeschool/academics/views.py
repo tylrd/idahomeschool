@@ -60,10 +60,11 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context["active_year"] = active_year
 
         if active_year:
-            context["active_courses"] = Course.objects.filter(
+            context["active_enrollments"] = CourseEnrollment.objects.filter(
+                user=user,
                 school_year=active_year,
-                student__user=user,
-            ).select_related("student", "school_year")
+                status="IN_PROGRESS",
+            ).select_related("student", "course", "school_year")
 
             # Get attendance statistics for active year
             logs_in_year = DailyLog.objects.filter(
@@ -73,7 +74,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             )
             context["total_attendance_days"] = logs_in_year.count()
             context["instructional_days"] = logs_in_year.filter(
-                status__in=["PRESENT", "FIELD_TRIP"]
+                status__in=["PRESENT", "FIELD_TRIP"],
             ).count()
 
         # Recent daily logs
@@ -84,12 +85,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         )
 
         context["recent_students"] = Student.objects.filter(user=user).order_by(
-            "-created_at"
+            "-created_at",
         )[:5]
         context["recent_courses"] = (
-            Course.objects.filter(student__user=user)
-            .select_related("student", "school_year")
-            .order_by("-created_at")[:5]
+            Course.objects.filter(user=user).prefetch_related("enrollments").order_by("-created_at")[:5]
         )
 
         return context
@@ -309,7 +308,18 @@ class ResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 def resource_search_htmx(request):
     """HTMX endpoint for searching resources."""
     search_query = request.GET.get("search", "")
-    queryset = Resource.objects.filter(user=request.user)
+    field_name = request.GET.get("field_name", "resources")
+    selected_ids = request.GET.get("selected_ids", "")
+
+    # Parse selected IDs
+    selected_id_list = []
+    if selected_ids:
+        try:
+            selected_id_list = [int(x) for x in selected_ids.split(",") if x]
+        except ValueError:
+            selected_id_list = []
+
+    queryset = Resource.objects.filter(user=request.user).prefetch_related("tags")
 
     if search_query:
         queryset = queryset.filter(
@@ -324,7 +334,11 @@ def resource_search_htmx(request):
     return render(
         request,
         "academics/partials/resource_search_results.html",
-        {"resources": resources},
+        {
+            "resources": resources,
+            "field_name": field_name,
+            "selected_ids": selected_id_list,
+        },
     )
 
 
@@ -737,26 +751,21 @@ class CourseListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = Course.objects.filter(
-            student__user=self.request.user
-        ).select_related("student", "school_year")
+        queryset = Course.objects.filter(user=self.request.user).prefetch_related(
+            "resources",
+            "enrollments",
+        )
 
-        # Filter by school year if specified
-        year_id = self.request.GET.get("year")
-        if year_id:
-            queryset = queryset.filter(school_year_id=year_id)
+        # Search functionality
+        search_query = self.request.GET.get("search", "")
+        if search_query:
+            queryset = queryset.filter(name__icontains=search_query)
 
-        # Filter by student if specified
-        student_id = self.request.GET.get("student")
-        if student_id:
-            queryset = queryset.filter(student_id=student_id)
-
-        return queryset
+        return queryset.order_by("-created_at")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["school_years"] = SchoolYear.objects.filter(user=self.request.user)
-        context["students"] = Student.objects.filter(user=self.request.user)
+        context["search_query"] = self.request.GET.get("search", "")
         return context
 
 
@@ -768,13 +777,17 @@ class CourseDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     context_object_name = "course"
 
     def test_func(self):
-        return self.get_object().student.user == self.request.user
+        return self.get_object().user == self.request.user
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         course = self.get_object()
 
-        context["resources"] = course.resources.all()
+        context["resources"] = course.resources.prefetch_related("tags").all()
+        context["enrollments"] = course.enrollments.select_related(
+            "student",
+            "school_year",
+        ).all()
 
         return context
 
@@ -806,7 +819,7 @@ class CourseUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = "academics/course_form.html"
 
     def test_func(self):
-        return self.get_object().student.user == self.request.user
+        return self.get_object().user == self.request.user
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -828,7 +841,7 @@ class CourseDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     success_url = reverse_lazy("academics:course_list")
 
     def test_func(self):
-        return self.get_object().student.user == self.request.user
+        return self.get_object().user == self.request.user
 
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Course deleted successfully!")
@@ -845,7 +858,7 @@ class CurriculumResourceCreateView(LoginRequiredMixin, UserPassesTestMixin, Crea
 
     def test_func(self):
         course = get_object_or_404(Course, pk=self.kwargs["course_pk"])
-        return course.student.user == self.request.user
+        return course.user == self.request.user
 
     def form_valid(self, form):
         course = get_object_or_404(Course, pk=self.kwargs["course_pk"])
@@ -874,7 +887,7 @@ class CurriculumResourceUpdateView(LoginRequiredMixin, UserPassesTestMixin, Upda
     template_name = "academics/curriculumresource_form.html"
 
     def test_func(self):
-        return self.get_object().course.student.user == self.request.user
+        return self.get_object().course.user == self.request.user
 
     def form_valid(self, form):
         messages.success(
@@ -893,7 +906,7 @@ class CurriculumResourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, Dele
     template_name = "academics/curriculumresource_confirm_delete.html"
 
     def test_func(self):
-        return self.get_object().course.student.user == self.request.user
+        return self.get_object().course.user == self.request.user
 
     def get_success_url(self):
         return self.object.course.get_absolute_url()
@@ -1055,28 +1068,32 @@ class DailyLogEntryView(LoginRequiredMixin, View):
         except DailyLog.DoesNotExist:
             daily_log = None
 
-        # Get student's courses for the active school year
+        # Get student's enrollments for the active school year
         active_year = SchoolYear.objects.filter(
-            user=request.user, is_active=True
+            user=request.user, is_active=True,
         ).first()
-        courses = Course.objects.filter(student=student)
+        enrollments = CourseEnrollment.objects.filter(
+            user=request.user,
+            student=student,
+        ).select_related("course", "school_year")
+
         if active_year:
-            courses = courses.filter(school_year=active_year)
+            enrollments = enrollments.filter(school_year=active_year)
 
         # Get existing course notes (if daily log exists)
         existing_notes = {}
         if daily_log:
             existing_notes = {
-                note.course_id: note for note in daily_log.course_notes.all()
+                note.course_enrollment_id: note for note in daily_log.course_notes.all()
             }
 
         # Prepare course notes data
         course_notes_data = []
-        for course in courses:
-            note = existing_notes.get(course.id)
+        for enrollment in enrollments:
+            note = existing_notes.get(enrollment.id)
             course_notes_data.append(
                 {
-                    "course": course,
+                    "enrollment": enrollment,
                     "note": note,
                     "notes_text": note.notes if note else "",
                 }
@@ -1125,25 +1142,31 @@ class DailyLogEntryView(LoginRequiredMixin, View):
         daily_log.save()
 
         # Process course notes
-        courses = Course.objects.filter(student=student)
+        enrollments = CourseEnrollment.objects.filter(
+            user=request.user,
+            student=student,
+        )
         active_year = SchoolYear.objects.filter(
-            user=request.user, is_active=True
+            user=request.user, is_active=True,
         ).first()
         if active_year:
-            courses = courses.filter(school_year=active_year)
+            enrollments = enrollments.filter(school_year=active_year)
 
-        for course in courses:
-            notes_text = request.POST.get(f"course_notes_{course.id}", "").strip()
+        for enrollment in enrollments:
+            notes_text = request.POST.get(f"course_notes_{enrollment.id}", "").strip()
             if notes_text:
                 # Create or update course note
                 CourseNote.objects.update_or_create(
                     daily_log=daily_log,
-                    course=course,
-                    defaults={"notes": notes_text, "user": request.user},
+                    course_enrollment=enrollment,
+                    defaults={"notes": notes_text},
                 )
             else:
                 # Delete course note if exists and notes are empty
-                CourseNote.objects.filter(daily_log=daily_log, course=course).delete()
+                CourseNote.objects.filter(
+                    daily_log=daily_log,
+                    course_enrollment=enrollment,
+                ).delete()
 
         messages.success(
             request,
@@ -1350,12 +1373,18 @@ class AttendanceReportPDFView(LoginRequiredMixin, View):
             holiday_days = logs_query.filter(status="HOLIDAY").count()
             instructional_days = present_days + field_trip_days
 
-            # Get courses for this student in the school year
-            courses_query = Course.objects.filter(student=student).prefetch_related(
-                "resources"
+            # Get enrollments for this student in the school year
+            enrollments_query = (
+                CourseEnrollment.objects.filter(
+                    user=user,
+                    student=student,
+                )
+                .select_related("course", "school_year")
+                .prefetch_related("course__resources")
             )
+
             if school_year:
-                courses_query = courses_query.filter(school_year=school_year)
+                enrollments_query = enrollments_query.filter(school_year=school_year)
 
             report_data.append(
                 {
@@ -1367,7 +1396,7 @@ class AttendanceReportPDFView(LoginRequiredMixin, View):
                     "absent_days": absent_days,
                     "sick_days": sick_days,
                     "holiday_days": holiday_days,
-                    "courses": courses_query,
+                    "enrollments": enrollments_query,
                 }
             )
 
@@ -1528,26 +1557,31 @@ def attendance_course_notes(request, student_pk, log_date):
     # Get active school year
     active_year = SchoolYear.objects.filter(user=request.user, is_active=True).first()
 
-    # Get courses for this student in the active school year
-    courses = Course.objects.filter(student=student)
+    # Get enrollments for this student
+    enrollments = CourseEnrollment.objects.filter(
+        user=request.user,
+        student=student,
+    ).select_related("course", "school_year")
+
     if active_year:
-        courses = courses.filter(school_year=active_year)
-    courses = courses.select_related("school_year").order_by("name")
+        enrollments = enrollments.filter(school_year=active_year)
+
+    enrollments = enrollments.order_by("course__name")
 
     # Get existing course notes if log exists
     course_notes = {}
     if daily_log:
         notes_qs = CourseNote.objects.filter(daily_log=daily_log).select_related(
-            "course"
+            "course_enrollment",
         )
-        course_notes = {note.course.id: note.notes for note in notes_qs}
+        course_notes = {note.course_enrollment.id: note.notes for note in notes_qs}
 
     context = {
         "student": student,
         "date": date_obj,
         "date_str": log_date,
         "daily_log": daily_log,
-        "courses": courses,
+        "enrollments": enrollments,
         "course_notes": course_notes,
     }
 
@@ -1579,27 +1613,31 @@ def attendance_save_course_notes(request, student_pk, log_date):
     # Get active school year
     active_year = SchoolYear.objects.filter(user=request.user, is_active=True).first()
 
-    # Get courses for this student
-    courses = Course.objects.filter(student=student)
+    # Get enrollments for this student
+    enrollments = CourseEnrollment.objects.filter(
+        user=request.user,
+        student=student,
+    )
+
     if active_year:
-        courses = courses.filter(school_year=active_year)
+        enrollments = enrollments.filter(school_year=active_year)
 
     # Save course notes
     saved_count = 0
-    for course in courses:
-        note_text = request.POST.get(f"course_{course.id}", "").strip()
+    for enrollment in enrollments:
+        note_text = request.POST.get(f"enrollment_{enrollment.id}", "").strip()
 
         if note_text:
             # Create or update course note
             CourseNote.objects.update_or_create(
                 daily_log=daily_log,
-                course=course,
+                course_enrollment=enrollment,
                 defaults={"notes": note_text, "user": request.user},
             )
             saved_count += 1
         else:
             # Delete course note if text is empty
-            CourseNote.objects.filter(daily_log=daily_log, course=course).delete()
+            CourseNote.objects.filter(daily_log=daily_log, course_enrollment=enrollment).delete()
 
     # Check if there are any course notes for this log
     has_notes = CourseNote.objects.filter(daily_log=daily_log).exists()

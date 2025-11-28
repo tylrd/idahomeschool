@@ -23,20 +23,25 @@
           <dt class="col-sm-3">Course Name:</dt>
           <dd class="col-sm-9">{{ course.name }}</dd>
 
-          <dt class="col-sm-3">Student:</dt>
+          <dt class="col-sm-3">Course Template:</dt>
           <dd class="col-sm-9">
-            <a href="{% url 'academics:student_detail' course.student.pk %}">{{ course.student.name }}</a>
-          </dd>
-
-          <dt class="col-sm-3">School Year:</dt>
-          <dd class="col-sm-9">
-            <a href="{% url 'academics:schoolyear_detail' course.school_year.pk %}">{{ course.school_year.name }}</a>
+            {% if course.course_template %}
+              <a href="{% url 'academics:coursetemplate_detail' course.course_template.pk %}">{{ course.course_template.name }}</a>
+            {% else %}
+              <span class="text-muted">None</span>
+            {% endif %}
           </dd>
 
           {% if course.description %}
           <dt class="col-sm-3">Description:</dt>
           <dd class="col-sm-9">{{ course.description }}</dd>
           {% endif %}
+
+          <dt class="col-sm-3">Total Enrollments:</dt>
+          <dd class="col-sm-9">{{ course.enrollments.count }}</dd>
+
+          <dt class="col-sm-3">Resources:</dt>
+          <dd class="col-sm-9">{{ course.resources.count }}</dd>
 
           <dt class="col-sm-3">Created:</dt>
           <dd class="col-sm-9">{{ course.created_at|date:"F d, Y" }}</dd>
@@ -49,49 +54,82 @@
   </div>
 </div>
 
-<div class="card">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">Curriculum Resources</h5>
-    <a href="{% url 'academics:resource_create' course.pk %}" class="btn btn-sm btn-success">Add Resource</a>
-  </div>
-  <div class="card-body">
-    {% if resources %}
-      <div class="table-responsive">
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Author</th>
-              <th>Publisher</th>
-              <th>ISBN</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for resource in resources %}
-            <tr>
-              <td>{{ resource.title }}</td>
-              <td>{{ resource.author|default:"-" }}</td>
-              <td>{{ resource.publisher|default:"-" }}</td>
-              <td>{{ resource.isbn|default:"-" }}</td>
-              <td>
-                <a href="{% url 'academics:resource_update' resource.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                <a href="{% url 'academics:resource_delete' resource.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
-              </td>
-            </tr>
-            {% if resource.notes %}
-            <tr>
-              <td colspan="5" class="text-muted"><small><strong>Notes:</strong> {{ resource.notes }}</small></td>
-            </tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
+<div class="row">
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Enrollments</h5>
+        <a href="{% url 'academics:courseenrollment_create' %}" class="btn btn-sm btn-success">Add Enrollment</a>
       </div>
-    {% else %}
-      <p class="text-muted">No curriculum resources added yet.</p>
-      <a href="{% url 'academics:resource_create' course.pk %}" class="btn btn-primary">Add First Resource</a>
-    {% endif %}
+      <div class="card-body">
+        {% if course.enrollments.all %}
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>School Year</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for enrollment in course.enrollments.all %}
+                <tr>
+                  <td><a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a></td>
+                  <td><a href="{% url 'academics:schoolyear_detail' enrollment.school_year.pk %}">{{ enrollment.school_year.name }}</a></td>
+                  <td>
+                    {% if enrollment.status == 'COMPLETED' %}
+                      <span class="badge bg-success">Completed</span>
+                    {% elif enrollment.status == 'IN_PROGRESS' %}
+                      <span class="badge bg-primary">In Progress</span>
+                    {% else %}
+                      <span class="badge bg-warning">Paused</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No students enrolled yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Resources</h5>
+      </div>
+      <div class="card-body">
+        {% if resources %}
+          <div class="list-group">
+            {% for resource in resources %}
+              <a href="{% url 'academics:resource_detail' resource.pk %}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">{{ resource.title }}</h6>
+                  <small><span class="badge bg-secondary">{{ resource.get_resource_type_display }}</span></small>
+                </div>
+                {% if resource.author %}
+                  <p class="mb-1"><small class="text-muted">{{ resource.author }}</small></p>
+                {% endif %}
+                {% if resource.tags.all %}
+                  <div class="mt-1">
+                    {% for tag in resource.tags.all %}
+                      <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">No resources assigned yet.</p>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div>
 {% endblock academics_content %}

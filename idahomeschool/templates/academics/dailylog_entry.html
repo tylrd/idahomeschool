@@ -75,16 +75,16 @@
     <div class="card-body">
       {% for item in course_notes_data %}
       <div class="mb-3">
-        <label for="course_notes_{{ item.course.id }}" class="form-label">
-          <strong>{{ item.course.name }}</strong>
-          <span class="badge bg-secondary">{{ item.course.school_year.name }}</span>
+        <label for="course_notes_{{ item.enrollment.id }}" class="form-label">
+          <strong>{{ item.enrollment.course.name }}</strong>
+          <span class="badge bg-secondary">{{ item.enrollment.school_year.name }}</span>
         </label>
         <textarea
-          name="course_notes_{{ item.course.id }}"
-          id="course_notes_{{ item.course.id }}"
+          name="course_notes_{{ item.enrollment.id }}"
+          id="course_notes_{{ item.enrollment.id }}"
           class="form-control"
           rows="3"
-          placeholder="What did {{ student.name }} work on in {{ item.course.name }} today?"
+          placeholder="What did {{ student.name }} work on in {{ item.enrollment.course.name }} today?"
         >{{ item.notes_text }}</textarea>
       </div>
       {% endfor %}

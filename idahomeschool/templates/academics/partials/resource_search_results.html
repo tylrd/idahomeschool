@@ -2,8 +2,11 @@
 <div class="list-group">
   {% for resource in resources %}
   <label class="list-group-item list-group-item-action d-flex align-items-center">
-    <input type="checkbox" name="resources" value="{{ resource.id }}" class="form-check-input me-2"
-      {% if resource.id in form.resources.value %}checked{% endif %}>
+    <input type="checkbox"
+           name="{{ field_name }}"
+           value="{{ resource.id }}"
+           class="form-check-input me-2 resource-checkbox"
+           {% if resource.id in selected_ids %}checked{% endif %}>
     <div class="flex-grow-1">
       <div class="fw-bold">{{ resource.title }}</div>
       <div class="small text-muted">

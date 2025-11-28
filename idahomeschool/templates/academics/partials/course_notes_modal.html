@@ -6,8 +6,8 @@ Variables expected:
 - date: Date object
 - date_str: Date as string (Y-m-d format)
 - daily_log: DailyLog object (can be None)
-- courses: List of courses for the student
-- course_notes: Dict mapping course_id to CourseNote object
+- enrollments: List of course enrollments for the student
+- course_notes: Dict mapping enrollment_id to CourseNote notes text
 {% endcomment %}
 
 <!-- Modal backdrop and container -->
@@ -52,28 +52,29 @@ Variables expected:
           <hr>
           {% endif %}
 
-          {% if courses %}
+          {% if enrollments %}
             <h6 class="mb-3">Course-Specific Notes:</h6>
-            {% for course in courses %}
+            {% for enrollment in enrollments %}
               <div class="mb-4">
-                <label for="course-{{ course.id }}" class="form-label">
-                  <strong>{{ course.name }}</strong>
-                  {% if course.description %}
-                    <small class="text-muted d-block">{{ course.description|truncatewords:15 }}</small>
+                <label for="enrollment-{{ enrollment.id }}" class="form-label">
+                  <strong>{{ enrollment.course.name }}</strong>
+                  <span class="badge bg-secondary">{{ enrollment.school_year.name }}</span>
+                  {% if enrollment.course.description %}
+                    <small class="text-muted d-block">{{ enrollment.course.description|truncatewords:15 }}</small>
                   {% endif %}
                 </label>
                 <textarea class="form-control"
-                          id="course-{{ course.id }}"
-                          name="course_{{ course.id }}"
+                          id="enrollment-{{ enrollment.id }}"
+                          name="enrollment_{{ enrollment.id }}"
                           rows="3"
-                          placeholder="What did {{ student.name|truncatewords:1 }} work on in {{ course.name }}?">{% if course_notes|get_item:course.id %}{{ course_notes|get_item:course.id }}{% endif %}</textarea>
+                          placeholder="What did {{ student.name|truncatewords:1 }} work on in {{ enrollment.course.name }}?">{% if course_notes|get_item:enrollment.id %}{{ course_notes|get_item:enrollment.id }}{% endif %}</textarea>
               </div>
             {% endfor %}
           {% else %}
             <div class="alert alert-info">
               <i class="bi bi-info-circle"></i>
-              <strong>No courses found</strong> for {{ student.name }} in the active school year.
-              <a href="{% url 'academics:course_create' %}" class="alert-link">Add a course</a> to start logging course-specific notes.
+              <strong>No enrollments found</strong> for {{ student.name }} in the active school year.
+              <a href="{% url 'academics:course_create' %}" class="alert-link">Add a course</a> and enroll the student to start logging course-specific notes.
             </div>
           {% endif %}
         </div>
@@ -84,7 +85,7 @@ Variables expected:
                   onclick="document.getElementById('course-notes-modal-container').innerHTML = ''">
             Cancel
           </button>
-          {% if courses %}
+          {% if enrollments %}
           <button type="submit" class="btn btn-primary">
             <i class="bi bi-save"></i> Save Course Notes
           </button>

@@ -69,8 +69,8 @@
     {% for note in course_notes %}
     <div class="mb-4">
       <h6>
-        {{ note.course.name }}
-        <span class="badge bg-secondary">{{ note.course.school_year.name }}</span>
+        {{ note.course_enrollment.course.name }}
+        <span class="badge bg-secondary">{{ note.course_enrollment.school_year.name }}</span>
       </h6>
       <div class="border-start border-4 border-primary ps-3">
         {{ note.notes|linebreaks }}

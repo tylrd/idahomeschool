@@ -14,31 +14,56 @@
 
       <div class="mb-3">
         <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
-        {{ form.name }}
+        <input type="text" name="{{ form.name.name }}" class="form-control{% if form.name.errors %} is-invalid{% endif %}"
+               id="{{ form.name.id_for_label }}" value="{{ form.name.value|default:'' }}" required>
         {% if form.name.errors %}
-          <div class="invalid-feedback d-block">{{ form.name.errors }}</div>
+          <div class="invalid-feedback">{{ form.name.errors.0 }}</div>
         {% endif %}
       </div>
 
       <div class="mb-3">
         <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
-        {{ form.description }}
+        <textarea name="{{ form.description.name }}" class="form-control{% if form.description.errors %} is-invalid{% endif %}"
+                  id="{{ form.description.id_for_label }}" rows="3">{{ form.description.value|default:'' }}</textarea>
         {% if form.description.errors %}
-          <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
+          <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
         {% endif %}
       </div>
 
       <div class="mb-3">
         <label class="form-label">Suggested Resources</label>
+
+        <!-- Currently Selected Resources -->
+        {% if form.instance.pk %}
+        <div class="mb-2">
+          <strong>Currently Selected:</strong>
+          <div id="selected-resources-display" class="mt-1">
+            {% for resource in form.instance.suggested_resources.all %}
+              <span class="badge bg-info me-1">{{ resource.title }}</span>
+            {% empty %}
+              <span class="text-muted">None</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
         <input
           type="text"
+          id="resource-search-input"
+          name="search"
           class="form-control mb-2"
           placeholder="Search resources by title, author, or publisher..."
-          hx-get="{% url 'academics:resource_search_htmx' %}"
-          hx-trigger="keyup changed delay:300ms"
+          hx-get="{% url 'academics:resource_search_htmx' %}?field_name=suggested_resources"
+          hx-trigger="keyup changed delay:300ms, load"
           hx-target="#resource-search-results"
-          name="search"
+          hx-include="#selected-resources-container"
         >
+
+        <!-- Hidden container for selected resource IDs -->
+        <div id="selected-resources-container" style="display: none;">
+          <input type="hidden" name="selected_ids" value="{% if form.instance.pk %}{% for resource in form.instance.suggested_resources.all %}{{ resource.id }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}" id="selected-ids-input">
+        </div>
+
         <div id="resource-search-results" class="border rounded p-2" style="max-height: 400px; overflow-y: auto;">
           <p class="text-muted">Type to search for resources...</p>
         </div>
@@ -47,6 +72,30 @@
           <div class="invalid-feedback d-block">{{ form.suggested_resources.errors }}</div>
         {% endif %}
       </div>
+
+      <script>
+        // Update selected IDs when checkboxes change
+        document.addEventListener('htmx:afterSwap', function(event) {
+          if (event.detail.target.id === 'resource-search-results') {
+            const checkboxes = document.querySelectorAll('.resource-checkbox');
+            checkboxes.forEach(checkbox => {
+              checkbox.addEventListener('change', updateSelectedIds);
+            });
+          }
+        });
+
+        function updateSelectedIds() {
+          const checkboxes = document.querySelectorAll('.resource-checkbox:checked');
+          const ids = Array.from(checkboxes).map(cb => cb.value).join(',');
+          document.getElementById('selected-ids-input').value = ids;
+
+          // Trigger another search to update checked states
+          const searchInput = document.getElementById('resource-search-input');
+          if (searchInput.value) {
+            htmx.trigger(searchInput, 'keyup');
+          }
+        }
+      </script>
 
       <button type="submit" class="btn btn-primary">Save Course Template</button>
       <a href="{% url 'academics:coursetemplate_list' %}" class="btn btn-secondary">Cancel</a>

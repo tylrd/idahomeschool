@@ -224,17 +224,17 @@
       <div class="course-section">
         <h3>{{ data.student.name }} - Grade {{ data.student.grade_level }}</h3>
 
-        {% if data.courses %}
-          {% for course in data.courses %}
-            <h4>{{ course.name }}</h4>
-            {% if course.description %}
-              <p><em>{{ course.description }}</em></p>
+        {% if data.enrollments %}
+          {% for enrollment in data.enrollments %}
+            <h4>{{ enrollment.course.name }} <small style="color: #666;">({{ enrollment.school_year.name }})</small></h4>
+            {% if enrollment.course.description %}
+              <p><em>{{ enrollment.course.description }}</em></p>
             {% endif %}
 
-            {% if course.resources.all %}
+            {% if enrollment.course.resources.all %}
               <p><strong>Curriculum Resources:</strong></p>
               <ul>
-                {% for resource in course.resources.all %}
+                {% for resource in enrollment.course.resources.all %}
                   <li>
                     {{ resource.title }}
                     {% if resource.author %} by {{ resource.author }}{% endif %}

@@ -15,14 +15,14 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 
 ## Implementation Status
 
-**Current Progress:** Phase 1, 2, 2.5, & 2.7 Complete ✅ | Phase 2.6, 3 & 4 Pending
+**Current Progress:** Phase 1, 2, 2.5, 2.6 & 2.7 Complete ✅ | Phase 3 & 4 Pending
 
 - ✅ **Phase 1: Foundation** - Complete
 - ✅ **Phase 2: Attendance System** - Complete (with course-specific notes)
 - ✅ **Phase 2.5: HTMX Dynamic Attendance** - Complete
+- ✅ **Phase 2.6: Multi-Year Course Support** - Complete (with tagging and HTMX search)
 - ✅ **Phase 2.7: Navigation & UX Restructuring** - Complete
-- 🔜 **Phase 2.6: Multi-Year Course Support** - Planned (next up)
-- 🔜 **Phase 3: Paperless-NGX Integration** - Planned
+- 🔜 **Phase 3: Paperless-NGX Integration** - Planned (next up)
 - 📋 **Phase 4: Idaho Compliance Reporting** - Planned
 
 ---
@@ -248,192 +248,193 @@ Enhanced the attendance calendar with HTMX for dynamic, real-time updates withou
 - Visual feedback for all interactions (animations, highlights, badges)
 - Progressive enhancement - links still work without JavaScript
 
-### 🔜 Phase 2.6: Multi-Year Course Support (PLANNED)
+### ✅ Phase 2.6: Multi-Year Course Support (COMPLETED)
 
 **Overview:**
-Implement comprehensive multi-year course support using the Course Template Model (Option 2). This allows courses like "Algebra 1" or "Latin" that span multiple school years to be tracked as a single educational unit while maintaining year-by-year enrollment and progress tracking.
+Implemented comprehensive multi-year course support using the Course Template Model. Courses like "Algebra 1" or "Latin" that span multiple school years can now be tracked as a single educational unit while maintaining year-by-year enrollment and progress tracking. Also implemented resource tagging system and HTMX-powered resource search for improved UX.
 
-**Goals:**
-- Support courses that span multiple school years (e.g., 2-year Algebra program)
-- Eliminate duplicate course creation and manual tracking across years
-- Enable aggregate reporting across all years of a course
-- Share curriculum resources across all enrollments of the same course
-- Track progress and completion status per year and overall
-
-**Database Schema Changes:**
-
-**New Models to Create:**
+**Models Implemented:**
 
 1. **CourseTemplate** - Defines a course independent of school year
-   ```python
-   class CourseTemplate(models.Model):
-       user = models.ForeignKey(User, on_delete=models.CASCADE)
-       name = models.CharField(max_length=200)  # "Algebra 1"
-       description = models.TextField(blank=True)
-       created_at = models.DateTimeField(auto_now_add=True)
-       updated_at = models.DateTimeField(auto_now=True)
-   ```
+   - Fields: user, name, description, suggested_resources (M2M to Resource), created_at, updated_at
+   - Replaces the old Course model's role as the course definition
+   - Resources are suggested at template level and can be added to specific courses
 
-2. **CourseEnrollment** - Links student to course template for specific period
-   ```python
-   class CourseEnrollment(models.Model):
-       user = models.ForeignKey(User, on_delete=models.CASCADE)
-       student = models.ForeignKey(Student, on_delete=models.CASCADE)
-       course_template = models.ForeignKey(CourseTemplate, on_delete=models.CASCADE)
-       school_year = models.ForeignKey(SchoolYear, on_delete=models.CASCADE)
+2. **Course** - Refactored from student-specific to user-owned
+   - **REMOVED**: student, school_year foreign keys (these are now in CourseEnrollment)
+   - Fields: user, name, description, course_template (optional FK), resources (M2M), created_at, updated_at
+   - A Course now belongs to a user and can be reused across multiple students/years
+   - Students enroll in courses via CourseEnrollment
 
-       # Optional date tracking within year
-       started_date = models.DateField(null=True, blank=True)
-       completed_date = models.DateField(null=True, blank=True)
+3. **CourseEnrollment** - Links student to course for specific school year
+   - Fields: user, student, course, school_year, status, started_date, completed_date, final_grade
+   - Status choices: IN_PROGRESS, COMPLETED, PAUSED
+   - Unique constraint: one enrollment per student+course+school_year
+   - This is the new way to track "which student is taking which course in which year"
 
-       # Status tracking
-       status = models.CharField(
-           max_length=20,
-           choices=[
-               ('IN_PROGRESS', 'In Progress'),
-               ('COMPLETED', 'Completed'),
-               ('PAUSED', 'Paused'),
-           ],
-           default='IN_PROGRESS'
-       )
+4. **Tag** - NEW model for organizing resources
+   - Fields: user, name, color (hex color code), created_at, updated_at
+   - Unique constraint: unique tag names per user
+   - Used for filtering and organizing curriculum resources
 
-       # Optional: grade/completion percentage
-       final_grade = models.CharField(max_length=5, blank=True)
-       completion_percentage = models.IntegerField(null=True, blank=True)
+5. **Resource** - NEW model replacing CurriculumResource
+   - Fields: user, title, author, publisher, isbn, resource_type, url, tags (M2M), created_at, updated_at
+   - Resource types: TEXTBOOK, WORKBOOK, ONLINE, VIDEO, SOFTWARE, OTHER
+   - Tags enable flexible categorization and filtering
+   - Resources are shared across courses via M2M relationship
 
-       class Meta:
-           unique_together = [["student", "course_template", "school_year"]]
-           ordering = ['school_year__start_date', 'course_template__name']
-   ```
+6. **CourseNote** - Updated to reference CourseEnrollment
+   - **CHANGED**: course_enrollment FK (was course FK)
+   - Now connects daily logs to specific enrollment (student+course+year combination)
+   - This allows proper tracking of notes across multi-year courses
 
-**Models to Update:**
+**Migration Strategy (Completed):**
 
-1. **CurriculumResource** - Move from Course to CourseTemplate
-   ```python
-   class CurriculumResource(models.Model):
-       course_template = models.ForeignKey(CourseTemplate, ...)  # CHANGED from Course
-       # All other fields remain the same
-   ```
+- ✅ Created Tag and Resource models
+- ✅ Created CourseTemplate model with suggested_resources M2M to Resource
+- ✅ Created CourseEnrollment model linking student+course+school_year
+- ✅ Removed student and school_year FKs from Course model (Course.user is now the owner)
+- ✅ Updated CourseNote to reference course_enrollment instead of course
+- ✅ Created data migration (0005_migrate_course_data.py) to:
+  - Create Course from old Course records (one per user+name)
+  - Create CourseEnrollment for each old Course record
+  - Update CourseNote foreign keys to point to enrollments
+- ✅ Removed old CurriculumResource model (replaced by Resource)
 
-2. **CourseNote** - Update to reference CourseEnrollment
-   ```python
-   class CourseNote(models.Model):
-       course_enrollment = models.ForeignKey(CourseEnrollment, ...)  # CHANGED from course
-       # All other fields remain the same
-   ```
-
-3. **Course** (Legacy) - Keep temporarily for data migration, mark as deprecated
-
-**Migration Strategy:**
-
-**Phase 1: Create New Models**
-- Create CourseTemplate and CourseEnrollment models
-- Run migration to create tables
-- Do NOT delete old Course model yet
-
-**Phase 2: Data Migration**
-- Create data migration to convert existing Course records:
-  ```python
-  # For each existing Course:
-  # 1. Create or get CourseTemplate with same name
-  # 2. Create CourseEnrollment linking student + template + school_year
-  # 3. Copy over any additional data
-  # 4. Update CurriculumResource foreign keys
-  # 5. Update CourseNote foreign keys
-  ```
-
-**Phase 3: Update Application Code**
-- Create new forms: `CourseTemplateForm`, `CourseEnrollmentForm`
-- Create new views for CRUD operations on both models
-- Update dashboard and reporting views
-- Update Django admin
-- Update all templates
-
-**Phase 4: Cleanup**
-- Verify all data migrated correctly
-- Remove old Course model and related code
-- Remove old migrations after squashing
-
-**Features to Implement:**
+**Features Implemented:**
 
 **1. Course Template Management**
-- CRUD views for course templates
-- List view showing all course templates with enrollment count
-- Detail view showing all enrollments across years
-- Curriculum resource management (shared across enrollments)
+- ✅ Full CRUD views for course templates
+- ✅ List view showing all templates with enrollment count
+- ✅ Detail view showing all enrollments using this template
+- ✅ Suggested resources management (M2M to Resource)
+- ✅ Auto-populate resources when selecting a template for a course
 
-**2. Course Enrollment Management**
-- CRUD views for enrollments
-- "Enroll Student" workflow:
-  - Select student
-  - Select course template (or create new)
-  - Select school year
-  - Set status (in progress/completed/paused)
-- "Continue Course" button to enroll same student in next year
-- "Clone & Continue" to copy settings to new enrollment
+**2. Course Management (Refactored)**
+- ✅ CRUD views for courses (user-owned, not student-specific)
+- ✅ Course can be created from template or standalone
+- ✅ Resources are M2M (can attach multiple resources to a course)
+- ✅ HTMX-powered resource search with live filtering
+- ✅ Resource checkboxes with search-as-you-type
+- ✅ Auto-selection of template resources when choosing a template
 
-**3. Reporting & Visualization**
-- Course lineage view showing progression across years
-- Aggregate statistics (total instructional days across all years)
-- Completion tracking and status indicators
-- Multi-year progress reports
+**3. Course Enrollment Management**
+- ✅ Full CRUD views for enrollments
+- ✅ Enrollment workflow:
+  - Select student and school year
+  - Select course
+  - Set status (IN_PROGRESS, COMPLETED, PAUSED)
+  - Track start/end dates and final grades
+- ✅ Unique constraint prevents duplicate enrollments
+- ✅ List view with filtering by student and school year
 
-**4. Dashboard Integration**
-- Active enrollments widget
-- Course completion status
-- Multi-year course alerts (e.g., "Algebra 1 entering year 2")
+**4. Tag & Resource System**
+- ✅ Tag CRUD operations with color coding
+- ✅ Resource CRUD operations with tag assignment
+- ✅ Tag filtering in resource list view
+- ✅ HTMX search for resources in course/template forms
+- ✅ Visual tag badges with custom colors
+- ✅ Search by title, author, or publisher
 
-**URL Structure:**
+**5. Updated Attendance & Reporting**
+- ✅ Daily log entry updated to use enrollments
+- ✅ Calendar view modal updated to show enrollment-based notes
+- ✅ PDF export updated to show enrollments with school year
+- ✅ Dashboard updated to show active enrollments
+- ✅ All views updated to query by enrollment instead of course
+
+**6. Dashboard Integration**
+- ✅ Active enrollments widget (shows current year enrollments)
+- ✅ Recent courses widget
+- ✅ Enrollment status indicators (badges for IN_PROGRESS, COMPLETED)
+
+**URL Structure (Implemented):**
 ```
+# Course Templates
 /academics/course-templates/                    # List all templates
 /academics/course-templates/create/             # Create new template
-/academics/course-templates/<pk>/               # Template detail
+/academics/course-templates/<pk>/               # Template detail (shows all courses using it)
 /academics/course-templates/<pk>/update/        # Edit template
 /academics/course-templates/<pk>/delete/        # Delete template
 
+# Courses (Refactored - user-owned)
+/academics/courses/                             # List all courses
+/academics/courses/create/                      # Create new course
+/academics/courses/<pk>/                        # Course detail (shows enrollments)
+/academics/courses/<pk>/update/                 # Edit course
+/academics/courses/<pk>/delete/                 # Delete course
+
+# Enrollments
 /academics/enrollments/                         # List all enrollments
 /academics/enrollments/create/                  # New enrollment
 /academics/enrollments/<pk>/                    # Enrollment detail
 /academics/enrollments/<pk>/update/             # Edit enrollment
 /academics/enrollments/<pk>/delete/             # Delete enrollment
-/academics/enrollments/<pk>/continue/           # Continue to next year
+
+# Tags & Resources
+/academics/tags/                                # List all tags
+/academics/tags/create/                         # Create new tag
+/academics/tags/<pk>/update/                    # Edit tag
+/academics/tags/<pk>/delete/                    # Delete tag
+
+/academics/resources/                           # List all resources (with tag filtering)
+/academics/resources/create/                    # Create new resource
+/academics/resources/<pk>/                      # Resource detail
+/academics/resources/<pk>/update/               # Edit resource
+/academics/resources/<pk>/delete/               # Delete resource
+
+# HTMX Endpoints
+/academics/resources/search/                    # HTMX resource search endpoint
 ```
 
 **Updated Model Relationships:**
 ```
-User (1) ──────→ (N) CourseTemplate
-                        │
-                        │ (N)
-                        ↓
-User (1) ──────→ (N) CourseEnrollment ←────┐
-                        │                    │
-                        ├──→ (1) Student     │
-                        ├──→ (1) SchoolYear  │
-                        └──→ (1) CourseTemplate
-                        │
-                        │ (1)
-                        ↓
-                  CurriculumResource (N)
+User (1) ──────→ (N) Tag
+                     │
+                     │ (M:N)
+                     ↓
+User (1) ──────→ (N) Resource ←────┐
+                     │              │ (M:N)
+                     │              │
+                     │ (M:N)        │
+                     ↓              │
+User (1) ──────→ (N) Course ←──────┤
+                     │              │
+                     │ (M:N)        │ (M:N)
+                     ↓              │
+User (1) ──────→ (N) CourseTemplate┘
 
-User (1) ──────→ (N) DailyLog
-                        │
-                        │ (1)
-                        ↓
-                  CourseNote (N) ──→ CourseEnrollment (1)
+User (1) ──────→ (N) CourseEnrollment
+                     │
+                     ├──→ (1) Student
+                     ├──→ (1) SchoolYear
+                     └──→ (1) Course
+
+User (1) ──────→ (N) DailyLog ←────┐
+                     │              │ (1)
+                     │ (1)          │
+                     ↓              │
+                 CourseNote (N) ────┘
+                     │
+                     └──→ (1) CourseEnrollment
 ```
 
-**Benefits:**
-- ✅ One course definition, multiple year enrollments
-- ✅ Shared curriculum resources across years
-- ✅ Clear progress tracking and status management
-- ✅ Aggregate reporting across multiple years
-- ✅ Support for pausing and resuming courses
-- ✅ Better reflects real-world homeschooling patterns
+**Key Architecture Benefits:**
+- ✅ Courses are user-owned and reusable across multiple students/years
+- ✅ CourseEnrollment tracks which student takes which course in which year
+- ✅ CourseTemplate provides optional standardization and resource suggestions
+- ✅ Resources are tagged and searchable with HTMX for better UX
+- ✅ CourseNote properly tracks notes per enrollment (student+course+year)
+- ✅ Multi-year courses supported through multiple enrollments of the same course
+- ✅ Shared resources across courses via M2M relationship
+- ✅ Flexible tagging system for organizing curriculum materials
 
-**Backward Compatibility:**
-- Data migration preserves all existing course data
-- Old URLs can redirect to new structure
-- Existing reports continue to work during transition
+**Migration Completed Successfully:**
+- ✅ All existing Course records migrated to new structure
+- ✅ CourseEnrollments created for all old student+course+year combinations
+- ✅ CourseNotes updated to reference enrollments instead of courses
+- ✅ No data loss during migration
+- ✅ All views, templates, and reports updated to use new architecture
 
 ### ✅ Phase 2.7: Navigation & UX Restructuring (COMPLETED)
 
@@ -618,49 +619,81 @@ idahomeschool/
 
 ## Important Technical Details
 
-### Model Relationships
+### Model Relationships (Updated Phase 2.6)
 
 ```
 User (1) ──────→ (N) SchoolYear
                      │
-                     │ (N)
+                     │ (M:N)
                      ↓
-User (1) ──────→ (N) Student ←──────┐
-                     │               │
-                     │ (M:N)         │
-                     │               │
-                     ↓               │
-                 SchoolYear          │
-                     │               │
-                     │ (1)           │ (1)
-                     ↓               │
-                  Course ────────────┘
-                     │               │
-                     │ (1)           │
-                     ↓               │
-              CurriculumResource (N) │
-                                     │
-                                     │
-User (1) ──────→ (N) DailyLog ───────┘
-                     │  (1)
+User (1) ──────→ (N) Student
+
+User (1) ──────→ (N) Tag
+                     │
+                     │ (M:N)
+                     ↓
+User (1) ──────→ (N) Resource
+                     │
+                     │ (M:N - suggested)
+                     ↓
+User (1) ──────→ (N) CourseTemplate
+                     │
+                     │ (0..1 - optional)
+                     ↓
+User (1) ──────→ (N) Course ←──────────┐
+                     │                  │ (M:N)
+                     │                  │
+                     │ (M:N)            │
+                     └──────────────────┘ Resource
                      │
                      │ (1)
                      ↓
-                 CourseNote (N) ──→ Course (1)
+User (1) ──────→ (N) CourseEnrollment
+                     │
+                     ├──→ (1) Student
+                     ├──→ (1) SchoolYear
+                     └──→ (1) Course
+
+User (1) ──────→ (N) DailyLog
+                     │
+                     ├──→ (1) Student
+                     │
+                     │ (1)
+                     ↓
+                 CourseNote (N)
+                     │
+                     └──→ (1) CourseEnrollment
 ```
 
-**Phase 2 Models:**
-- **DailyLog**: One entry per student per day, tracks attendance status
-- **CourseNote**: Multiple notes per daily log, one per course
-- CourseNote connects the daily log to specific courses, allowing detailed tracking
+**Key Models:**
+- **SchoolYear**: Academic years with start/end dates, active year tracking
+- **Student**: Student records with M2M to school years
+- **Tag**: Colored tags for organizing resources
+- **Resource**: Curriculum materials (textbooks, workbooks, etc.) with M2M tags
+- **CourseTemplate**: Optional template for creating standardized courses with suggested resources
+- **Course**: User-owned course definitions with optional template and M2M resources
+- **CourseEnrollment**: Links student+course+school_year, tracks progress and completion
+- **DailyLog**: Daily attendance records per student
+- **CourseNote**: Course-specific notes for each day, linked to enrollment
 
 ### User Data Isolation Pattern
 
 All models include a `user` ForeignKey and views filter by `request.user`:
 ```python
 queryset = Model.objects.filter(user=request.user)
-# or for related objects:
-queryset = Course.objects.filter(student__user=request.user)
+
+# Examples with new architecture:
+# Get enrollments for user's students
+enrollments = CourseEnrollment.objects.filter(user=request.user)
+
+# Get courses for user
+courses = Course.objects.filter(user=request.user)
+
+# Get resources with tags
+resources = Resource.objects.filter(user=request.user).prefetch_related('tags')
+
+# Get course notes via enrollments
+notes = CourseNote.objects.filter(course_enrollment__user=request.user)
 ```
 
 ### Active School Year Logic
@@ -721,14 +754,20 @@ uv run coverage html            # Generate coverage report
   - Inline course notes modal
   - Delete attendance logs
 
-### Phase 2.6 Items (Multi-Year Courses)
-- [ ] Create CourseTemplate and CourseEnrollment models
-- [ ] Create data migration for existing Course records
-- [ ] Implement course template management views
-- [ ] Implement course enrollment management views
-- [ ] Update dashboard with multi-year course widgets
-- [ ] Update reporting to show aggregate statistics
-- [ ] Add "Continue Course" workflow for next year
+### Phase 2.6 Items (Multi-Year Courses) - ✅ ALL COMPLETED
+- [x] Create CourseTemplate and CourseEnrollment models - ✅ COMPLETED
+- [x] Create Tag and Resource models with M2M relationships - ✅ COMPLETED
+- [x] Refactor Course model to be user-owned (removed student/school_year FKs) - ✅ COMPLETED
+- [x] Create data migration for existing Course records - ✅ COMPLETED
+- [x] Implement course template management views (CRUD) - ✅ COMPLETED
+- [x] Implement course enrollment management views (CRUD) - ✅ COMPLETED
+- [x] Implement tag and resource management views (CRUD) - ✅ COMPLETED
+- [x] Update dashboard with active enrollments widget - ✅ COMPLETED
+- [x] Update attendance calendar modal to use enrollments - ✅ COMPLETED
+- [x] Update daily log entry to use enrollments - ✅ COMPLETED
+- [x] Update PDF export to show enrollments with school year - ✅ COMPLETED
+- [x] Implement HTMX resource search for course/template forms - ✅ COMPLETED
+- [x] Auto-populate resources when selecting course template - ✅ COMPLETED
 
 ### Future Considerations
 - [ ] Add data import capability (CSV upload)
@@ -768,7 +807,10 @@ just manage shell
 ```
 ```python
 from idahomeschool.users.models import User
-from idahomeschool.academics.models import SchoolYear, Student, Course, DailyLog, CourseNote
+from idahomeschool.academics.models import (
+    SchoolYear, Student, Course, CourseEnrollment,
+    Tag, Resource, DailyLog, CourseNote
+)
 from datetime import date
 
 user = User.objects.first()  # or create one
@@ -791,19 +833,68 @@ student = Student.objects.create(
 )
 student.school_years.add(year)
 
-# Create courses
-math = Course.objects.create(
-    name="Math 4",
-    student=student,
-    school_year=year,
-    description="4th grade mathematics"
+# Create tags
+math_tag = Tag.objects.create(
+    name="Mathematics",
+    color="#007bff",
+    user=user
 )
 
-science = Course.objects.create(
+science_tag = Tag.objects.create(
+    name="Science",
+    color="#28a745",
+    user=user
+)
+
+# Create resources
+math_book = Resource.objects.create(
+    title="Saxon Math 4",
+    author="Stephen Hake",
+    publisher="Saxon Publishers",
+    resource_type="TEXTBOOK",
+    user=user
+)
+math_book.tags.add(math_tag)
+
+science_book = Resource.objects.create(
+    title="Apologia Science",
+    author="Dr. Jay Wile",
+    publisher="Apologia",
+    resource_type="TEXTBOOK",
+    user=user
+)
+science_book.tags.add(science_tag)
+
+# Create courses (user-owned, reusable)
+math_course = Course.objects.create(
+    name="Math 4",
+    description="4th grade mathematics",
+    user=user
+)
+math_course.resources.add(math_book)
+
+science_course = Course.objects.create(
     name="Science 4",
+    description="4th grade science",
+    user=user
+)
+science_course.resources.add(science_book)
+
+# Enroll student in courses for this school year
+math_enrollment = CourseEnrollment.objects.create(
     student=student,
+    course=math_course,
     school_year=year,
-    description="4th grade science"
+    status="IN_PROGRESS",
+    user=user
+)
+
+science_enrollment = CourseEnrollment.objects.create(
+    student=student,
+    course=science_course,
+    school_year=year,
+    status="IN_PROGRESS",
+    user=user
 )
 
 # Create daily log with course notes
@@ -815,65 +906,65 @@ daily_log = DailyLog.objects.create(
     user=user
 )
 
-# Add course notes
+# Add course notes (linked to enrollments)
 CourseNote.objects.create(
     daily_log=daily_log,
-    course=math,
+    course_enrollment=math_enrollment,
     notes="Completed chapter 5 on fractions. Student showed good understanding.",
     user=user
 )
 
 CourseNote.objects.create(
     daily_log=daily_log,
-    course=science,
+    course_enrollment=science_enrollment,
     notes="Studied the solar system. Built a model of planets.",
     user=user
 )
 ```
 
-## Next Immediate Steps (Phase 2.6)
+## Next Immediate Steps (Phase 3)
 
-Phase 2.6 will focus on **Multi-Year Course Support** - enabling courses to span multiple school years with shared curriculum and aggregate tracking.
+Phase 3 will focus on **Paperless-NGX Integration** - connecting the application to a running Paperless-NGX instance for document management and work sample tracking.
 
-1. **Create New Models** (Migration Phase 1)
-   - Add `CourseTemplate` model for course definitions
-   - Add `CourseEnrollment` model for student enrollments
-   - Create migration to add new tables
-   - Keep existing `Course` model temporarily for data migration
+1. **Create Paperless Models**
+   - Create `PaperlessConfig` model for API settings (URL, token)
+   - Create `PaperlessLink` model with GenericForeignKey
+   - Create migration for new tables
 
-2. **Data Migration** (Migration Phase 2)
-   - Write data migration script to convert existing `Course` records:
-     - Create `CourseTemplate` for each unique course name per user
-     - Create `CourseEnrollment` for each existing Course record
-     - Link to appropriate student, school_year, and course_template
-   - Update `CurriculumResource` foreign keys to point to CourseTemplate
-   - Update `CourseNote` foreign keys to point to CourseEnrollment
-   - Verify all data migrated correctly
+2. **Build Paperless API Client**
+   - Create `utils/paperless_client.py` with API wrapper
+   - Implement document fetching and searching
+   - Implement tag syncing functionality
+   - Add error handling and connection testing
 
-3. **Create Forms and Views**
-   - Create `CourseTemplateForm` and `CourseEnrollmentForm`
-   - Implement CRUD views for CourseTemplate
-   - Implement CRUD views for CourseEnrollment
-   - Add "Continue Course" action for next year enrollment
-   - Update Django admin for new models
+3. **Settings Interface**
+   - Create settings page for Paperless URL and API token configuration
+   - Add connection test button
+   - Implement secure token storage (encryption)
 
-4. **Update Templates**
-   - Create course template list/detail/form templates
-   - Create course enrollment list/detail/form templates
-   - Update dashboard to show active enrollments
-   - Add course lineage visualization (showing multi-year progression)
+4. **Document Selector UI**
+   - Create modal component for document selection
+   - Implement search and filtering
+   - Display document thumbnails from Paperless API
+   - Add document metadata display
 
-5. **Update Reporting**
-   - Modify attendance reports to show aggregate days across enrollments
-   - Add course completion status to reports
-   - Create multi-year progress view
+5. **Document Linking Features**
+   - Add "Attach Document" button to Student detail pages
+   - Add "Attach Document" button to Course detail pages
+   - Implement document linking workflow
+   - Display linked documents with thumbnails
+   - Add ability to remove document links
 
-6. **Testing and Cleanup**
-   - Test all CRUD operations
-   - Test data migration with sample data
-   - Verify backward compatibility
-   - Remove old `Course` model and related code
-   - Update documentation
+6. **Tag Syncing**
+   - Auto-apply tags to documents when linked (e.g., "homeschool", "student:john")
+   - Sync tags from OpenHomeSchool to Paperless
+   - Add tag management interface
+
+7. **Work Samples & Portfolio**
+   - Create work samples section on course detail pages
+   - Create correspondence section on student detail pages
+   - Add filtering by document type or date
+   - Create portfolio view for compliance reporting
 
 ## References
 

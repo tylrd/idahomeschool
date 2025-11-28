@@ -50,16 +50,18 @@
           <tr>
             <th>Course</th>
             <th>Student</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {% for course in active_courses %}
+          {% for enrollment in active_enrollments %}
           <tr>
-            <td><a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a></td>
-            <td><a href="{% url 'academics:student_detail' course.student.pk %}">{{ course.student.name }}</a></td>
+            <td><a href="{% url 'academics:course_detail' enrollment.course.pk %}">{{ enrollment.course.name }}</a></td>
+            <td><a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a></td>
+            <td><span class="badge bg-primary">{{ enrollment.get_status_display }}</span></td>
             <td>
-              <a href="{% url 'academics:course_update' course.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+              <a href="{% url 'academics:courseenrollment_detail' enrollment.pk %}" class="btn btn-sm btn-outline-primary">View</a>
             </td>
           </tr>
           {% endfor %}
@@ -105,9 +107,11 @@
         <a href="{% url 'academics:course_detail' course.pk %}" class="list-group-item list-group-item-action">
           <div class="d-flex w-100 justify-content-between">
             <h6 class="mb-1">{{ course.name }}</h6>
-            <small>{{ course.school_year.name }}</small>
+            <small class="badge bg-secondary">{{ course.enrollments.count }} enrollment{{ course.enrollments.count|pluralize }}</small>
           </div>
-          <small class="text-muted">{{ course.student.name }}</small>
+          {% if course.course_template %}
+            <small class="text-muted">Template: {{ course.course_template.name }}</small>
+          {% endif %}
         </a>
         {% empty %}
         <div class="list-group-item">

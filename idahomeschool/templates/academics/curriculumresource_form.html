@@ -8,7 +8,7 @@
   <div class="card-header">
     <h3 class="mb-0">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Curriculum Resource</h3>
     {% if course %}
-      <p class="mb-0 mt-2 text-muted">Course: {{ course.name }} ({{ course.student.name }})</p>
+      <p class="mb-0 mt-2 text-muted">Course: {{ course.name }}</p>
     {% endif %}
   </div>
   <div class="card-body">

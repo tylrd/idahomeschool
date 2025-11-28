@@ -230,8 +230,8 @@ class CourseForm(forms.ModelForm):
         # Filter course_templates and resources to only show those belonging to the user
         if self.user:
             self.fields["course_template"].queryset = CourseTemplate.objects.filter(
-                user=self.user
-            )
+                user=self.user,
+            ).prefetch_related("suggested_resources")
             self.fields["resources"].queryset = Resource.objects.filter(user=self.user)
 
         self.helper = FormHelper()

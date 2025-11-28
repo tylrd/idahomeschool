@@ -14,42 +14,77 @@
 
       <div class="mb-3">
         <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
-        {{ form.name }}
+        <input type="text" name="{{ form.name.name }}" class="form-control{% if form.name.errors %} is-invalid{% endif %}"
+               id="{{ form.name.id_for_label }}" value="{{ form.name.value|default:'' }}" required>
         {% if form.name.errors %}
-          <div class="invalid-feedback d-block">{{ form.name.errors }}</div>
+          <div class="invalid-feedback">{{ form.name.errors.0 }}</div>
         {% endif %}
       </div>
 
       <div class="mb-3">
         <label for="{{ form.course_template.id_for_label }}" class="form-label">{{ form.course_template.label }}</label>
-        {{ form.course_template }}
-        {% if form.course_template.errors %}
-          <div class="invalid-feedback d-block">{{ form.course_template.errors }}</div>
-        {% endif %}
+        <select name="{{ form.course_template.name }}" class="form-select{% if form.course_template.errors %} is-invalid{% endif %}"
+                id="{{ form.course_template.id_for_label }}" data-template-select>
+          <option value="">---------</option>
+          {% for choice in form.fields.course_template.queryset %}
+            <option value="{{ choice.id }}"
+                    {% if form.course_template.value == choice.id|stringformat:"s" %}selected{% endif %}
+                    data-resources="{% for resource in choice.suggested_resources.all %}{{ resource.id }}{% if not forloop.last %},{% endif %}{% endfor %}">
+              {{ choice.name }}
+            </option>
+          {% endfor %}
+        </select>
         {% if form.course_template.help_text %}
-          <small class="text-muted">{{ form.course_template.help_text }}</small>
+          <small class="form-text text-muted">{{ form.course_template.help_text }}</small>
+        {% endif %}
+        {% if form.course_template.errors %}
+          <div class="invalid-feedback">{{ form.course_template.errors.0 }}</div>
         {% endif %}
       </div>
 
       <div class="mb-3">
         <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
-        {{ form.description }}
+        <textarea name="{{ form.description.name }}" class="form-control{% if form.description.errors %} is-invalid{% endif %}"
+                  id="{{ form.description.id_for_label }}" rows="3">{{ form.description.value|default:'' }}</textarea>
         {% if form.description.errors %}
-          <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
+          <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
         {% endif %}
       </div>
 
       <div class="mb-3">
         <label class="form-label">Resources</label>
+
+        <!-- Currently Selected Resources -->
+        {% if form.instance.pk %}
+        <div class="mb-2">
+          <strong>Currently Selected:</strong>
+          <div id="selected-resources-display" class="mt-1">
+            {% for resource in form.instance.resources.all %}
+              <span class="badge bg-info me-1">{{ resource.title }}</span>
+            {% empty %}
+              <span class="text-muted">None</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
         <input
           type="text"
+          id="resource-search-input"
+          name="search"
           class="form-control mb-2"
           placeholder="Search resources by title, author, or publisher..."
-          hx-get="{% url 'academics:resource_search_htmx' %}"
-          hx-trigger="keyup changed delay:300ms"
+          hx-get="{% url 'academics:resource_search_htmx' %}?field_name=resources"
+          hx-trigger="keyup changed delay:300ms, load"
           hx-target="#resource-search-results"
-          name="search"
+          hx-include="#selected-resources-container"
         >
+
+        <!-- Hidden container for selected resource IDs -->
+        <div id="selected-resources-container" style="display: none;">
+          <input type="hidden" name="selected_ids" value="{% if form.instance.pk %}{% for resource in form.instance.resources.all %}{{ resource.id }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}" id="selected-ids-input">
+        </div>
+
         <div id="resource-search-results" class="border rounded p-2" style="max-height: 400px; overflow-y: auto;">
           <p class="text-muted">Type to search for resources...</p>
         </div>
@@ -58,6 +93,72 @@
           <div class="invalid-feedback d-block">{{ form.resources.errors }}</div>
         {% endif %}
       </div>
+
+      <script>
+        // Update selected IDs when checkboxes change
+        document.addEventListener('htmx:afterSwap', function(event) {
+          if (event.detail.target.id === 'resource-search-results') {
+            const checkboxes = document.querySelectorAll('.resource-checkbox');
+            checkboxes.forEach(checkbox => {
+              checkbox.addEventListener('change', updateSelectedIds);
+            });
+          }
+        });
+
+        function updateSelectedIds() {
+          const checkboxes = document.querySelectorAll('.resource-checkbox:checked');
+          const ids = Array.from(checkboxes).map(cb => cb.value).join(',');
+          document.getElementById('selected-ids-input').value = ids;
+
+          // Trigger another search to update checked states
+          const searchInput = document.getElementById('resource-search-input');
+          if (searchInput.value) {
+            htmx.trigger(searchInput, 'keyup');
+          }
+        }
+
+        // Auto-populate resources when course template is selected
+        document.addEventListener('DOMContentLoaded', function() {
+          const templateSelect = document.querySelector('[data-template-select]');
+          if (templateSelect) {
+            templateSelect.addEventListener('change', function() {
+              const selectedOption = this.options[this.selectedIndex];
+              const resourceIds = selectedOption.getAttribute('data-resources');
+
+              if (resourceIds) {
+                // Update the hidden input with selected resource IDs
+                document.getElementById('selected-ids-input').value = resourceIds;
+
+                // Trigger HTMX to reload the search results with selected items
+                const searchInput = document.getElementById('resource-search-input');
+
+                // Use HTMX trigger to force a reload with the new selected_ids
+                htmx.ajax('GET', searchInput.getAttribute('hx-get'), {
+                  target: '#resource-search-results',
+                  swap: 'innerHTML',
+                  values: {
+                    search: searchInput.value,
+                    selected_ids: resourceIds,
+                    field_name: 'resources'
+                  }
+                });
+              } else {
+                // Clear selections if no template selected
+                document.getElementById('selected-ids-input').value = '';
+                htmx.ajax('GET', document.getElementById('resource-search-input').getAttribute('hx-get'), {
+                  target: '#resource-search-results',
+                  swap: 'innerHTML',
+                  values: {
+                    search: '',
+                    selected_ids: '',
+                    field_name: 'resources'
+                  }
+                });
+              }
+            });
+          }
+        });
+      </script>
 
       <button type="submit" class="btn btn-primary">Save Course</button>
       <a href="{% url 'academics:course_list' %}" class="btn btn-secondary">Cancel</a>
