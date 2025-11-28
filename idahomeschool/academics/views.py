@@ -105,7 +105,7 @@ class SchoolYearListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return SchoolYear.objects.filter(user=self.request.user).annotate(
             student_count=Count("students", distinct=True),
-            course_count=Count("courses", distinct=True),
+            course_count=Count("course_enrollments", distinct=True),
         )
 
 
@@ -124,7 +124,10 @@ class SchoolYearDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         school_year = self.get_object()
 
         context["students"] = school_year.students.all()
-        context["courses"] = school_year.courses.select_related("student").all()
+        context["enrollments"] = school_year.course_enrollments.select_related(
+            "student",
+            "course",
+        ).all()
 
         return context
 
@@ -302,7 +305,7 @@ class CourseTemplateListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = CourseTemplate.objects.filter(user=self.request.user).annotate(
-            course_count=Count("courses", distinct=True)
+            course_count=Count("courses", distinct=True),
         )
 
         # Search functionality
@@ -510,7 +513,7 @@ class StudentListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = Student.objects.filter(user=self.request.user).annotate(
-            course_count=Count("courses", distinct=True)
+            course_count=Count("course_enrollments", distinct=True),
         )
 
         # Search functionality
@@ -535,7 +538,10 @@ class StudentDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         context = super().get_context_data(**kwargs)
         student = self.get_object()
 
-        context["courses"] = student.courses.select_related("school_year").all()
+        context["enrollments"] = student.course_enrollments.select_related(
+            "course",
+            "school_year",
+        ).all()
         context["school_years"] = student.school_years.all()
 
         return context

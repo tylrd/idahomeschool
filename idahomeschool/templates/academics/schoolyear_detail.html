@@ -55,8 +55,8 @@
           <dt class="col-sm-6">Enrolled Students:</dt>
           <dd class="col-sm-6">{{ students.count }}</dd>
 
-          <dt class="col-sm-6">Total Courses:</dt>
-          <dd class="col-sm-6">{{ courses.count }}</dd>
+          <dt class="col-sm-6">Total Enrollments:</dt>
+          <dd class="col-sm-6">{{ enrollments.count }}</dd>
         </dl>
       </div>
     </div>
@@ -93,26 +93,36 @@
 
 <div class="card">
   <div class="card-header">
-    <h5 class="mb-0">Courses</h5>
+    <h5 class="mb-0">Course Enrollments</h5>
   </div>
   <div class="card-body">
-    {% if courses %}
+    {% if enrollments %}
       <div class="table-responsive">
         <table class="table table-striped">
           <thead>
             <tr>
               <th>Course Name</th>
               <th>Student</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {% for course in courses %}
+            {% for enrollment in enrollments %}
             <tr>
-              <td><a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a></td>
-              <td><a href="{% url 'academics:student_detail' course.student.pk %}">{{ course.student.name }}</a></td>
+              <td><a href="{% url 'academics:course_detail' enrollment.course.pk %}">{{ enrollment.course.name }}</a></td>
+              <td><a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a></td>
               <td>
-                <a href="{% url 'academics:course_update' course.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                {% if enrollment.status == 'COMPLETED' %}
+                  <span class="badge bg-success">{{ enrollment.get_status_display }}</span>
+                {% elif enrollment.status == 'PAUSED' %}
+                  <span class="badge bg-warning">{{ enrollment.get_status_display }}</span>
+                {% else %}
+                  <span class="badge bg-primary">{{ enrollment.get_status_display }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'academics:courseenrollment_update' enrollment.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
               </td>
             </tr>
             {% endfor %}
@@ -120,8 +130,8 @@
         </table>
       </div>
     {% else %}
-      <p class="text-muted">No courses for this school year yet.</p>
-      <a href="{% url 'academics:course_create' %}" class="btn btn-primary">Add Course</a>
+      <p class="text-muted">No course enrollments for this school year yet.</p>
+      <a href="{% url 'academics:courseenrollment_create' %}" class="btn btn-primary">Add Enrollment</a>
     {% endif %}
   </div>
 </div>
