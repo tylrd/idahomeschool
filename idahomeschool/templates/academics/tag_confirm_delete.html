@@ -1,0 +1,21 @@
+{% extends "academics/base.html" %}
+
+{% block title %}Delete Tag{% endblock %}
+
+{% block academics_content %}
+<div class="card">
+  <div class="card-header bg-danger text-white">
+    <h3 class="mb-0">Delete Tag</h3>
+  </div>
+  <div class="card-body">
+    <p>Are you sure you want to delete the tag <strong><span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span></strong>?</p>
+    <p class="text-muted">This action cannot be undone. The tag will be removed from all resources.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, Delete</button>
+      <a href="{% url 'academics:tag_detail' tag.pk %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock academics_content %}

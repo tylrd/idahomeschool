@@ -43,6 +43,26 @@ urlpatterns = [
         views.ResourceDeleteView.as_view(),
         name="library_delete",
     ),
+    # HTMX endpoints
+    path(
+        "library/search/",
+        views.resource_search_htmx,
+        name="resource_search_htmx",
+    ),
+    # Tag URLs
+    path("tags/", views.TagListView.as_view(), name="tag_list"),
+    path("tags/create/", views.TagCreateView.as_view(), name="tag_create"),
+    path("tags/<int:pk>/", views.TagDetailView.as_view(), name="tag_detail"),
+    path(
+        "tags/<int:pk>/update/",
+        views.TagUpdateView.as_view(),
+        name="tag_update",
+    ),
+    path(
+        "tags/<int:pk>/delete/",
+        views.TagDeleteView.as_view(),
+        name="tag_delete",
+    ),
     # CourseTemplate URLs
     path(
         "course-templates/",

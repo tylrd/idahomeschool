@@ -10,6 +10,7 @@ from .models import (
     Resource,
     SchoolYear,
     Student,
+    Tag,
 )
 
 
@@ -47,13 +48,40 @@ class SchoolYearAdmin(admin.ModelAdmin):
     ]
 
 
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    """Admin for Tag model."""
+
+    list_display = ["name", "color", "user", "created_at"]
+    list_filter = ["created_at", "user"]
+    search_fields = ["name"]
+    readonly_fields = ["created_at", "updated_at"]
+    date_hierarchy = "created_at"
+    fieldsets = [
+        (
+            "Tag Information",
+            {
+                "fields": ["user", "name", "color"],
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ["created_at", "updated_at"],
+                "classes": ["collapse"],
+            },
+        ),
+    ]
+
+
 @admin.register(Resource)
 class ResourceAdmin(admin.ModelAdmin):
     """Admin for Resource model."""
 
     list_display = ["title", "author", "publisher", "resource_type", "user", "created_at"]
-    list_filter = ["resource_type", "created_at", "user"]
+    list_filter = ["resource_type", "created_at", "user", "tags"]
     search_fields = ["title", "author", "publisher", "isbn", "description"]
+    filter_horizontal = ["tags"]
     readonly_fields = ["created_at", "updated_at"]
     date_hierarchy = "created_at"
     fieldsets = [
@@ -64,9 +92,9 @@ class ResourceAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Description",
+            "Description & Tags",
             {
-                "fields": ["description"],
+                "fields": ["description", "tags"],
             },
         ),
         (

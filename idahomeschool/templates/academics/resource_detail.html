@@ -33,6 +33,17 @@
       <dt class="col-sm-3">Resource Type:</dt>
       <dd class="col-sm-9"><span class="badge bg-secondary">{{ resource.get_resource_type_display }}</span></dd>
 
+      <dt class="col-sm-3">Tags:</dt>
+      <dd class="col-sm-9">
+        {% for tag in resource.tags.all %}
+          <a href="{% url 'academics:tag_detail' tag.pk %}">
+            <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+          </a>
+        {% empty %}
+          <span class="text-muted">No tags</span>
+        {% endfor %}
+      </dd>
+
       {% if resource.description %}
       <dt class="col-sm-3">Description:</dt>
       <dd class="col-sm-9">{{ resource.description|linebreaks }}</dd>

@@ -1,0 +1,16 @@
+{% extends "academics/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if tag %}Edit Tag{% else %}Create Tag{% endif %}{% endblock %}
+
+{% block academics_content %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="mb-0">{% if tag %}Edit Tag{% else %}Create Tag{% endif %}</h3>
+  </div>
+  <div class="card-body">
+    {% crispy form %}
+    <a href="{% url 'academics:tag_list' %}" class="btn btn-secondary">Cancel</a>
+  </div>
+</div>
+{% endblock academics_content %}

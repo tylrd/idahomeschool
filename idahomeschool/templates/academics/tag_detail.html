@@ -1,0 +1,57 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}{{ tag.name }}{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>
+    <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+  </h1>
+  <div>
+    <a href="{% url 'academics:tag_update' tag.pk %}" class="btn btn-primary">Edit</a>
+    <a href="{% url 'academics:tag_delete' tag.pk %}" class="btn btn-danger">Delete</a>
+    <a href="{% url 'academics:tag_list' %}" class="btn btn-outline-secondary">Back to Tags</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Resources with this Tag ({{ resources.count }})</h5>
+  </div>
+  <div class="card-body">
+    {% if resources %}
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Publisher</th>
+              <th>Type</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for resource in resources %}
+            <tr>
+              <td>
+                <a href="{% url 'academics:resource_detail' resource.pk %}">{{ resource.title }}</a>
+              </td>
+              <td>{{ resource.author|default:"-" }}</td>
+              <td>{{ resource.publisher|default:"-" }}</td>
+              <td><span class="badge bg-secondary">{{ resource.get_resource_type_display }}</span></td>
+              <td>
+                <a href="{% url 'academics:library_update' resource.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">No resources have this tag yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock academics_content %}

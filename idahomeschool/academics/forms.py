@@ -13,6 +13,7 @@ from .models import (
     Resource,
     SchoolYear,
     Student,
+    Tag,
 )
 
 
@@ -51,6 +52,33 @@ class SchoolYearForm(forms.ModelForm):
         return instance
 
 
+class TagForm(forms.ModelForm):
+    """Form for creating and updating Tag instances."""
+
+    class Meta:
+        model = Tag
+        fields = ["name", "color"]
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.layout = Layout(
+            "name",
+            "color",
+            Submit("submit", "Save Tag", css_class="btn btn-primary"),
+        )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user and not instance.pk:
+            instance.user = self.user
+        if commit:
+            instance.save()
+        return instance
+
+
 class ResourceForm(forms.ModelForm):
     """Form for creating and updating Resource instances."""
 
@@ -63,11 +91,16 @@ class ResourceForm(forms.ModelForm):
             "isbn",
             "resource_type",
             "description",
+            "tags",
         ]
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+        # Filter tags to only show those belonging to the user
+        if self.user:
+            self.fields["tags"].queryset = Tag.objects.filter(user=self.user)
+
         self.helper = FormHelper()
         self.helper.form_method = "post"
         self.helper.layout = Layout(
@@ -81,6 +114,7 @@ class ResourceForm(forms.ModelForm):
                 Column("resource_type", css_class="col-md-6"),
             ),
             "description",
+            "tags",
             Submit("submit", "Save Resource", css_class="btn btn-primary"),
         )
 
@@ -90,6 +124,7 @@ class ResourceForm(forms.ModelForm):
             instance.user = self.user
         if commit:
             instance.save()
+            self.save_m2m()  # Save many-to-many relationships (tags)
         return instance
 
 

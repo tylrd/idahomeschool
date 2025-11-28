@@ -111,6 +111,36 @@ class Student(models.Model):
         )
 
 
+class Tag(models.Model):
+    """Represents a tag for organizing resources."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="tags",
+    )
+    name = models.CharField(max_length=50)
+    color = models.CharField(
+        max_length=7,
+        default="#007bff",
+        help_text="Hex color code for the tag badge",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Tag"
+        verbose_name_plural = "Tags"
+        unique_together = [["user", "name"]]
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("academics:tag_detail", kwargs={"pk": self.pk})
+
+
 class Resource(models.Model):
     """Represents a curriculum resource in the central library."""
 
@@ -144,6 +174,11 @@ class Resource(models.Model):
     description = models.TextField(
         blank=True,
         help_text="Optional description or notes",
+    )
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name="resources",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
