@@ -84,11 +84,8 @@
           {# Tags field - use custom tag selector component #}
           <div class="mb-3">
             <label class="form-label">Tags</label>
-            {% include "academics/partials/tag_selector.html" with field_name="tags_modal" %}
+            {% include "academics/partials/tag_selector.html" with field_name="tags" %}
           </div>
-
-          {# Hidden field for tags data #}
-          <input type="hidden" name="tags_data" id="tags_modal_data">
 
         </div>
         <div class="modal-footer">

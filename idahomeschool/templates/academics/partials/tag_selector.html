@@ -1,4 +1,5 @@
 {% load static %}
+{% load academics_extras %}
 
 <!-- Tag Selector Component -->
 <div class="tag-selector" id="tag-selector-{{ field_name|default:'tags' }}">
@@ -9,9 +10,9 @@
   <div class="selected-tags mb-2" id="selected-tags-{{ field_name|default:'tags' }}">
     {% if selected_tags %}
       {% for tag in selected_tags %}
-      <span class="badge me-1 mb-1" style="background-color: {{ tag.color }}; font-size: 0.9rem; padding: 0.4rem 0.6rem;" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name }}" data-tag-color="{{ tag.color }}">
+      <span class="badge me-1 mb-1" style="background-color: {{ tag.color }}; color: {{ tag.color|contrast_text_color }}; font-size: 0.9rem; padding: 0.4rem 0.6rem;" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name }}" data-tag-color="{{ tag.color }}">
         {{ tag.name }}
-        <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem; padding: 0;" onclick="removeTag{{ field_name|default:'tags'|capfirst }}({{ tag.id }})"></button>
+        <button type="button" class="btn-close {% if tag.color|contrast_text_color == '#ffffff' %}btn-close-white{% endif %} ms-1" style="font-size: 0.6rem; padding: 0;" onclick="removeTag{{ field_name|default:'tags'|capfirst }}({{ tag.id }})"></button>
       </span>
       {% endfor %}
     {% endif %}
@@ -97,18 +98,20 @@
     selectedTags = [];
   }
 
+  // Show all tags when input is focused
+  tagInput.addEventListener('focus', function() {
+    if (this.value.trim().length === 0) {
+      fetchAutocomplete('');
+    }
+  });
+
   // Handle input for autocomplete
   tagInput.addEventListener('input', function() {
     const query = this.value.trim();
 
     clearTimeout(debounceTimer);
 
-    if (query.length === 0) {
-      hideAutocomplete();
-      return;
-    }
-
-    // Debounce API call
+    // Debounce API call (show all tags if empty, filtered if not)
     debounceTimer = setTimeout(() => {
       fetchAutocomplete(query);
     }, 300);
@@ -172,36 +175,60 @@
 
   function renderAutocomplete(query) {
     if (autocompleteResults.length === 0) {
-      // Show "Create new tag" option
-      autocompleteDropdown.innerHTML = `
-        <div class="autocomplete-item" onclick="addNewTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}('${escapeHtml(query)}')">
-          <i class="bi bi-plus-circle"></i> Create new tag: <strong>${escapeHtml(query)}</strong>
-        </div>
-      `;
-      autocompleteDropdown.classList.add('show');
+      // Only show "Create new tag" if user has typed something
+      if (query.trim().length > 0) {
+        autocompleteDropdown.innerHTML = `
+          <div class="autocomplete-item" onclick="addNewTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}('${escapeHtml(query)}')">
+            <i class="bi bi-plus-circle"></i> Create new tag: <strong>${escapeHtml(query)}</strong>
+          </div>
+        `;
+        autocompleteDropdown.classList.add('show');
+      } else {
+        // No tags available and no query - show message
+        autocompleteDropdown.innerHTML = `
+          <div class="autocomplete-item text-muted" style="cursor: default;">
+            <i class="bi bi-info-circle"></i> No tags available
+          </div>
+        `;
+        autocompleteDropdown.classList.add('show');
+      }
       return;
     }
 
     let html = '';
+    let visibleCount = 0;
     autocompleteResults.forEach((tag, index) => {
       // Skip tags that are already selected
       if (selectedTags.some(t => t.id === tag.id)) {
         return;
       }
 
+      const textColor = getContrastColor(tag.color);
       html += `
         <div class="autocomplete-item ${index === activeItemIndex ? 'active' : ''}" onclick="selectTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${index})">
-          <span class="badge me-2" style="background-color: ${tag.color};">${escapeHtml(tag.name)}</span>
+          <span class="badge me-2" style="background-color: ${tag.color}; color: ${textColor};">${escapeHtml(tag.name)}</span>
         </div>
       `;
+      visibleCount++;
     });
 
-    // Add "Create new tag" option at the end if query doesn't exactly match
-    const exactMatch = autocompleteResults.some(tag => tag.name.toLowerCase() === query.toLowerCase());
-    if (!exactMatch) {
-      html += `
-        <div class="autocomplete-item" onclick="addNewTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}('${escapeHtml(query)}')">
-          <i class="bi bi-plus-circle"></i> Create new tag: <strong>${escapeHtml(query)}</strong>
+    // Only add "Create new tag" option if user has typed something and it doesn't exactly match
+    if (query.trim().length > 0) {
+      const exactMatch = autocompleteResults.some(tag => tag.name.toLowerCase() === query.toLowerCase());
+      if (!exactMatch) {
+        html += `
+          <div class="autocomplete-item" onclick="addNewTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}('${escapeHtml(query)}')">
+            <i class="bi bi-plus-circle"></i> Create new tag: <strong>${escapeHtml(query)}</strong>
+          </div>
+        `;
+      }
+    }
+
+    // If all tags are already selected, show a message
+    if (visibleCount === 0 && query.trim().length === 0) {
+      html = `
+        <div class="autocomplete-item text-muted" style="cursor: default;">
+          <i class="bi bi-info-circle"></i> All tags already selected
         </div>
       `;
     }
@@ -276,11 +303,12 @@
   function updateDisplay() {
     let html = '';
     selectedTags.forEach(tag => {
+      const textColor = getContrastColor(tag.color);
       html += `
-        <span class="badge me-1 mb-1" style="background-color: ${tag.color}; font-size: 0.9rem; padding: 0.4rem 0.6rem;" data-tag-id="${tag.id}" data-tag-name="${escapeHtml(tag.name)}" data-tag-color="${tag.color}">
+        <span class="badge me-1 mb-1" style="background-color: ${tag.color}; color: ${textColor}; font-size: 0.9rem; padding: 0.4rem 0.6rem;" data-tag-id="${tag.id}" data-tag-name="${escapeHtml(tag.name)}" data-tag-color="${tag.color}">
           ${escapeHtml(tag.name)}
           ${tag.is_new ? ' <i class="bi bi-plus-circle" title="New tag"></i>' : ''}
-          <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem; padding: 0;" onclick="removeTag${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${tag.id})"></button>
+          <button type="button" class="btn-close ${textColor === '#000' ? '' : 'btn-close-white'} ms-1" style="font-size: 0.6rem; padding: 0;" onclick="removeTag${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${tag.id})"></button>
         </span>
       `;
     });

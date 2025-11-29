@@ -983,6 +983,91 @@ Implemented photo upload functionality for students with thumbnail displays thro
 - `idahomeschool/templates/academics/courseenrollment_list.html` - Added thumbnails
 - `idahomeschool/templates/academics/dashboard.html` - Added thumbnails to all widgets
 
+### ✅ Phase 2.9: Dynamic Resource Creation & Tag Filter Improvements (COMPLETED)
+
+**Overview:**
+Implemented dynamic resource creation modal on Course forms and improved tag filtering UX with event delegation pattern and better tag selector behavior.
+
+**Features Implemented:**
+
+**1. Resource Creation Modal**
+- ✅ "Create New Resource" button on Course creation/edit forms
+- ✅ Bootstrap modal loads dynamically via HTMX
+- ✅ Full resource form with tag selector in modal
+- ✅ Auto-selection of newly created resource
+- ✅ Auto-positioning of new resource at top of list
+- ✅ Modal closes automatically on successful creation
+- ✅ Seamless integration with existing resource search
+
+**2. Tag Filter Fixes**
+- ✅ Refactored to use event delegation pattern (no global functions)
+- ✅ Single event listener on container for all tag buttons
+- ✅ Fixed tag filtering to properly filter resource list
+- ✅ Fixed infinite loop issue with search triggers
+- ✅ Proper `htmx.ajax()` implementation with explicit parameters
+- ✅ Tag IDs passed correctly as array to backend
+
+**3. Tag Selector UX Improvements**
+- ✅ Show all available tags when clicking into field (focus event)
+- ✅ Filter tags as user types (with 300ms debounce)
+- ✅ Show "No tags available" message when appropriate
+- ✅ Show "All tags already selected" when all tags chosen
+- ✅ Only show "Create new tag" option when user has typed something
+- ✅ Alphabetical ordering of tags in dropdown
+
+**4. Bootstrap Global Exposure**
+- ✅ Exposed Bootstrap globally in `vendors.js` for modal API access
+- ✅ Pattern matches HTMX global exposure
+- ✅ Enables `bootstrap.Modal` usage throughout application
+
+**Technical Implementation:**
+
+**Event Delegation Pattern:**
+- No inline `onclick` handlers
+- Data stored in `data-*` attributes
+- Single event listener with `e.target.closest()` pattern
+- Works with dynamically added elements
+- No global namespace pollution
+
+**Files Modified:**
+- `idahomeschool/templates/academics/course_form.html` - Modal integration, event delegation
+- `idahomeschool/templates/academics/partials/resource_create_modal.html` - Fixed tag selector integration
+- `idahomeschool/templates/academics/partials/tag_selector.html` - Focus event, UX improvements
+- `idahomeschool/academics/views/library.py` - Enhanced modal view, tag autocomplete ordering
+- `idahomeschool/static/js/vendors.js` - Bootstrap global exposure
+
+**Key Architectural Improvements:**
+- ✅ Event delegation over inline handlers
+- ✅ Scoped functions instead of globals
+- ✅ Explicit HTMX request parameters
+- ✅ Infinite loop prevention with guard flags
+- ✅ Cleaner HTML without inline JavaScript
+
+**URL Structure:**
+```
+POST /academics/resources/create-modal/?field_name=resources&selected_ids=1,2,3
+GET  /academics/library/search/?tag_ids[]=1&tag_ids[]=2&search=math&selected_ids=1,2
+GET  /academics/tags/autocomplete/?search=  # Returns all tags when empty
+```
+
+**User Flow:**
+1. User on Course creation/edit page clicks "Create New Resource"
+2. Modal loads via HTMX with resource form
+3. User fills in title, author, publisher, tags, etc.
+4. User submits form
+5. Modal closes automatically
+6. New resource appears at top of list (ordered by created_at DESC)
+7. New resource is automatically checked/selected
+8. User continues editing course
+
+**Benefits:**
+- ✅ No page reload needed to create resources
+- ✅ Maintains context and form state
+- ✅ Better UX - faster workflow
+- ✅ Follows modern JavaScript best practices
+- ✅ No global namespace pollution
+- ✅ Works with dynamic content
+
 ### Future Considerations
 - [ ] Add data import capability (CSV upload)
 - [x] Add image upload for students (profile pictures) - ✅ COMPLETED
@@ -995,6 +1080,8 @@ Implemented photo upload functionality for students with thumbnail displays thro
 - [ ] Batch photo upload/management tool
 - [ ] Photo cropping/editing in the UI
 - [ ] Photo compression for optimized storage
+- [ ] Consider Alpine.js for more complex interactive components
+- [ ] Add CourseTemplate modal similar to Resource modal
 
 ## Getting Started (Next Session)
 

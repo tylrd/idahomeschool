@@ -6,6 +6,21 @@ window.htmx = htmx;
 
 /* Project specific Javascript goes here. */
 
+/**
+ * Simple utility for calculating contrasting text color.
+ * Used only for client-side dynamic badge rendering.
+ * Most badges should use server-side {{ tag.color|contrast_text_color }} filter.
+ */
+window.getContrastColor = function(hexColor) {
+  if (!hexColor) return '#fff';
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#000' : '#fff';
+};
+
 // Sidebar toggle functionality
 document.addEventListener('DOMContentLoaded', function() {
   const sidebarToggle = document.getElementById('sidebarToggle');

@@ -1,5 +1,6 @@
 {% extends "academics/base.html" %}
 {% load static %}
+{% load academics_extras %}
 
 {% block title %}Tags{% endblock %}
 
@@ -24,12 +25,10 @@
       {% for tag in tags %}
       <tr>
         <td>
-          <a href="{% url 'academics:tag_detail' tag.pk %}">
-            <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
-          </a>
+          {% tag_badge tag link_to_detail=True %}
         </td>
         <td>
-          <span class="badge" style="background-color: {{ tag.color }};">{{ tag.color }}</span>
+          <span class="badge" style="background-color: {{ tag.color }}; color: {{ tag.color|contrast_text_color }};">{{ tag.color }}</span>
         </td>
         <td>{{ tag.resource_count }}</td>
         <td>

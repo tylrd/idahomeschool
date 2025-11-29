@@ -1,5 +1,6 @@
 {% extends "academics/base.html" %}
 {% load static %}
+{% load academics_extras %}
 
 {% block title %}Resource Library{% endblock %}
 
@@ -70,7 +71,7 @@
         <td><span class="badge bg-secondary">{{ resource.get_resource_type_display }}</span></td>
         <td>
           {% for tag in resource.tags.all %}
-            <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+            {% tag_badge tag size="sm" link_to_detail=True %}
           {% empty %}
             -
           {% endfor %}

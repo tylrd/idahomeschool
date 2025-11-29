@@ -1,3 +1,4 @@
+{% load academics_extras %}
 {% if resources %}
 <div class="list-group">
   {% for resource in resources %}
@@ -15,7 +16,7 @@
         {% if resource.tags.all %}
           <div class="mt-1">
             {% for tag in resource.tags.all %}
-              <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+              <span class="badge" style="background-color: {{ tag.color }}; color: {{ tag.color|contrast_text_color }};">{{ tag.name }}</span>
             {% endfor %}
           </div>
         {% endif %}

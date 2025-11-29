@@ -1,4 +1,5 @@
 {% extends "academics/base.html" %}
+{% load academics_extras %}
 
 {% block title %}Delete Tag{% endblock %}
 
@@ -8,7 +9,7 @@
     <h3 class="mb-0">Delete Tag</h3>
   </div>
   <div class="card-body">
-    <p>Are you sure you want to delete the tag <strong><span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span></strong>?</p>
+    <p>Are you sure you want to delete the tag <strong>{% tag_badge tag %}</strong>?</p>
     <p class="text-muted">This action cannot be undone. The tag will be removed from all resources.</p>
 
     <form method="post">

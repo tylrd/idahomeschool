@@ -1,12 +1,13 @@
 {% extends "academics/base.html" %}
 {% load static %}
+{% load academics_extras %}
 
 {% block title %}{{ tag.name }}{% endblock %}
 
 {% block academics_content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1>
-    <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+    {% tag_badge tag size="lg" %}
   </h1>
   <div>
     <a href="{% url 'academics:tag_update' tag.pk %}" class="btn btn-primary">Edit</a>

@@ -1,5 +1,6 @@
 {% extends "academics/base.html" %}
 {% load static %}
+{% load academics_extras %}
 
 {% block title %}{{ resource.title }}{% endblock %}
 
@@ -36,9 +37,7 @@
       <dt class="col-sm-3">Tags:</dt>
       <dd class="col-sm-9">
         {% for tag in resource.tags.all %}
-          <a href="{% url 'academics:tag_detail' tag.pk %}">
-            <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
-          </a>
+          {% tag_badge tag link_to_detail=True %}
         {% empty %}
           <span class="text-muted">No tags</span>
         {% endfor %}

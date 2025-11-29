@@ -1,0 +1,17 @@
+{% comment %}
+Reusable tag badge template with automatic contrast.
+
+Context variables:
+  - tag: Tag model instance
+  - text_color: Calculated contrasting text color
+  - size_class: CSS class for badge size
+  - clickable: Boolean to add pointer cursor
+  - link_to_detail: Boolean to wrap in link to tag detail page
+{% endcomment %}
+{% if link_to_detail %}
+<a href="{% url 'academics:tag_detail' tag.pk %}" class="text-decoration-none">
+  <span class="badge {{ size_class }}" style="background-color: {{ tag.color }}; color: {{ text_color }}; {% if clickable %}cursor: pointer;{% endif %}">{{ tag.name }}</span>
+</a>
+{% else %}
+<span class="badge {{ size_class }}" style="background-color: {{ tag.color }}; color: {{ text_color }}; {% if clickable %}cursor: pointer;{% endif %}">{{ tag.name }}</span>
+{% endif %}

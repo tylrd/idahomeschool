@@ -98,17 +98,30 @@
           </div>
         </div>
 
-        <input
-          type="text"
-          id="resource-search-input"
-          name="search"
-          class="form-control mb-2"
-          placeholder="Search resources by title, author, or publisher..."
-          hx-get="{% url 'academics:resource_search_htmx' %}?field_name=resources"
-          hx-trigger="keyup changed delay:300ms, load"
-          hx-target="#resource-search-results-resources"
-          hx-include="#selected-resources-container, #tag-filter-inputs"
-        >
+        <!-- Search input with Create button -->
+        <div class="input-group mb-2">
+          <input
+            type="text"
+            id="resource-search-input"
+            name="search"
+            class="form-control"
+            placeholder="Search resources by title, author, or publisher..."
+            hx-get="{% url 'academics:resource_search_htmx' %}?field_name=resources"
+            hx-trigger="keyup changed delay:300ms, load"
+            hx-target="#resource-search-results-resources"
+            hx-include="#selected-resources-container, #tag-filter-inputs"
+          >
+          <button
+            type="button"
+            class="btn btn-success"
+            id="create-resource-btn"
+            hx-get="{% url 'academics:resource_create_modal_htmx' %}?field_name=resources"
+            hx-target="#modal-container"
+            hx-swap="innerHTML"
+          >
+            <i class="bi bi-plus-circle"></i> Create New Resource
+          </button>
+        </div>
 
         <!-- Hidden container for selected resource IDs -->
         <div id="selected-resources-container" style="display: none;">
@@ -118,7 +131,7 @@
         <!-- Hidden container for tag filter IDs -->
         <div id="tag-filter-inputs" style="display: none;"></div>
 
-        <div id="resource-search-results-resources" class="border rounded p-2" style="max-height: 400px; overflow-y: auto;">
+        <div id="resource-search-results-resources" style="max-height: 400px; overflow-y: auto;">
           <p class="text-muted">Type to search for resources...</p>
         </div>
         <small class="text-muted">Search and select resources for this course. Use tag filters to narrow results.</small>
@@ -127,12 +140,22 @@
         {% endif %}
       </div>
 
+      <style>
+        /* Tag filter hover effect */
+        .tag-filter-btn:hover .badge {
+          opacity: 1 !important;
+          transform: scale(1.05);
+        }
+      </style>
+
       <script>
         let selectedTagIds = [];
+        let isSearching = false; // Guard against infinite loops
 
         // Update selected IDs when checkboxes change
         document.addEventListener('htmx:afterSwap', function(event) {
           if (event.detail.target.id === 'resource-search-results-resources') {
+            isSearching = false; // Reset guard after search completes
             const checkboxes = document.querySelectorAll('.resource-checkbox');
             checkboxes.forEach(checkbox => {
               checkbox.addEventListener('change', updateSelectedIds);
@@ -145,14 +168,38 @@
           const ids = Array.from(checkboxes).map(cb => cb.value).join(',');
           document.getElementById('selected-ids-input').value = ids;
 
-          // Trigger another search to update checked states
-          const searchInput = document.getElementById('resource-search-input');
-          triggerResourceSearch();
+          // Don't trigger a search - just update the hidden input
+          // The search will include these IDs when triggered by other actions
         }
 
         function triggerResourceSearch() {
+          if (isSearching) {
+            return; // Prevent infinite loop
+          }
+
+          isSearching = true;
           const searchInput = document.getElementById('resource-search-input');
-          htmx.trigger(searchInput, 'keyup');
+
+          // Get the URL from the hx-get attribute
+          const url = searchInput.getAttribute('hx-get');
+          const searchQuery = searchInput.value;
+          const selectedIds = document.getElementById('selected-ids-input').value;
+
+          // Get tag IDs from hidden inputs
+          const tagInputs = document.querySelectorAll('#tag-filter-inputs input[name="tag_ids[]"]');
+          const tagIds = Array.from(tagInputs).map(input => input.value);
+
+          // Use htmx.ajax to make the request with proper parameters
+          htmx.ajax('GET', url, {
+            target: '#resource-search-results-resources',
+            swap: 'innerHTML',
+            values: {
+              search: searchQuery,
+              selected_ids: selectedIds,
+              field_name: 'resources',
+              'tag_ids[]': tagIds
+            }
+          });
         }
 
         // Auto-populate resources when course template is selected
@@ -198,15 +245,29 @@
             });
           }
 
-          // Use event delegation for clear tag filters button
-          document.getElementById('tag-filter-container').addEventListener('click', function(e) {
-            if (e.target.closest('#clear-tag-filters')) {
-              selectedTagIds = [];
-              updateTagFilterInputs();
-              updateTagFilterDisplay();
-              triggerResourceSearch();
-            }
-          });
+          // Use event delegation for tag filter buttons
+          const tagFilterContainer = document.getElementById('tag-filter-container');
+          if (tagFilterContainer) {
+            tagFilterContainer.addEventListener('click', function(e) {
+              // Handle tag filter button clicks
+              const tagButton = e.target.closest('.tag-filter-btn');
+              if (tagButton) {
+                const tagId = parseInt(tagButton.getAttribute('data-tag-id'));
+                const tagName = tagButton.getAttribute('data-tag-name');
+                const tagColor = tagButton.getAttribute('data-tag-color');
+                toggleTagFilter(tagId, tagName, tagColor);
+                return;
+              }
+
+              // Handle clear filters button
+              if (e.target.closest('#clear-tag-filters')) {
+                selectedTagIds = [];
+                updateTagFilterInputs();
+                updateTagFilterDisplay();
+                triggerResourceSearch();
+              }
+            });
+          }
         });
 
         function loadTagFilters() {
@@ -233,13 +294,14 @@
             html = '<p class="text-muted small mb-0">No tags available. <a href="/academics/tags/create/">Create a tag</a> to filter resources.</p>';
           } else {
             tags.forEach(tag => {
+              const textColor = getContrastColor(tag.color);
               html += `
                 <button type="button"
-                        class="btn btn-sm btn-outline-primary me-1 mb-1 tag-filter-btn"
+                        class="btn btn-sm me-1 mb-1 tag-filter-btn p-0 border-0"
                         data-tag-id="${tag.id}"
-                        style="border-color: ${tag.color};"
-                        onclick="toggleTagFilter(${tag.id}, '${escapeHtml(tag.name)}', '${tag.color}')">
-                  <span class="badge" style="background-color: ${tag.color};">${escapeHtml(tag.name)}</span>
+                        data-tag-name="${escapeHtml(tag.name)}"
+                        data-tag-color="${tag.color}">
+                  <span class="badge" style="background-color: ${tag.color}; color: ${textColor}; cursor: pointer; opacity: 0.7; transition: all 0.2s ease;">${escapeHtml(tag.name)}</span>
                 </button>
               `;
             });
@@ -294,12 +356,16 @@
           const buttons = document.querySelectorAll('.tag-filter-btn');
           buttons.forEach(button => {
             const tagId = parseInt(button.getAttribute('data-tag-id'));
+            const badge = button.querySelector('.badge');
+
             if (selectedTagIds.includes(tagId)) {
-              button.classList.remove('btn-outline-primary');
-              button.classList.add('btn-primary');
+              // Selected: add a subtle ring around the badge
+              badge.style.boxShadow = '0 0 0 2px rgba(255, 255, 255, 0.5), 0 0 0 4px currentColor';
+              badge.style.opacity = '1';
             } else {
-              button.classList.remove('btn-primary');
-              button.classList.add('btn-outline-primary');
+              // Not selected: remove ring and make slightly transparent
+              badge.style.boxShadow = 'none';
+              badge.style.opacity = '0.7';
             }
           });
         }
@@ -316,4 +382,59 @@
     </form>
   </div>
 </div>
+
+<!-- Modal Container -->
+<div id="modal-container"></div>
+
+<script>
+  // Handle modal show/hide and resource creation
+  let resourceModal = null;
+
+  // Show modal after HTMX loads it
+  document.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target.id === 'modal-container') {
+      const modalElement = document.getElementById('resourceCreateModal');
+      if (modalElement) {
+        resourceModal = new bootstrap.Modal(modalElement);
+        resourceModal.show();
+      }
+    }
+
+    // Handle successful resource creation
+    if (event.detail.target.id === 'resource-search-results-resources') {
+      // Close modal if it's open
+      if (resourceModal) {
+        resourceModal.hide();
+        resourceModal = null;
+        // Clear modal container after closing
+        setTimeout(() => {
+          document.getElementById('modal-container').innerHTML = '';
+        }, 300);
+      }
+
+      // Re-attach event listeners to checkboxes and update selected IDs
+      const checkboxes = document.querySelectorAll('.resource-checkbox');
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedIds);
+      });
+
+      // Update the hidden input with currently checked values
+      updateSelectedIds();
+    }
+  });
+
+  // Update Create button to include selected_ids in URL
+  document.addEventListener('DOMContentLoaded', function() {
+    const createBtn = document.getElementById('create-resource-btn');
+    if (createBtn) {
+      createBtn.addEventListener('click', function() {
+        const selectedIds = document.getElementById('selected-ids-input').value;
+        const url = new URL(this.getAttribute('hx-get'), window.location.origin);
+        url.searchParams.set('selected_ids', selectedIds);
+        this.setAttribute('hx-get', url.toString());
+      });
+    }
+  });
+</script>
+
 {% endblock academics_content %}

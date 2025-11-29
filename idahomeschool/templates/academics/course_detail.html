@@ -1,5 +1,6 @@
 {% extends "academics/base.html" %}
 {% load static %}
+{% load academics_extras %}
 
 {% block title %}{{ course.name }}{% endblock %}
 
@@ -127,7 +128,7 @@
                 {% if resource.tags.all %}
                   <div class="mt-1">
                     {% for tag in resource.tags.all %}
-                      <span class="badge" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+                      {% tag_badge tag size="sm" %}
                     {% endfor %}
                   </div>
                 {% endif %}

@@ -205,17 +205,18 @@ def tag_autocomplete_htmx(request):
     """HTMX endpoint for tag autocomplete."""
     search_query = request.GET.get("search", "").strip()
 
-    # If no search query, return all tags (useful for tag filters)
-    # Otherwise, filter by search query
+    # If no search query, return all tags (useful for showing full list on focus)
+    # Otherwise, filter by search query and limit results
     if search_query:
         tags = Tag.objects.filter(
             user=request.user,
             name__icontains=search_query,
-        ).values("id", "name", "color")[:10]
+        ).values("id", "name", "color").order_by("name")[:10]
     else:
+        # Return all tags when no search (browsing mode)
         tags = Tag.objects.filter(
             user=request.user,
-        ).values("id", "name", "color")[:10]
+        ).values("id", "name", "color").order_by("name")
 
     return JsonResponse({"tags": list(tags)})
 
@@ -243,9 +244,11 @@ def resource_create_modal_htmx(request):
             selected_id_list.append(resource.id)
 
             # Get all resources for the search results
+            # Order by created_at descending to show newest first
+            # This ensures the newly created resource appears at the top
             resources = Resource.objects.filter(
                 user=request.user,
-            ).prefetch_related("tags")[:20]
+            ).prefetch_related("tags").order_by("-created_at")[:20]
 
             # Return updated search results with success message
             context = {
