@@ -22,6 +22,26 @@
       </div>
 
       <div class="mb-3">
+        <label for="{{ form.grade_level.id_for_label }}" class="form-label">{{ form.grade_level.label }}</label>
+        <select name="{{ form.grade_level.name }}" class="form-select{% if form.grade_level.errors %} is-invalid{% endif %}"
+                id="{{ form.grade_level.id_for_label }}">
+          <option value="">--------- (Grade-agnostic)</option>
+          {% for choice in form.fields.grade_level.queryset %}
+            <option value="{{ choice.id }}"
+                    {% if form.grade_level.value == choice.id|stringformat:"s" %}selected{% endif %}>
+              {{ choice.name }}
+            </option>
+          {% endfor %}
+        </select>
+        {% if form.grade_level.help_text %}
+          <small class="form-text text-muted">{{ form.grade_level.help_text }}</small>
+        {% endif %}
+        {% if form.grade_level.errors %}
+          <div class="invalid-feedback">{{ form.grade_level.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
         <label for="{{ form.course_template.id_for_label }}" class="form-label">{{ form.course_template.label }}</label>
         <select name="{{ form.course_template.name }}" class="form-select{% if form.course_template.errors %} is-invalid{% endif %}"
                 id="{{ form.course_template.id_for_label }}" data-template-select>

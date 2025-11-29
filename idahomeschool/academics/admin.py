@@ -7,9 +7,11 @@ from .models import (
     CourseTemplate,
     CurriculumResource,
     DailyLog,
+    GradeLevel,
     Resource,
     SchoolYear,
     Student,
+    StudentGradeYear,
     Tag,
 )
 
@@ -62,6 +64,32 @@ class TagAdmin(admin.ModelAdmin):
             "Tag Information",
             {
                 "fields": ["user", "name", "color"],
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ["created_at", "updated_at"],
+                "classes": ["collapse"],
+            },
+        ),
+    ]
+
+
+@admin.register(GradeLevel)
+class GradeLevelAdmin(admin.ModelAdmin):
+    """Admin for GradeLevel model."""
+
+    list_display = ["name", "order", "user", "created_at"]
+    list_filter = ["created_at", "user"]
+    search_fields = ["name", "description"]
+    readonly_fields = ["created_at", "updated_at"]
+    date_hierarchy = "created_at"
+    fieldsets = [
+        (
+            "Grade Level Information",
+            {
+                "fields": ["user", "name", "order", "description"],
             },
         ),
         (
@@ -194,6 +222,42 @@ class CourseEnrollmentAdmin(admin.ModelAdmin):
     ]
 
 
+class StudentGradeYearInline(admin.TabularInline):
+    """Inline admin for student grade assignments."""
+
+    model = StudentGradeYear
+    extra = 0
+    fields = ["school_year", "grade_level"]
+    verbose_name = "Grade Assignment"
+    verbose_name_plural = "Grade Assignments by Year"
+
+
+@admin.register(StudentGradeYear)
+class StudentGradeYearAdmin(admin.ModelAdmin):
+    """Admin for StudentGradeYear model."""
+
+    list_display = ["student", "school_year", "grade_level", "user", "created_at"]
+    list_filter = ["school_year", "grade_level", "created_at", "user"]
+    search_fields = ["student__name", "school_year__name", "grade_level__name"]
+    readonly_fields = ["created_at", "updated_at"]
+    date_hierarchy = "created_at"
+    fieldsets = [
+        (
+            "Grade Assignment Information",
+            {
+                "fields": ["user", "student", "school_year", "grade_level"],
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": ["created_at", "updated_at"],
+                "classes": ["collapse"],
+            },
+        ),
+    ]
+
+
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     """Admin for Student model."""
@@ -204,6 +268,7 @@ class StudentAdmin(admin.ModelAdmin):
     filter_horizontal = ["school_years"]
     readonly_fields = ["created_at", "updated_at", "age"]
     date_hierarchy = "created_at"
+    inlines = [StudentGradeYearInline]
     fieldsets = [
         (
             "Student Information",
@@ -238,17 +303,31 @@ class StudentAdmin(admin.ModelAdmin):
 class CourseAdmin(admin.ModelAdmin):
     """Admin for Course model."""
 
-    list_display = ["name", "student", "school_year", "created_at"]
-    list_filter = ["school_year", "created_at"]
-    search_fields = ["name", "student__name", "school_year__name", "description"]
+    list_display = ["name", "grade_level", "user", "created_at"]
+    list_filter = ["grade_level", "created_at", "user"]
+    search_fields = ["name", "description", "user__name", "user__email"]
+    filter_horizontal = ["resources"]
     readonly_fields = ["created_at", "updated_at"]
     date_hierarchy = "created_at"
     inlines = [CurriculumResourceInline]
     fieldsets = [
         (
-            None,
+            "Course Information",
             {
-                "fields": ["student", "school_year", "name", "description"],
+                "fields": ["user", "name", "grade_level", "description"],
+            },
+        ),
+        (
+            "Template and Resources",
+            {
+                "fields": ["course_template", "resources"],
+            },
+        ),
+        (
+            "Deprecated Fields",
+            {
+                "fields": ["student", "school_year"],
+                "classes": ["collapse"],
             },
         ),
         (

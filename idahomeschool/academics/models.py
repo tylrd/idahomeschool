@@ -110,6 +110,102 @@ class Student(models.Model):
             )
         )
 
+    def get_grade_for_year(self, school_year):
+        """Get the grade level for a specific school year."""
+        if not school_year:
+            return None
+
+        try:
+            grade_year = self.grade_years.get(school_year=school_year)
+        except StudentGradeYear.DoesNotExist:
+            return None
+        else:
+            return grade_year.grade_level
+
+
+class GradeLevel(models.Model):
+    """Represents a user-defined grade level (e.g., '1st Grade', 'Year 1', 'Junior')."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="grade_levels",
+    )
+    name = models.CharField(
+        max_length=100,
+        help_text="Grade name (e.g., '1st Grade', 'Year 1', 'Upper Elementary')",
+    )
+    order = models.IntegerField(
+        help_text="Numeric order for sorting (e.g., 0 for PK, 1 for K, 2 for 1st)",
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Optional description of this grade level",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order"]
+        verbose_name = "Grade Level"
+        verbose_name_plural = "Grade Levels"
+        unique_together = [
+            ["user", "name"],
+            ["user", "order"],
+        ]
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("academics:gradelevel_detail", kwargs={"pk": self.pk})
+
+
+class StudentGradeYear(models.Model):
+    """Links a student to a specific grade level for a specific school year."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="student_grade_years",
+    )
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="grade_years",
+    )
+    school_year = models.ForeignKey(
+        SchoolYear,
+        on_delete=models.CASCADE,
+        related_name="student_grades",
+    )
+    grade_level = models.ForeignKey(
+        GradeLevel,
+        on_delete=models.CASCADE,
+        related_name="student_years",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["school_year__start_date", "student__name"]
+        verbose_name = "Student Grade Assignment"
+        verbose_name_plural = "Student Grade Assignments"
+        unique_together = [["student", "school_year"]]
+        indexes = [
+            models.Index(fields=["student", "school_year"]),
+            models.Index(fields=["school_year", "grade_level"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.student.name} - {self.grade_level.name} "
+            f"({self.school_year.name})"
+        )
+
+    def get_absolute_url(self):
+        return reverse("academics:student_detail", kwargs={"pk": self.student.pk})
+
 
 class Tag(models.Model):
     """Represents a tag for organizing resources."""
@@ -249,6 +345,14 @@ class Course(models.Model):
     description = models.TextField(
         blank=True,
         help_text="Optional course description",
+    )
+    grade_level = models.ForeignKey(
+        GradeLevel,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="courses",
+        help_text="Optional grade level this course is designed for",
     )
     course_template = models.ForeignKey(
         CourseTemplate,

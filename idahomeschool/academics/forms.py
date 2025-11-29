@@ -10,9 +10,11 @@ from .models import (
     CourseTemplate,
     CurriculumResource,
     DailyLog,
+    GradeLevel,
     Resource,
     SchoolYear,
     Student,
+    StudentGradeYear,
     Tag,
 )
 
@@ -219,7 +221,7 @@ class CourseForm(forms.ModelForm):
 
     class Meta:
         model = Course
-        fields = ["name", "description", "course_template", "resources"]
+        fields = ["name", "grade_level", "description", "course_template", "resources"]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
         }
@@ -227,8 +229,11 @@ class CourseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        # Filter course_templates and resources to only show those belonging to the user
+        # Filter grade_levels, course_templates, and resources to user's data
         if self.user:
+            self.fields["grade_level"].queryset = GradeLevel.objects.filter(
+                user=self.user,
+            )
             self.fields["course_template"].queryset = CourseTemplate.objects.filter(
                 user=self.user,
             ).prefetch_related("suggested_resources")
@@ -237,7 +242,10 @@ class CourseForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_method = "post"
         self.helper.layout = Layout(
-            "name",
+            Row(
+                Column("name", css_class="col-md-8"),
+                Column("grade_level", css_class="col-md-4"),
+            ),
             "course_template",
             "description",
             "resources",
@@ -433,3 +441,101 @@ CourseNoteFormSet = modelformset_factory(
         "notes": forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
     },
 )
+
+
+class GradeLevelForm(forms.ModelForm):
+    """Form for creating and updating GradeLevel instances."""
+
+    class Meta:
+        model = GradeLevel
+        fields = ["name", "order", "description"]
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.layout = Layout(
+            Row(
+                Column("name", css_class="col-md-8"),
+                Column("order", css_class="col-md-4"),
+            ),
+            "description",
+            Submit("submit", "Save Grade Level", css_class="btn btn-primary"),
+        )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user and not instance.pk:
+            instance.user = self.user
+        if commit:
+            instance.save()
+        return instance
+
+
+class StudentGradeYearForm(forms.ModelForm):
+    """Form for creating and updating StudentGradeYear instances."""
+
+    class Meta:
+        model = StudentGradeYear
+        fields = ["student", "school_year", "grade_level"]
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        self.student = kwargs.pop("student", None)
+        super().__init__(*args, **kwargs)
+
+        # Filter querysets to user's data
+        if self.user:
+            self.fields["student"].queryset = Student.objects.filter(
+                user=self.user,
+            )
+            self.fields["school_year"].queryset = SchoolYear.objects.filter(
+                user=self.user,
+            )
+            self.fields["grade_level"].queryset = GradeLevel.objects.filter(
+                user=self.user,
+            )
+
+        # Pre-select student if provided
+        if self.student:
+            self.fields["student"].initial = self.student
+            self.fields["student"].widget = forms.HiddenInput()
+
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+
+        if self.student:
+            self.helper.layout = Layout(
+                "student",
+                Row(
+                    Column("school_year", css_class="col-md-6"),
+                    Column("grade_level", css_class="col-md-6"),
+                ),
+                Submit(
+                    "submit",
+                    "Assign Grade",
+                    css_class="btn btn-primary",
+                ),
+            )
+        else:
+            self.helper.layout = Layout(
+                "student",
+                Row(
+                    Column("school_year", css_class="col-md-6"),
+                    Column("grade_level", css_class="col-md-6"),
+                ),
+                Submit(
+                    "submit",
+                    "Assign Grade",
+                    css_class="btn btn-primary",
+                ),
+            )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user and not instance.pk:
+            instance.user = self.user
+        if commit:
+            instance.save()
+        return instance

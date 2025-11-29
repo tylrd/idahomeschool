@@ -251,6 +251,11 @@ Backups: The database should be easily dump-able (e.g., standard django-admin du
 
 **✅ Phase 1: The Foundation (COMPLETED)**
 - ✅ Set up Django Project with user authentication
+  - ✅ Django-allauth integration with MFA support
+  - ✅ Bootstrap 5 styled login, signup, and password reset pages
+  - ✅ Separate template blocks for authenticated/unauthenticated users
+  - ✅ Email verification set to mandatory
+  - ✅ Username-based login configuration
 - ✅ Build SchoolYear, Student, Course models
 - ✅ Build full CRUD views for all models
 - ✅ Dashboard with statistics and recent activity

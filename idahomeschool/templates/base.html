@@ -94,18 +94,22 @@
         <a href="#schoolSubmenu"
            class="list-group-item list-group-item-action bg-light sidebar-section-toggle collapsed"
            data-bs-toggle="collapse"
-           aria-expanded="{% if 'schoolyear' in request.resolver_match.url_name or 'student' in request.resolver_match.url_name or 'course' in request.resolver_match.url_name %}true{% else %}false{% endif %}">
+           aria-expanded="{% if 'schoolyear' in request.resolver_match.url_name or 'gradelevel' in request.resolver_match.url_name or 'student' in request.resolver_match.url_name or 'course' in request.resolver_match.url_name %}true{% else %}false{% endif %}">
           <span><i class="bi bi-building me-2"></i><span class="nav-text">Management</span></span>
           <i class="bi bi-chevron-down"></i>
         </a>
-        <div class="collapse {% if 'schoolyear' in request.resolver_match.url_name or 'student' in request.resolver_match.url_name or 'course' in request.resolver_match.url_name %}show{% endif %}"
+        <div class="collapse {% if 'schoolyear' in request.resolver_match.url_name or 'gradelevel' in request.resolver_match.url_name or 'student' in request.resolver_match.url_name or 'course' in request.resolver_match.url_name %}show{% endif %}"
              id="schoolSubmenu">
           <a href="{% url 'academics:schoolyear_list' %}"
              class="list-group-item list-group-item-action bg-light {% if 'schoolyear' in request.resolver_match.url_name %}active{% endif %}">
             <span><i class="bi bi-calendar-range me-2"></i><span class="nav-text">School Years</span></span>
           </a>
+          <a href="{% url 'academics:gradelevel_list' %}"
+             class="list-group-item list-group-item-action bg-light {% if 'gradelevel' in request.resolver_match.url_name %}active{% endif %}">
+            <span><i class="bi bi-award me-2"></i><span class="nav-text">Grade Levels</span></span>
+          </a>
           <a href="{% url 'academics:student_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'student' in request.resolver_match.url_name %}active{% endif %}">
+             class="list-group-item list-group-item-action bg-light {% if 'student' in request.resolver_match.url_name and 'grade' not in request.resolver_match.url_name %}active{% endif %}">
             <span><i class="bi bi-people me-2"></i><span class="nav-text">Students</span></span>
           </a>
           <a href="{% url 'academics:course_list' %}"
@@ -225,8 +229,8 @@
   <div class="container mt-5">
     {% if messages %}
       {% for message in messages %}
-        <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags %}{% endif %}">
-          {{ message %}
+        <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+          {{ message }}
           <button type="button"
                   class="btn-close"
                   data-bs-dismiss="alert"
@@ -234,8 +238,7 @@
         </div>
       {% endfor %}
     {% endif %}
-    {# Content for non-authenticated users comes from child templates like login.html/signup.html #}
-    {# They override the content block defined in the authenticated section above #}
+    {% block unauthenticated_content %}{% endblock unauthenticated_content %}
   </div>
   {% endif %}
   <!-- /container -->

@@ -12,13 +12,23 @@
 <div class="card mb-3">
   <div class="card-body">
     <form method="get" class="row g-3">
-      <div class="col-md-6">
+      <div class="col-md-4">
         <input type="text" name="search" class="form-control" placeholder="Search courses by name..." value="{{ search_query }}">
       </div>
-      <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">Search</button>
+      <div class="col-md-3">
+        <select name="grade" class="form-select">
+          <option value="">All Grades</option>
+          {% for grade in grade_levels %}
+            <option value="{{ grade.id }}" {% if grade_filter == grade.id|stringformat:"s" %}selected{% endif %}>
+              {{ grade.name }}
+            </option>
+          {% endfor %}
+        </select>
       </div>
-      {% if search_query %}
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Filter</button>
+      </div>
+      {% if search_query or grade_filter %}
       <div class="col-md-2">
         <a href="{% url 'academics:course_list' %}" class="btn btn-secondary w-100">Clear</a>
       </div>
@@ -35,6 +45,7 @@
         <thead>
           <tr>
             <th>Course Name</th>
+            <th>Grade Level</th>
             <th>Template</th>
             <th>Enrollments</th>
             <th>Resources</th>
@@ -45,6 +56,13 @@
           {% for course in courses %}
           <tr>
             <td><a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a></td>
+            <td>
+              {% if course.grade_level %}
+                <a href="{% url 'academics:gradelevel_detail' course.grade_level.pk %}">{{ course.grade_level.name }}</a>
+              {% else %}
+                <span class="text-muted">Any</span>
+              {% endif %}
+            </td>
             <td>
               {% if course.course_template %}
                 <a href="{% url 'academics:coursetemplate_detail' course.course_template.pk %}">{{ course.course_template.name }}</a>

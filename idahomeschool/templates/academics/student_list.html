@@ -35,7 +35,14 @@
           <a href="{% url 'academics:student_detail' student.pk %}">{{ student.name }}</a>
         </h5>
         <p class="card-text">
-          <strong>Grade:</strong> {{ student.get_grade_level_display }}<br>
+          <strong>Grade:</strong>
+          {% if student.current_grade %}
+            {{ student.current_grade.name }}
+          {% elif active_year %}
+            <span class="text-muted">Not assigned</span>
+          {% else %}
+            <span class="text-muted">No active year</span>
+          {% endif %}<br>
           <strong>Age:</strong> {{ student.age }}<br>
           <strong>Date of Birth:</strong> {{ student.date_of_birth }}<br>
           <strong>Courses:</strong> {{ student.course_count }}

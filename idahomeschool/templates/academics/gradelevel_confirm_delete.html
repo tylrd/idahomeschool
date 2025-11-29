@@ -1,0 +1,21 @@
+{% extends "academics/base.html" %}
+
+{% block title %}Delete Grade Level{% endblock %}
+
+{% block academics_content %}
+<div class="card">
+  <div class="card-header bg-danger text-white">
+    <h3 class="mb-0">Delete Grade Level</h3>
+  </div>
+  <div class="card-body">
+    <p>Are you sure you want to delete the grade level <strong>{{ grade_level.name }}</strong>?</p>
+    <p class="text-muted">This action cannot be undone. All student grade assignments and courses associated with this grade level will be affected.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, Delete</button>
+      <a href="{% url 'academics:gradelevel_detail' grade_level.pk %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock academics_content %}

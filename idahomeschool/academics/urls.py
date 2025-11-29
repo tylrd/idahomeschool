@@ -63,6 +63,54 @@ urlpatterns = [
         views.TagDeleteView.as_view(),
         name="tag_delete",
     ),
+    # GradeLevel URLs
+    path("grade-levels/", views.GradeLevelListView.as_view(), name="gradelevel_list"),
+    path(
+        "grade-levels/create/",
+        views.GradeLevelCreateView.as_view(),
+        name="gradelevel_create",
+    ),
+    path(
+        "grade-levels/create-pk12/",
+        views.create_pk12_grades,
+        name="gradelevel_create_pk12",
+    ),
+    path(
+        "grade-levels/<int:pk>/",
+        views.GradeLevelDetailView.as_view(),
+        name="gradelevel_detail",
+    ),
+    path(
+        "grade-levels/<int:pk>/update/",
+        views.GradeLevelUpdateView.as_view(),
+        name="gradelevel_update",
+    ),
+    path(
+        "grade-levels/<int:pk>/delete/",
+        views.GradeLevelDeleteView.as_view(),
+        name="gradelevel_delete",
+    ),
+    # StudentGradeYear URLs
+    path(
+        "student-grades/create/",
+        views.StudentGradeYearCreateView.as_view(),
+        name="studentgradeyear_create",
+    ),
+    path(
+        "students/<int:student_pk>/assign-grade/",
+        views.StudentGradeYearCreateView.as_view(),
+        name="studentgradeyear_create_for_student",
+    ),
+    path(
+        "student-grades/<int:pk>/update/",
+        views.StudentGradeYearUpdateView.as_view(),
+        name="studentgradeyear_update",
+    ),
+    path(
+        "student-grades/<int:pk>/delete/",
+        views.StudentGradeYearDeleteView.as_view(),
+        name="studentgradeyear_delete",
+    ),
     # CourseTemplate URLs
     path(
         "course-templates/",

@@ -32,6 +32,15 @@
             {% endif %}
           </dd>
 
+          <dt class="col-sm-3">Grade Level:</dt>
+          <dd class="col-sm-9">
+            {% if course.grade_level %}
+              <a href="{% url 'academics:gradelevel_detail' course.grade_level.pk %}">{{ course.grade_level.name }}</a>
+            {% else %}
+              <span class="text-muted">Not specified (grade-agnostic)</span>
+            {% endif %}
+          </dd>
+
           {% if course.description %}
           <dt class="col-sm-3">Description:</dt>
           <dd class="col-sm-9">{{ course.description }}</dd>

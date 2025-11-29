@@ -30,9 +30,11 @@ from .forms import CourseNoteForm
 from .forms import CourseTemplateForm
 from .forms import CurriculumResourceForm
 from .forms import DailyLogForm
+from .forms import GradeLevelForm
 from .forms import ResourceForm
 from .forms import SchoolYearForm
 from .forms import StudentForm
+from .forms import StudentGradeYearForm
 from .forms import TagForm
 from .models import Course
 from .models import CourseEnrollment
@@ -40,9 +42,11 @@ from .models import CourseNote
 from .models import CourseTemplate
 from .models import CurriculumResource
 from .models import DailyLog
+from .models import GradeLevel
 from .models import Resource
 from .models import SchoolYear
 from .models import Student
+from .models import StudentGradeYear
 from .models import Tag
 
 
@@ -652,7 +656,7 @@ class StudentListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = Student.objects.filter(user=self.request.user).annotate(
             course_count=Count("course_enrollments", distinct=True),
-        )
+        ).prefetch_related("grade_years__grade_level", "grade_years__school_year")
 
         # Search functionality
         search = self.request.GET.get("search")
@@ -660,6 +664,22 @@ class StudentListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(Q(name__icontains=search))
 
         return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get active school year for grade display
+        active_year = SchoolYear.objects.filter(
+            user=self.request.user,
+            is_active=True,
+        ).first()
+        context["active_year"] = active_year
+
+        # Add current grade to each student for display
+        if active_year:
+            for student in context["students"]:
+                student.current_grade = student.get_grade_for_year(active_year)
+
+        return context
 
 
 class StudentDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
@@ -681,6 +701,10 @@ class StudentDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
             "school_year",
         ).all()
         context["school_years"] = student.school_years.all()
+        context["grade_years"] = student.grade_years.select_related(
+            "school_year",
+            "grade_level",
+        ).all()
 
         return context
 
@@ -754,18 +778,27 @@ class CourseListView(LoginRequiredMixin, ListView):
         queryset = Course.objects.filter(user=self.request.user).prefetch_related(
             "resources",
             "enrollments",
-        )
+        ).select_related("grade_level")
 
         # Search functionality
         search_query = self.request.GET.get("search", "")
         if search_query:
             queryset = queryset.filter(name__icontains=search_query)
 
+        # Filter by grade level
+        grade_filter = self.request.GET.get("grade", "")
+        if grade_filter:
+            queryset = queryset.filter(grade_level__id=grade_filter)
+
         return queryset.order_by("-created_at")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["search_query"] = self.request.GET.get("search", "")
+        context["grade_filter"] = self.request.GET.get("grade", "")
+        context["grade_levels"] = GradeLevel.objects.filter(
+            user=self.request.user,
+        )
         return context
 
 
@@ -1664,3 +1697,267 @@ def attendance_save_course_notes(request, student_pk, log_date):
 
     # Return updated badge HTML with OOB swap to update the badge, and closes modal
     return HttpResponse(badge_html_with_oob)
+
+
+# GradeLevel Views
+class GradeLevelListView(LoginRequiredMixin, ListView):
+    """List all grade levels for the current user."""
+
+    model = GradeLevel
+    template_name = "academics/gradelevel_list.html"
+    context_object_name = "grade_levels"
+    paginate_by = 20
+
+    def get_queryset(self):
+        return GradeLevel.objects.filter(user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Check if there are any grade levels
+        context["has_grades"] = context["grade_levels"].exists()
+        return context
+
+
+class GradeLevelDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """Detail view for a grade level."""
+
+    model = GradeLevel
+    template_name = "academics/gradelevel_detail.html"
+    context_object_name = "grade_level"
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        grade_level = self.get_object()
+
+        # Get courses for this grade
+        context["courses"] = grade_level.courses.all()
+
+        # Get students currently in this grade (active year)
+        active_year = SchoolYear.objects.filter(
+            user=self.request.user,
+            is_active=True,
+        ).first()
+        if active_year:
+            context["current_students"] = Student.objects.filter(
+                grade_years__grade_level=grade_level,
+                grade_years__school_year=active_year,
+            )
+
+        # Get all student-year assignments for this grade
+        context["student_assignments"] = StudentGradeYear.objects.filter(
+            grade_level=grade_level,
+        ).select_related("student", "school_year")
+
+        return context
+
+
+class GradeLevelCreateView(LoginRequiredMixin, CreateView):
+    """Create a new grade level."""
+
+    model = GradeLevel
+    form_class = GradeLevelForm
+    template_name = "academics/gradelevel_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            f"Grade level '{form.instance.name}' created successfully!",
+        )
+        return super().form_valid(form)
+
+
+class GradeLevelUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """Update an existing grade level."""
+
+    model = GradeLevel
+    form_class = GradeLevelForm
+    template_name = "academics/gradelevel_form.html"
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            f"Grade level '{form.instance.name}' updated successfully!",
+        )
+        return super().form_valid(form)
+
+
+class GradeLevelDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Delete a grade level."""
+
+    model = GradeLevel
+    template_name = "academics/gradelevel_confirm_delete.html"
+    success_url = reverse_lazy("academics:gradelevel_list")
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Grade level deleted successfully!")
+        return super().delete(request, *args, **kwargs)
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_pk12_grades(request):
+    """Bulk create PK-12 grade levels for the user."""
+    user = request.user
+
+    # Check if user already has grades
+    existing_count = GradeLevel.objects.filter(user=user).count()
+    if existing_count > 0:
+        messages.warning(
+            request,
+            "You already have grade levels defined. "
+            "Delete them first if you want to recreate.",
+        )
+        return redirect("academics:gradelevel_list")
+
+    # Define standard PK-12 grades
+    grades = [
+        ("Pre-Kindergarten", 0),
+        ("Kindergarten", 1),
+        ("1st Grade", 2),
+        ("2nd Grade", 3),
+        ("3rd Grade", 4),
+        ("4th Grade", 5),
+        ("5th Grade", 6),
+        ("6th Grade", 7),
+        ("7th Grade", 8),
+        ("8th Grade", 9),
+        ("9th Grade", 10),
+        ("10th Grade", 11),
+        ("11th Grade", 12),
+        ("12th Grade", 13),
+    ]
+
+    # Bulk create all grades
+    grade_objects = [
+        GradeLevel(user=user, name=name, order=order)
+        for name, order in grades
+    ]
+    GradeLevel.objects.bulk_create(grade_objects)
+
+    messages.success(
+        request,
+        f"Successfully created {len(grades)} grade levels (PK-12)!",
+    )
+    return redirect("academics:gradelevel_list")
+
+
+# StudentGradeYear Views
+class StudentGradeYearCreateView(LoginRequiredMixin, CreateView):
+    """Assign a student to a grade for a specific school year."""
+
+    model = StudentGradeYear
+    form_class = StudentGradeYearForm
+    template_name = "academics/studentgradeyear_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+
+        # If student_pk is in URL, pre-fill the student
+        student_pk = self.kwargs.get("student_pk")
+        if student_pk:
+            student = get_object_or_404(
+                Student,
+                pk=student_pk,
+                user=self.request.user,
+            )
+            kwargs["student"] = student
+
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        student_pk = self.kwargs.get("student_pk")
+        if student_pk:
+            context["student"] = get_object_or_404(
+                Student,
+                pk=student_pk,
+                user=self.request.user,
+            )
+        return context
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            f"Grade assignment for {form.instance.student.name} created successfully!",
+        )
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return self.object.student.get_absolute_url()
+
+
+class StudentGradeYearUpdateView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    UpdateView,
+):
+    """Update a student's grade assignment for a school year."""
+
+    model = StudentGradeYear
+    form_class = StudentGradeYearForm
+    template_name = "academics/studentgradeyear_form.html"
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        kwargs["student"] = self.get_object().student
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["student"] = self.get_object().student
+        return context
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            f"Grade assignment for {form.instance.student.name} updated successfully!",
+        )
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return self.object.student.get_absolute_url()
+
+
+class StudentGradeYearDeleteView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    DeleteView,
+):
+    """Delete a student's grade assignment."""
+
+    model = StudentGradeYear
+    template_name = "academics/studentgradeyear_confirm_delete.html"
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Grade assignment deleted successfully!")
+        return super().delete(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return self.object.student.get_absolute_url()

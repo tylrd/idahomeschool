@@ -56,6 +56,20 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 - `/academics/courses/` - Course management
 - `/admin/academics/` - Django admin interface
 
+**Authentication & Template Structure:**
+- [x] Django-allauth integration with MFA support
+- [x] Custom template structure with separate blocks for authenticated/unauthenticated users
+  - `base.html` uses `{% block content %}` for authenticated users (with sidebar)
+  - `base.html` uses `{% block unauthenticated_content %}` for login/signup pages
+- [x] Allauth templates created:
+  - `account/login.html` - Bootstrap 5 styled login form
+  - `account/signup.html` - User registration form
+  - `account/logout.html` - Sign out confirmation
+  - `account/password_reset.html` - Password reset request form
+- [x] Fixed duplicate content block issue in base template
+- [x] LOGIN_URL configured to 'account_login'
+- [x] LOGIN_REDIRECT_URL configured to 'users:redirect'
+
 ### ✅ Phase 2: Attendance System (COMPLETED)
 
 **Models Created** (`idahomeschool/academics/models.py`):
@@ -514,7 +528,11 @@ Mobile: ☰ Hamburger → Slide-out menu (same structure)
 4. **Chevron Rotation:** Added JavaScript listeners for Bootstrap collapse events to rotate chevron arrows.
 
 **Files Modified:**
-- `templates/base.html` - New sidebar structure with mobile header
+- `templates/base.html` - New sidebar structure with mobile header, separate content blocks for auth/unauth
+- `templates/account/login.html` - Bootstrap 5 styled login page
+- `templates/account/signup.html` - User registration page
+- `templates/account/logout.html` - Sign out confirmation page
+- `templates/account/password_reset.html` - Password reset request page
 - `static/sass/sidebar.scss` - Complete responsive sidebar styles
 - `static/js/project.js` - Toggle logic and chevron rotation
 - `templates/academics/base.html` - Simplified (removed old sidebar)
@@ -742,6 +760,13 @@ uv run coverage html            # Generate coverage report
 - [ ] Consider adding "archived" status for old school years
 - [ ] Add bulk delete confirmation with related object counts
 - [ ] Add inline curriculum resource editing on course form
+- [ ] Add additional allauth templates as needed:
+  - [ ] `account/email_confirm.html` - Email verification page (important since email verification is mandatory)
+  - [ ] `account/email.html` - Email management page
+  - [ ] `account/password_reset_from_key.html` - Password reset form (after clicking email link)
+  - [ ] `account/password_reset_done.html` - Confirmation after requesting password reset
+  - [ ] `account/password_change.html` - Change password when logged in
+  - [ ] `account/verification_sent.html` - Shown after signup
 - [x] Add PDF export for attendance reports (compliance) - ✅ COMPLETED
   - Implemented with WeasyPrint
   - Includes flipped table structure (statuses as rows, max 3 students per table)

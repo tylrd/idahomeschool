@@ -1,0 +1,51 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}Grade Levels{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Grade Levels</h1>
+  <a href="{% url 'academics:gradelevel_create' %}" class="btn btn-success">Create Grade Level</a>
+</div>
+
+{% if grade_levels %}
+<div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Order</th>
+        <th>Description</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for grade in grade_levels %}
+      <tr>
+        <td>
+          <a href="{% url 'academics:gradelevel_detail' grade.pk %}">{{ grade.name }}</a>
+        </td>
+        <td>{{ grade.order }}</td>
+        <td>{{ grade.description|truncatewords:10 }}</td>
+        <td>
+          <a href="{% url 'academics:gradelevel_update' grade.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+          <a href="{% url 'academics:gradelevel_delete' grade.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+  <h4>No grade levels found</h4>
+  <p>Create grade levels to organize your students and courses by grade.</p>
+  <a href="{% url 'academics:gradelevel_create' %}" class="btn btn-primary">Create Grade Level</a>
+  <form method="post" action="{% url 'academics:gradelevel_create_pk12' %}" class="d-inline">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-primary">Create PK-12 Grades</button>
+  </form>
+</div>
+{% endif %}
+{% endblock academics_content %}
