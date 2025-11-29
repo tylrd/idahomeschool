@@ -62,8 +62,21 @@
           {% for row in attendance_grid %}
           <tr>
             <td>
-              <strong>{{ row.student.name }}</strong><br>
-              <small class="text-muted">Grade {{ row.student.grade_level }}</small>
+              <div class="d-flex align-items-center">
+                <div class="flex-shrink-0 me-2">
+                  {% if row.student.photo %}
+                    <img src="{{ row.student.photo.url }}" alt="{{ row.student.name }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                  {% else %}
+                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; color: white; font-size: 16px; font-weight: bold;">
+                      {{ row.student.name.0 }}
+                    </div>
+                  {% endif %}
+                </div>
+                <div>
+                  <strong>{{ row.student.name }}</strong><br>
+                  <small class="text-muted">Grade {{ row.student.grade_level }}</small>
+                </div>
+              </div>
             </td>
             {% for date_info in row.dates %}
               <td class="text-center attendance-cell {% if date_info.date == ref_date %}table-light{% endif %}"

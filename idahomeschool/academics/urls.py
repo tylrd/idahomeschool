@@ -148,6 +148,12 @@ urlpatterns = [
         views.CourseEnrollmentCreateView.as_view(),
         name="courseenrollment_create",
     ),
+    # HTMX endpoint for course filtering
+    path(
+        "enrollments/filter-courses/",
+        views.filter_courses_by_student,
+        name="filter_courses_by_student",
+    ),
     path(
         "enrollments/<int:pk>/",
         views.CourseEnrollmentDetailView.as_view(),

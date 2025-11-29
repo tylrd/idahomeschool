@@ -1,22 +1,23 @@
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Column, Layout, Row, Submit
+from crispy_forms.layout import Column
+from crispy_forms.layout import Layout
+from crispy_forms.layout import Row
+from crispy_forms.layout import Submit
 from django import forms
 from django.forms import modelformset_factory
 
-from .models import (
-    Course,
-    CourseEnrollment,
-    CourseNote,
-    CourseTemplate,
-    CurriculumResource,
-    DailyLog,
-    GradeLevel,
-    Resource,
-    SchoolYear,
-    Student,
-    StudentGradeYear,
-    Tag,
-)
+from .models import Course
+from .models import CourseEnrollment
+from .models import CourseNote
+from .models import CourseTemplate
+from .models import CurriculumResource
+from .models import DailyLog
+from .models import GradeLevel
+from .models import Resource
+from .models import SchoolYear
+from .models import Student
+from .models import StudentGradeYear
+from .models import Tag
 
 
 class SchoolYearForm(forms.ModelForm):
@@ -139,6 +140,7 @@ class StudentForm(forms.ModelForm):
             "name",
             "date_of_birth",
             "grade_level",
+            "photo",
             "school_years",
             "paperless_tag_id",
         ]
@@ -157,12 +159,14 @@ class StudentForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_enctype = "multipart/form-data"  # Required for file uploads
         self.helper.layout = Layout(
             "name",
             Row(
                 Column("date_of_birth", css_class="col-md-6"),
                 Column("grade_level", css_class="col-md-6"),
             ),
+            "photo",
             "school_years",
             "paperless_tag_id",
             Submit("submit", "Save Student", css_class="btn btn-primary"),
@@ -288,10 +292,51 @@ class CourseEnrollmentForm(forms.ModelForm):
         # Filter students, courses, and school_years to only show those belonging to the user
         if self.user:
             self.fields["student"].queryset = Student.objects.filter(user=self.user)
-            self.fields["course"].queryset = Course.objects.filter(user=self.user)
+            self.fields["course"].queryset = Course.objects.filter(
+                user=self.user,
+            ).select_related("grade_level")
             self.fields["school_year"].queryset = SchoolYear.objects.filter(
                 user=self.user
             )
+
+        # Add HTMX attributes for dynamic course filtering
+        self.fields["student"].widget.attrs.update(
+            {
+                "hx-get": "/academics/enrollments/filter-courses/",
+                "hx-trigger": "change",
+                "hx-target": "#id_course",
+                "hx-swap": "innerHTML",
+                "hx-include": "[name='student'], [name='school_year']",
+            },
+        )
+
+        self.fields["school_year"].widget.attrs.update(
+            {
+                "hx-get": "/academics/enrollments/filter-courses/",
+                "hx-trigger": "change",
+                "hx-target": "#id_course",
+                "hx-swap": "innerHTML",
+                "hx-include": "[name='student'], [name='school_year']",
+            },
+        )
+
+        # Update course field to show grade level in options
+        course_choices = [("", "---------")]
+        for course in self.fields["course"].queryset.order_by(
+            "grade_level__order",
+            "name",
+        ):
+            grade_label = (
+                f" ({course.grade_level.name})" if course.grade_level else " (Any)"
+            )
+            label = f"{course.name}{grade_label}"
+            course_choices.append((course.pk, label))
+
+        self.fields["course"].choices = course_choices
+        self.fields["course"].help_text = (
+            "Courses are filtered by student's grade level. "
+            "Select a student and school year to see relevant courses."
+        )
 
         self.helper = FormHelper()
         self.helper.form_method = "post"

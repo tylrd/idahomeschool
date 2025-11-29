@@ -15,13 +15,14 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 
 ## Implementation Status
 
-**Current Progress:** Phase 1, 2, 2.5, 2.6 & 2.7 Complete ✅ | Phase 3 & 4 Pending
+**Current Progress:** Phases 1, 2, 2.5, 2.6, 2.7 & Student Photos Complete ✅ | Phase 3 & 4 Pending
 
 - ✅ **Phase 1: Foundation** - Complete
 - ✅ **Phase 2: Attendance System** - Complete (with course-specific notes)
 - ✅ **Phase 2.5: HTMX Dynamic Attendance** - Complete
 - ✅ **Phase 2.6: Multi-Year Course Support** - Complete (with tagging and HTMX search)
 - ✅ **Phase 2.7: Navigation & UX Restructuring** - Complete
+- ✅ **Student Photo Uploads** - Complete (filesystem-based, cloud-ready)
 - 🔜 **Phase 3: Paperless-NGX Integration** - Planned (next up)
 - 📋 **Phase 4: Idaho Compliance Reporting** - Planned
 
@@ -794,15 +795,56 @@ uv run coverage html            # Generate coverage report
 - [x] Implement HTMX resource search for course/template forms - ✅ COMPLETED
 - [x] Auto-populate resources when selecting course template - ✅ COMPLETED
 
+### ✅ Student Photo Uploads (COMPLETED)
+
+**Overview:**
+Implemented photo upload functionality for students with thumbnail displays throughout the application. Photos are stored on the filesystem with an architecture that makes future cloud storage migration seamless.
+
+**Features Implemented:**
+- ✅ Photo field added to Student model with custom upload path
+- ✅ File upload handling in StudentForm with multipart/form-data support
+- ✅ Thumbnail generation utilities using Pillow
+- ✅ Graceful fallbacks - displays student's initial in colored circle when no photo
+- ✅ Photo display in student list (60px circular thumbnails)
+- ✅ Photo display in student detail page (80px header image)
+- ✅ Photo display in attendance calendar (40px thumbnails)
+- ✅ Photo display in enrollment lists (32px thumbnails)
+- ✅ Photo display in dashboard widgets (28-40px thumbnails)
+- ✅ Cloud storage ready - easy migration to S3/Azure/GCS in future
+
+**Technical Implementation:**
+- Upload path: `media/students/<user_id>/<student_id>_<filename>`
+- Image processing with PIL/Pillow for format conversion
+- Responsive circular thumbnails with object-fit: cover
+- Consistent visual design across all views
+- User data isolation maintained in upload paths
+
+**Migration:**
+- Migration 0008_add_student_photo applied successfully
+- No data loss, backward compatible
+
+**Files Modified:**
+- `idahomeschool/academics/models.py` - Added photo field and upload path function
+- `idahomeschool/academics/forms.py` - Updated StudentForm with file upload support
+- `idahomeschool/academics/utils.py` - NEW: Thumbnail generation utilities
+- `idahomeschool/templates/academics/student_list.html` - Added thumbnails
+- `idahomeschool/templates/academics/student_detail.html` - Added header photo
+- `idahomeschool/templates/academics/attendance_calendar.html` - Added thumbnails
+- `idahomeschool/templates/academics/courseenrollment_list.html` - Added thumbnails
+- `idahomeschool/templates/academics/dashboard.html` - Added thumbnails to all widgets
+
 ### Future Considerations
 - [ ] Add data import capability (CSV upload)
-- [ ] Add image upload for students (profile pictures)
+- [x] Add image upload for students (profile pictures) - ✅ COMPLETED
 - [ ] Consider adding "notes" field to Student and SchoolYear
 - [ ] Add activity/audit log for compliance tracking
 - [ ] Grade/progress tracking within courses
 - [ ] Email reminders for attendance logging
 - [ ] Mobile app for quick attendance entry
 - [ ] Assignment tracking and grading
+- [ ] Batch photo upload/management tool
+- [ ] Photo cropping/editing in the UI
+- [ ] Photo compression for optimized storage
 
 ## Getting Started (Next Session)
 

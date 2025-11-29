@@ -58,7 +58,20 @@
           {% for enrollment in active_enrollments %}
           <tr>
             <td><a href="{% url 'academics:course_detail' enrollment.course.pk %}">{{ enrollment.course.name }}</a></td>
-            <td><a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a></td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="flex-shrink-0 me-2">
+                  {% if enrollment.student.photo %}
+                    <img src="{{ enrollment.student.photo.url }}" alt="{{ enrollment.student.name }}" class="rounded-circle" style="width: 28px; height: 28px; object-fit: cover;">
+                  {% else %}
+                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; color: white; font-size: 12px; font-weight: bold;">
+                      {{ enrollment.student.name.0 }}
+                    </div>
+                  {% endif %}
+                </div>
+                <a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a>
+              </div>
+            </td>
             <td><span class="badge bg-primary">{{ enrollment.get_status_display }}</span></td>
             <td>
               <a href="{% url 'academics:courseenrollment_detail' enrollment.pk %}" class="btn btn-sm btn-outline-primary">View</a>
@@ -81,11 +94,24 @@
       <div class="list-group list-group-flush">
         {% for student in recent_students %}
         <a href="{% url 'academics:student_detail' student.pk %}" class="list-group-item list-group-item-action">
-          <div class="d-flex w-100 justify-content-between">
-            <h6 class="mb-1">{{ student.name }}</h6>
-            <small>Grade {{ student.grade_level }}</small>
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0 me-3">
+              {% if student.photo %}
+                <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+              {% else %}
+                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; color: white; font-size: 16px; font-weight: bold;">
+                  {{ student.name.0 }}
+                </div>
+              {% endif %}
+            </div>
+            <div class="flex-grow-1">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ student.name }}</h6>
+                <small>Grade {{ student.grade_level }}</small>
+              </div>
+              <small class="text-muted">Age {{ student.age }}</small>
+            </div>
           </div>
-          <small class="text-muted">Age {{ student.age }}</small>
         </a>
         {% empty %}
         <div class="list-group-item">
@@ -131,21 +157,34 @@
       <div class="list-group list-group-flush">
         {% for log in recent_daily_logs %}
         <a href="{% url 'academics:dailylog_detail' log.pk %}" class="list-group-item list-group-item-action">
-          <div class="d-flex w-100 justify-content-between">
-            <h6 class="mb-1">{{ log.student.name }}</h6>
-            <small>
-              <span class="badge
-                {% if log.status == 'PRESENT' %}bg-success
-                {% elif log.status == 'ABSENT' %}bg-danger
-                {% elif log.status == 'SICK' %}bg-warning
-                {% elif log.status == 'HOLIDAY' %}bg-info
-                {% elif log.status == 'FIELD_TRIP' %}bg-primary
-                {% endif %}">
-                {{ log.get_status_display }}
-              </span>
-            </small>
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0 me-2">
+              {% if log.student.photo %}
+                <img src="{{ log.student.photo.url }}" alt="{{ log.student.name }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+              {% else %}
+                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; color: white; font-size: 14px; font-weight: bold;">
+                  {{ log.student.name.0 }}
+                </div>
+              {% endif %}
+            </div>
+            <div class="flex-grow-1">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ log.student.name }}</h6>
+                <small>
+                  <span class="badge
+                    {% if log.status == 'PRESENT' %}bg-success
+                    {% elif log.status == 'ABSENT' %}bg-danger
+                    {% elif log.status == 'SICK' %}bg-warning
+                    {% elif log.status == 'HOLIDAY' %}bg-info
+                    {% elif log.status == 'FIELD_TRIP' %}bg-primary
+                    {% endif %}">
+                    {{ log.get_status_display }}
+                  </span>
+                </small>
+              </div>
+              <small class="text-muted">{{ log.date|date:"F j, Y" }}</small>
+            </div>
           </div>
-          <small class="text-muted">{{ log.date|date:"F j, Y" }}</small>
         </a>
         {% empty %}
         <div class="list-group-item">

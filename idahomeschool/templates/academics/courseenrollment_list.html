@@ -55,6 +55,7 @@
       <tr>
         <th>Student</th>
         <th>Course</th>
+        <th>Grade Level</th>
         <th>School Year</th>
         <th>Status</th>
         <th>Progress</th>
@@ -64,8 +65,30 @@
     <tbody>
       {% for enrollment in enrollments %}
       <tr>
-        <td><a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a></td>
+        <td>
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0 me-2">
+              {% if enrollment.student.photo %}
+                <img src="{{ enrollment.student.photo.url }}" alt="{{ enrollment.student.name }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+              {% else %}
+                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; color: white; font-size: 14px; font-weight: bold;">
+                  {{ enrollment.student.name.0 }}
+                </div>
+              {% endif %}
+            </div>
+            <div>
+              <a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a>
+            </div>
+          </div>
+        </td>
         <td><a href="{% url 'academics:course_detail' enrollment.course.pk %}">{{ enrollment.course.name }}</a></td>
+        <td>
+          {% if enrollment.course.grade_level %}
+            <a href="{% url 'academics:gradelevel_detail' enrollment.course.grade_level.pk %}">{{ enrollment.course.grade_level.name }}</a>
+          {% else %}
+            <span class="text-muted">Any</span>
+          {% endif %}
+        </td>
         <td><a href="{% url 'academics:schoolyear_detail' enrollment.school_year.pk %}">{{ enrollment.school_year.name }}</a></td>
         <td>
           {% if enrollment.status == 'COMPLETED' %}

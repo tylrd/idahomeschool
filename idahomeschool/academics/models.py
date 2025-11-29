@@ -1,7 +1,12 @@
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
-from django.core.validators import MinValueValidator, MaxValueValidator
+
+
+def student_photo_path(instance, filename):
+    """Generate upload path for student photos."""
+    # Store photos in: media/students/<user_id>/<student_id>_<filename>
+    return f"students/{instance.user.id}/{instance.id or 'new'}_{filename}"
 
 
 class SchoolYear(models.Model):
@@ -65,6 +70,12 @@ class Student(models.Model):
     name = models.CharField(max_length=100)
     date_of_birth = models.DateField()
     grade_level = models.CharField(max_length=2, choices=GRADE_CHOICES)
+    photo = models.ImageField(
+        upload_to=student_photo_path,
+        blank=True,
+        null=True,
+        help_text="Student photo (optional)",
+    )
     paperless_tag_id = models.IntegerField(
         null=True,
         blank=True,

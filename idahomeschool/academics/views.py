@@ -551,7 +551,7 @@ class CourseEnrollmentListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = CourseEnrollment.objects.filter(
             user=self.request.user,
-        ).select_related("student", "course", "school_year")
+        ).select_related("student", "course", "course__grade_level", "school_year")
 
         # Filter by student
         student_id = self.request.GET.get("student")
@@ -642,6 +642,49 @@ class CourseEnrollmentDeleteView(LoginRequiredMixin, UserPassesTestMixin, Delete
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Course enrollment deleted successfully!")
         return super().delete(request, *args, **kwargs)
+
+
+@login_required
+@require_http_methods(["GET"])
+def filter_courses_by_student(request):
+    """HTMX endpoint to filter courses by student's grade level."""
+    student_id = request.GET.get("student")
+    school_year_id = request.GET.get("school_year")
+
+    # Get all courses for the user
+    courses = Course.objects.filter(user=request.user).select_related(
+        "grade_level",
+    )
+
+    # If both student and school year are provided, filter by grade level
+    if student_id and school_year_id:
+        try:
+            student = Student.objects.get(pk=student_id, user=request.user)
+            school_year = SchoolYear.objects.get(
+                pk=school_year_id,
+                user=request.user,
+            )
+
+            # Get the student's grade level for this school year
+            student_grade = student.get_grade_for_year(school_year)
+
+            if student_grade:
+                # Filter: matching grade level or no grade level (universal)
+                courses = courses.filter(
+                    Q(grade_level=student_grade) | Q(grade_level__isnull=True),
+                )
+        except (Student.DoesNotExist, SchoolYear.DoesNotExist):
+            pass
+
+    # Render course options
+    html = '<option value="">---------</option>'
+    for course in courses.order_by("grade_level__order", "name"):
+        grade_label = (
+            f" ({course.grade_level.name})" if course.grade_level else " (Any)"
+        )
+        html += f'<option value="{course.pk}">{course.name}{grade_label}</option>'
+
+    return HttpResponse(html)
 
 
 # Student Views
@@ -772,7 +815,7 @@ class CourseListView(LoginRequiredMixin, ListView):
     model = Course
     template_name = "academics/course_list.html"
     context_object_name = "courses"
-    paginate_by = 20
+    paginate_by = None  # Disable pagination for grouped view
 
     def get_queryset(self):
         queryset = Course.objects.filter(user=self.request.user).prefetch_related(
@@ -790,7 +833,7 @@ class CourseListView(LoginRequiredMixin, ListView):
         if grade_filter:
             queryset = queryset.filter(grade_level__id=grade_filter)
 
-        return queryset.order_by("-created_at")
+        return queryset.order_by("grade_level__order", "name")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -799,6 +842,26 @@ class CourseListView(LoginRequiredMixin, ListView):
         context["grade_levels"] = GradeLevel.objects.filter(
             user=self.request.user,
         )
+
+        # Group courses by grade level
+        courses = self.get_queryset()
+        grouped_courses = {}
+        unassigned_courses = []
+
+        for course in courses:
+            if course.grade_level:
+                grade_level = course.grade_level
+                if grade_level not in grouped_courses:
+                    grouped_courses[grade_level] = []
+                grouped_courses[grade_level].append(course)
+            else:
+                unassigned_courses.append(course)
+
+        # Sort grade levels by order
+        sorted_grade_levels = sorted(grouped_courses.items(), key=lambda x: x[0].order)
+
+        context["grouped_courses"] = sorted_grade_levels
+        context["unassigned_courses"] = unassigned_courses
         return context
 
 
