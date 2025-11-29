@@ -15,13 +15,14 @@ OpenHomeSchool is a self-hosted Django web application for managing homeschoolin
 
 ## Implementation Status
 
-**Current Progress:** Phases 1, 2, 2.5, 2.6, 2.7 & Student Photos Complete ✅ | Phase 3 & 4 Pending
+**Current Progress:** Phases 1, 2, 2.5, 2.6, 2.7, 2.8 & Student Photos Complete ✅ | Phase 3 & 4 Pending
 
 - ✅ **Phase 1: Foundation** - Complete
 - ✅ **Phase 2: Attendance System** - Complete (with course-specific notes)
 - ✅ **Phase 2.5: HTMX Dynamic Attendance** - Complete
 - ✅ **Phase 2.6: Multi-Year Course Support** - Complete (with tagging and HTMX search)
 - ✅ **Phase 2.7: Navigation & UX Restructuring** - Complete
+- ✅ **Phase 2.8: Color Palette System** - Complete (tag color management with named palettes)
 - ✅ **Student Photo Uploads** - Complete (filesystem-based, cloud-ready)
 - 🔜 **Phase 3: Paperless-NGX Integration** - Planned (next up)
 - 📋 **Phase 4: Idaho Compliance Reporting** - Planned
@@ -404,6 +405,14 @@ Implemented comprehensive multi-year course support using the Course Template Mo
 
 **Updated Model Relationships:**
 ```
+User (1) ──────→ (N) ColorPalette (is_active)
+                     │
+                     │ (M:N)
+                     ↓
+User (1) ──────→ (N) Color (hex codes)
+                     │
+                     │ (used by)
+                     ↓
 User (1) ──────→ (N) Tag
                      │
                      │ (M:N)
@@ -638,7 +647,7 @@ idahomeschool/
 
 ## Important Technical Details
 
-### Model Relationships (Updated Phase 2.6)
+### Model Relationships (Updated Phase 2.8)
 
 ```
 User (1) ──────→ (N) SchoolYear
@@ -647,6 +656,14 @@ User (1) ──────→ (N) SchoolYear
                      ↓
 User (1) ──────→ (N) Student
 
+User (1) ──────→ (N) ColorPalette (is_active)
+                     │
+                     │ (M:N)
+                     ↓
+User (1) ──────→ (N) Color (hex codes)
+                     │
+                     │ (used by)
+                     ↓
 User (1) ──────→ (N) Tag
                      │
                      │ (M:N)
@@ -687,7 +704,9 @@ User (1) ──────→ (N) DailyLog
 **Key Models:**
 - **SchoolYear**: Academic years with start/end dates, active year tracking
 - **Student**: Student records with M2M to school years
-- **Tag**: Colored tags for organizing resources
+- **ColorPalette**: Named collections of colors (e.g., "Ocean Blues"), only one active per user
+- **Color**: Individual hex color codes, can belong to multiple palettes via M2M
+- **Tag**: Colored tags for organizing resources, colors selected from active palette
 - **Resource**: Curriculum materials (textbooks, workbooks, etc.) with M2M tags
 - **CourseTemplate**: Optional template for creating standardized courses with suggested resources
 - **Course**: User-owned course definitions with optional template and M2M resources
@@ -794,6 +813,137 @@ uv run coverage html            # Generate coverage report
 - [x] Update PDF export to show enrollments with school year - ✅ COMPLETED
 - [x] Implement HTMX resource search for course/template forms - ✅ COMPLETED
 - [x] Auto-populate resources when selecting course template - ✅ COMPLETED
+
+### ✅ Phase 2.8: Color Palette System for Tag Management (COMPLETED)
+
+**Overview:**
+Implemented a comprehensive color palette system allowing users to create named collections of colors (e.g., "Ocean Blues", "Earth Tones") for organizing and generating tag colors. Only one palette can be active at a time, and its colors are used for random tag color generation.
+
+**Models Implemented:**
+
+1. **ColorPalette** - Named collection of colors
+   - Fields: user, name, is_active, created_at, updated_at
+   - Only one palette can be active per user
+   - Active palette colors are used for tag generation
+   - Ordering: Active palette first, then alphabetical
+
+2. **Color** - Individual hex color codes
+   - Fields: user, name, color (hex code), palettes (M2M to ColorPalette)
+   - Colors can belong to multiple palettes
+   - M2M relationship allows flexible organization
+   - Can exist without being in any palette
+
+**Features Implemented:**
+
+**1. Color Palette Management**
+- ✅ Full CRUD views for color palettes
+- ✅ List view with Bootstrap tabs showing:
+  - Individual palette tabs with all colors in that palette
+  - "All Colors" tab showing every color user has created
+- ✅ Active/inactive palette toggle
+- ✅ Visual badges for active palette
+- ✅ Color count displayed on each palette tab
+
+**2. Color Management**
+- ✅ Full CRUD operations for individual colors
+- ✅ Create color with optional palette assignment
+- ✅ Edit/delete colors from any view (palette tab or "All Colors")
+- ✅ Checkbox-based palette assignment (replaced clunky multiselect)
+- ✅ Remove color from palette (M2M delete) without deleting color
+- ✅ Live color preview when creating/editing
+
+**3. Color Import Feature**
+- ✅ Import multiple colors from hex codes (comma or newline separated)
+- ✅ Dropdown to select existing palette or create new one
+- ✅ Optional "mark as active" checkbox for new palettes
+- ✅ Bulk color creation with automatic palette assignment
+
+**4. Tag Integration**
+- ✅ Tag creation/edit forms show only active palette colors
+- ✅ `Tag.get_palette_colors_for_user()` filters by active palette
+- ✅ Random tag color selection from active palette
+- ✅ Visual color picker with active palette colors
+
+**5. Tag Filters for Resource Search**
+- ✅ Tag filter UI on course form
+- ✅ Colored tag badges for visual filtering
+- ✅ Click to toggle tag filters
+- ✅ "Clear Filters" button
+- ✅ Integration with HTMX resource search
+- ✅ Tag autocomplete fixed to return all tags when no search query
+
+**URL Structure (Implemented):**
+```
+/academics/settings/color-palettes/                              # List all palettes (tabbed view)
+/academics/settings/color-palettes/create/                       # Create new palette
+/academics/settings/color-palettes/<pk>/update/                  # Edit palette
+/academics/settings/color-palettes/<pk>/delete/                  # Delete palette
+/academics/settings/color-palettes/import/                       # Import colors to palette
+
+/academics/settings/colors/add/                                  # Create color
+/academics/settings/colors/<pk>/update/                          # Edit color
+/academics/settings/colors/<pk>/delete/                          # Delete color
+/academics/settings/color-palette/<palette_pk>/remove-color/<color_pk>/  # Remove from palette
+```
+
+**Technical Implementation:**
+
+**Backend (Django):**
+- ColorPalette and Color models in `models.py`
+- Full CRUD views in `views/library.py`:
+  - ColorPaletteListView - Tabbed interface with all palettes
+  - ColorPaletteCreateView, ColorPaletteUpdateView, ColorPaletteDeleteView
+  - ColorPaletteImportView - Bulk import with palette selection
+  - ColorCreateView, ColorUpdateView, ColorDeleteView
+  - remove_color_from_palette() - M2M removal without delete
+- ColorPaletteImportForm with dynamic palette choices
+- ColorForm with checkbox palette assignment
+- Tag autocomplete fixed to return all tags for filters
+
+**Frontend (Templates):**
+- `color_palette_list.html` - Bootstrap tabs for palette management
+- `color_palette_form.html` - Create/edit palette
+- `color_palette_import.html` - Bulk import interface
+- `color_form.html` - Create/edit color with checkboxes
+- `partials/color_palette_preview.html` - Live preview component
+- Tag forms updated to filter by active palette
+- Course form updated with tag filter buttons
+
+**Model Relationships:**
+```
+User (1) ──────→ (N) ColorPalette (is_active field)
+                     │
+                     │ (M2M)
+                     ↓
+                 (N) Color (name, hex)
+                     │
+                     │ (used by)
+                     ↓
+                 (N) Tag (gets random color from active palette)
+```
+
+**Migration Strategy (Completed):**
+- ✅ 0009_add_color_palette.py - Initial Color model
+- ✅ 0010_add_color_palette_groups.py - ColorPalette model with M2M
+- ✅ 0011_rename_color_models.py - Renamed models to correct architecture
+  - ColorPalette → Color (individual colors)
+  - ColorPaletteGroup → ColorPalette (named collections)
+  - Updated all foreign keys and related names
+
+**Key Architecture Benefits:**
+- ✅ Flexible color organization with named palettes
+- ✅ Colors can belong to multiple palettes (M2M)
+- ✅ Active palette controls tag color generation
+- ✅ Easy to switch color themes by changing active palette
+- ✅ Import colors in bulk with palette assignment
+- ✅ Remove vs delete distinction for color management
+- ✅ Tag filtering for resource search
+
+**Bug Fixes Applied:**
+- Fixed tag creation showing all colors instead of active palette colors
+- Fixed multiselect UI by replacing with checkboxes
+- Fixed tag autocomplete returning empty array for tag filters
+- Fixed tag filter buttons not rendering on course form
 
 ### ✅ Student Photo Uploads (COMPLETED)
 

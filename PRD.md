@@ -109,14 +109,30 @@ class Student(models.Model):
     # Future: paperless_tag_id for document linking
 ```
 
-**Resource & Tag Models:**
+**Resource, Tag & Color Models:**
 
 ```python
+class ColorPalette(models.Model):
+    """Named collection of colors for tag organization"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=False)
+    # Only one palette can be active per user
+    # Active palette colors are used for tag generation
+
+class Color(models.Model):
+    """Individual hex color code"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50, blank=True)
+    color = models.CharField(max_length=7)  # Hex color code
+    palettes = models.ManyToManyField(ColorPalette, related_name='colors', blank=True)
+    # Colors can belong to multiple palettes
+
 class Tag(models.Model):
     """Colored tags for organizing curriculum resources"""
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
-    color = models.CharField(max_length=7)  # Hex color code
+    color = models.CharField(max_length=7)  # Hex color code from active palette
 
     class Meta:
         unique_together = [['user', 'name']]
@@ -288,6 +304,18 @@ Backups: The database should be easily dump-able (e.g., standard django-admin du
 - ✅ Persistent collapsible sidebar with expandable sections
 - ✅ Mobile-responsive with hamburger menu
 - ✅ Root URL redirects directly to dashboard
+
+**✅ Phase 2.8: Color Palette System (COMPLETED)**
+- ✅ ColorPalette model - Named collections of colors (e.g., "Ocean Blues", "Earth Tones")
+- ✅ Color model - Individual hex codes with M2M to palettes
+- ✅ Active palette system - Only one palette active per user
+- ✅ Tag color generation from active palette colors
+- ✅ Full CRUD operations for palettes and colors
+- ✅ Bulk color import feature with palette assignment
+- ✅ Tab-based UI for palette management
+- ✅ Remove vs delete distinction for color management
+- ✅ Tag filter UI on course form with colored badges
+- ✅ Integration with HTMX resource search
 
 **🔜 Phase 3: Paperless-NGX Integration (NEXT)**
 - Implement the Paperless API client class in Python
