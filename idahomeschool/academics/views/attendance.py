@@ -275,7 +275,7 @@ class DailyLogEntryView(LoginRequiredMixin, View):
                 CourseNote.objects.update_or_create(
                     daily_log=daily_log,
                     course_enrollment=enrollment,
-                    defaults={"notes": notes_text},
+                    defaults={"notes": notes_text, "user": request.user},
                 )
             else:
                 # Delete course note if exists and notes are empty
