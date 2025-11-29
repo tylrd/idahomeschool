@@ -1,0 +1,103 @@
+{% load crispy_forms_tags %}
+{% load static %}
+
+<!-- Resource Creation Modal -->
+<div class="modal fade" id="resourceCreateModal" tabindex="-1" aria-labelledby="resourceCreateModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="resourceCreateModalLabel">
+          <i class="bi bi-plus-circle"></i> Create New Resource
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form
+        hx-post="/academics/resources/create-modal/?field_name={{ field_name }}&selected_ids={{ selected_ids }}"
+        hx-target="#resource-search-results-{{ field_name }}"
+        hx-swap="innerHTML"
+        method="post"
+      >
+        <div class="modal-body">
+          {% csrf_token %}
+
+          {# Title field #}
+          <div class="mb-3">
+            <label for="id_title" class="form-label">Title *</label>
+            <input type="text" class="form-control {% if form.title.errors %}is-invalid{% endif %}" id="id_title" name="title" value="{{ form.title.value|default:'' }}" required>
+            {% if form.title.errors %}
+            <div class="invalid-feedback">{{ form.title.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          {# Author and Publisher #}
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="id_author" class="form-label">Author</label>
+              <input type="text" class="form-control {% if form.author.errors %}is-invalid{% endif %}" id="id_author" name="author" value="{{ form.author.value|default:'' }}">
+              {% if form.author.errors %}
+              <div class="invalid-feedback">{{ form.author.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_publisher" class="form-label">Publisher</label>
+              <input type="text" class="form-control {% if form.publisher.errors %}is-invalid{% endif %}" id="id_publisher" name="publisher" value="{{ form.publisher.value|default:'' }}">
+              {% if form.publisher.errors %}
+              <div class="invalid-feedback">{{ form.publisher.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          {# ISBN and Resource Type #}
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="id_isbn" class="form-label">ISBN</label>
+              <input type="text" class="form-control {% if form.isbn.errors %}is-invalid{% endif %}" id="id_isbn" name="isbn" value="{{ form.isbn.value|default:'' }}">
+              {% if form.isbn.errors %}
+              <div class="invalid-feedback">{{ form.isbn.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_resource_type" class="form-label">Resource Type</label>
+              <select class="form-select {% if form.resource_type.errors %}is-invalid{% endif %}" id="id_resource_type" name="resource_type">
+                <option value="BOOK" {% if form.resource_type.value == 'BOOK' %}selected{% endif %}>Book</option>
+                <option value="WORKBOOK" {% if form.resource_type.value == 'WORKBOOK' %}selected{% endif %}>Workbook</option>
+                <option value="ONLINE" {% if form.resource_type.value == 'ONLINE' %}selected{% endif %}>Online Course</option>
+                <option value="VIDEO" {% if form.resource_type.value == 'VIDEO' %}selected{% endif %}>Video Course</option>
+                <option value="SOFTWARE" {% if form.resource_type.value == 'SOFTWARE' %}selected{% endif %}>Software</option>
+                <option value="OTHER" {% if form.resource_type.value == 'OTHER' %}selected{% endif %}>Other</option>
+              </select>
+              {% if form.resource_type.errors %}
+              <div class="invalid-feedback">{{ form.resource_type.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          {# Description #}
+          <div class="mb-3">
+            <label for="id_description" class="form-label">Description</label>
+            <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}" id="id_description" name="description" rows="3">{{ form.description.value|default:'' }}</textarea>
+            {% if form.description.errors %}
+            <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          {# Tags field - use custom tag selector component #}
+          <div class="mb-3">
+            <label class="form-label">Tags</label>
+            {% include "academics/partials/tag_selector.html" with field_name="tags_modal" %}
+          </div>
+
+          {# Hidden field for tags data #}
+          <input type="hidden" name="tags_data" id="tags_modal_data">
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Create Resource
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

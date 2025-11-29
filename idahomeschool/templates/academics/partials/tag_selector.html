@@ -1,0 +1,316 @@
+{% load static %}
+
+<!-- Tag Selector Component -->
+<div class="tag-selector" id="tag-selector-{{ field_name|default:'tags' }}">
+  <!-- Hidden input to store selected tag data (JSON) -->
+  <input type="hidden" name="{{ field_name|default:'tags' }}_data" id="{{ field_name|default:'tags' }}_data" value="{{ selected_tags_json|default:'[]' }}">
+
+  <!-- Display selected tags as pills -->
+  <div class="selected-tags mb-2" id="selected-tags-{{ field_name|default:'tags' }}">
+    {% if selected_tags %}
+      {% for tag in selected_tags %}
+      <span class="badge me-1 mb-1" style="background-color: {{ tag.color }}; font-size: 0.9rem; padding: 0.4rem 0.6rem;" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name }}" data-tag-color="{{ tag.color }}">
+        {{ tag.name }}
+        <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem; padding: 0;" onclick="removeTag{{ field_name|default:'tags'|capfirst }}({{ tag.id }})"></button>
+      </span>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- Input for typing new tags -->
+  <div class="position-relative">
+    <input
+      type="text"
+      class="form-control"
+      id="tag-input-{{ field_name|default:'tags' }}"
+      placeholder="Type to search or create tags..."
+      autocomplete="off"
+    >
+    <div class="autocomplete-dropdown position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-sm"
+         id="autocomplete-{{ field_name|default:'tags' }}"
+         style="display: none; max-height: 200px; overflow-y: auto; z-index: 1050;">
+    </div>
+  </div>
+
+  <div class="form-text mt-2">
+    <i class="bi bi-info-circle"></i>
+    Type tag name and press Enter to add. If the tag doesn't exist, it will be created automatically.
+  </div>
+</div>
+
+<style>
+  .autocomplete-dropdown {
+    display: none;
+  }
+
+  .autocomplete-dropdown.show {
+    display: block !important;
+  }
+
+  .autocomplete-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+  }
+
+  .autocomplete-item:hover,
+  .autocomplete-item.active {
+    background-color: #f8f9fa;
+  }
+
+  .autocomplete-item:last-child {
+    border-bottom: none;
+  }
+
+  .tag-selector .badge button.btn-close {
+    opacity: 0.8;
+  }
+
+  .tag-selector .badge button.btn-close:hover {
+    opacity: 1;
+  }
+</style>
+
+<script>
+(function() {
+  const fieldName = '{{ field_name|default:"tags" }}';
+  const tagInput = document.getElementById(`tag-input-${fieldName}`);
+  const autocompleteDropdown = document.getElementById(`autocomplete-${fieldName}`);
+  const selectedTagsContainer = document.getElementById(`selected-tags-${fieldName}`);
+  const hiddenInput = document.getElementById(`${fieldName}_data`);
+
+  // Color palette from user's active group
+  const paletteColors = {{ palette_colors|default:"[]"|safe }};
+
+  let selectedTags = [];
+  let autocompleteResults = [];
+  let activeItemIndex = -1;
+  let debounceTimer = null;
+
+  // Initialize with existing tags
+  try {
+    const initialData = hiddenInput.value;
+    if (initialData && initialData !== '[]') {
+      selectedTags = JSON.parse(initialData);
+    }
+  } catch (e) {
+    selectedTags = [];
+  }
+
+  // Handle input for autocomplete
+  tagInput.addEventListener('input', function() {
+    const query = this.value.trim();
+
+    clearTimeout(debounceTimer);
+
+    if (query.length === 0) {
+      hideAutocomplete();
+      return;
+    }
+
+    // Debounce API call
+    debounceTimer = setTimeout(() => {
+      fetchAutocomplete(query);
+    }, 300);
+  });
+
+  // Handle Enter key to add tag
+  tagInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+
+      if (activeItemIndex >= 0 && autocompleteResults.length > 0) {
+        // Select highlighted autocomplete item
+        selectTag(autocompleteResults[activeItemIndex]);
+      } else {
+        // Create new tag
+        const tagName = this.value.trim();
+        if (tagName) {
+          addNewTag(tagName);
+        }
+      }
+
+      this.value = '';
+      hideAutocomplete();
+      activeItemIndex = -1;
+
+      return false;
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      navigateAutocomplete(1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      navigateAutocomplete(-1);
+    } else if (e.key === 'Escape') {
+      hideAutocomplete();
+    }
+  });
+
+  // Hide autocomplete when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!tagInput.contains(e.target) && !autocompleteDropdown.contains(e.target)) {
+      hideAutocomplete();
+    }
+  });
+
+  function fetchAutocomplete(query) {
+    fetch(`/academics/tags/autocomplete/?search=${encodeURIComponent(query)}`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      autocompleteResults = data.tags || [];
+      renderAutocomplete(query);
+    })
+    .catch(error => {
+      console.error('Autocomplete error:', error);
+      hideAutocomplete();
+    });
+  }
+
+  function renderAutocomplete(query) {
+    if (autocompleteResults.length === 0) {
+      // Show "Create new tag" option
+      autocompleteDropdown.innerHTML = `
+        <div class="autocomplete-item" onclick="addNewTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}('${escapeHtml(query)}')">
+          <i class="bi bi-plus-circle"></i> Create new tag: <strong>${escapeHtml(query)}</strong>
+        </div>
+      `;
+      autocompleteDropdown.classList.add('show');
+      return;
+    }
+
+    let html = '';
+    autocompleteResults.forEach((tag, index) => {
+      // Skip tags that are already selected
+      if (selectedTags.some(t => t.id === tag.id)) {
+        return;
+      }
+
+      html += `
+        <div class="autocomplete-item ${index === activeItemIndex ? 'active' : ''}" onclick="selectTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${index})">
+          <span class="badge me-2" style="background-color: ${tag.color};">${escapeHtml(tag.name)}</span>
+        </div>
+      `;
+    });
+
+    // Add "Create new tag" option at the end if query doesn't exactly match
+    const exactMatch = autocompleteResults.some(tag => tag.name.toLowerCase() === query.toLowerCase());
+    if (!exactMatch) {
+      html += `
+        <div class="autocomplete-item" onclick="addNewTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}('${escapeHtml(query)}')">
+          <i class="bi bi-plus-circle"></i> Create new tag: <strong>${escapeHtml(query)}</strong>
+        </div>
+      `;
+    }
+
+    autocompleteDropdown.innerHTML = html;
+    autocompleteDropdown.classList.add('show');
+  }
+
+  function navigateAutocomplete(direction) {
+    const items = autocompleteDropdown.querySelectorAll('.autocomplete-item');
+    if (items.length === 0) return;
+
+    activeItemIndex += direction;
+
+    if (activeItemIndex < 0) activeItemIndex = items.length - 1;
+    if (activeItemIndex >= items.length) activeItemIndex = 0;
+
+    items.forEach((item, index) => {
+      item.classList.toggle('active', index === activeItemIndex);
+    });
+  }
+
+  function hideAutocomplete() {
+    autocompleteDropdown.classList.remove('show');
+    autocompleteResults = [];
+    activeItemIndex = -1;
+  }
+
+  function selectTag(tag) {
+    // Check if tag is already selected
+    if (selectedTags.some(t => t.id === tag.id)) {
+      return;
+    }
+
+    selectedTags.push(tag);
+    updateDisplay();
+    updateHiddenInput();
+  }
+
+  function addNewTag(tagName) {
+    // Check if tag with this name already exists in selected tags
+    if (selectedTags.some(t => t.name.toLowerCase() === tagName.toLowerCase())) {
+      return;
+    }
+
+    // Get random color from palette
+    let randomColor = '#007bff'; // Fallback color
+    if (paletteColors && paletteColors.length > 0) {
+      randomColor = paletteColors[Math.floor(Math.random() * paletteColors.length)];
+    }
+
+    // Add temporary tag (will be created on form submission)
+    // Use negative ID to indicate it's a new tag
+    const newTag = {
+      id: -(selectedTags.length + 1),
+      name: tagName,
+      color: randomColor,
+      is_new: true
+    };
+
+    selectedTags.push(newTag);
+    updateDisplay();
+    updateHiddenInput();
+  }
+
+  function removeTag(tagId) {
+    selectedTags = selectedTags.filter(t => t.id !== tagId);
+    updateDisplay();
+    updateHiddenInput();
+  }
+
+  function updateDisplay() {
+    let html = '';
+    selectedTags.forEach(tag => {
+      html += `
+        <span class="badge me-1 mb-1" style="background-color: ${tag.color}; font-size: 0.9rem; padding: 0.4rem 0.6rem;" data-tag-id="${tag.id}" data-tag-name="${escapeHtml(tag.name)}" data-tag-color="${tag.color}">
+          ${escapeHtml(tag.name)}
+          ${tag.is_new ? ' <i class="bi bi-plus-circle" title="New tag"></i>' : ''}
+          <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem; padding: 0;" onclick="removeTag${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${tag.id})"></button>
+        </span>
+      `;
+    });
+
+    selectedTagsContainer.innerHTML = html;
+  }
+
+  function updateHiddenInput() {
+    hiddenInput.value = JSON.stringify(selectedTags);
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Expose functions globally for onclick handlers
+  window[`selectTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`] = function(index) {
+    selectTag(autocompleteResults[index]);
+    tagInput.value = '';
+    hideAutocomplete();
+  };
+
+  window[`addNewTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`] = function(tagName) {
+    addNewTag(tagName);
+    tagInput.value = '';
+    hideAutocomplete();
+  };
+
+  window[`removeTag${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`] = removeTag;
+})();
+</script>

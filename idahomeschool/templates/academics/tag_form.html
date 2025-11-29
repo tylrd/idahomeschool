@@ -9,8 +9,207 @@
     <h3 class="mb-0">{% if tag %}Edit Tag{% else %}Create Tag{% endif %}</h3>
   </div>
   <div class="card-body">
-    {% crispy form %}
-    <a href="{% url 'academics:tag_list' %}" class="btn btn-secondary">Cancel</a>
+    <form method="post">
+      {% csrf_token %}
+
+      {# Tag Name Field #}
+      <div class="mb-3">
+        <label for="id_name" class="form-label">Tag Name *</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+          <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      {# Color Selection #}
+      <div class="mb-3">
+        <label class="form-label">Color *</label>
+
+        {# Color Palette Selection #}
+        {% if palette_colors %}
+        <div class="mb-3">
+          <p class="text-muted small mb-2">
+            <i class="bi bi-palette"></i> Pick from your color palette:
+          </p>
+          <div class="row g-2" id="palette-color-grid">
+            {% for palette_color in palette_colors %}
+            <div class="col-auto">
+              <button
+                type="button"
+                class="btn btn-outline-secondary palette-color-btn"
+                data-color="{{ palette_color.color }}"
+                onclick="selectPaletteColor('{{ palette_color.color }}')"
+                style="width: 50px; height: 50px; background-color: {{ palette_color.color }}; border: 2px solid #dee2e6;"
+                title="{{ palette_color.name|default:palette_color.color }}"
+              >
+                {% if form.color.value == palette_color.color %}
+                <i class="bi bi-check-lg text-white" style="text-shadow: 0 0 3px rgba(0,0,0,0.5);"></i>
+                {% endif %}
+              </button>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="mt-2">
+            <a href="{% url 'academics:color_palette_list' %}" class="btn btn-sm btn-link">
+              <i class="bi bi-gear"></i> Manage Color Palette
+            </a>
+          </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info mb-3">
+          <i class="bi bi-info-circle"></i>
+          You don't have any colors in your palette yet.
+          <a href="{% url 'academics:color_palette_list' %}" class="alert-link">Add colors to your palette</a>
+          or use the color picker below.
+        </div>
+        {% endif %}
+
+        {# Manual Color Input #}
+        <div class="mb-2">
+          <p class="text-muted small mb-2">
+            <i class="bi bi-eyedropper"></i> Or choose a custom color:
+          </p>
+          <div class="input-group">
+            <input
+              type="color"
+              class="form-control form-control-color"
+              id="id_color_picker"
+              value="{{ form.color.value|default:'#007bff' }}"
+              onchange="updateColorFromPicker()"
+              title="Pick a color"
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="id_color_hex"
+              name="color"
+              placeholder="#007bff"
+              maxlength="7"
+              pattern="^#[0-9A-Fa-f]{6}$"
+              value="{{ form.color.value|default:'#007bff' }}"
+              required
+              oninput="updatePickerFromHex()"
+            >
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              onclick="randomPaletteColor()"
+              title="Random color from palette"
+            >
+              <i class="bi bi-shuffle"></i> Random
+            </button>
+          </div>
+          {% if form.color.errors %}
+            <div class="invalid-feedback d-block">{{ form.color.errors.0 }}</div>
+          {% endif %}
+          <div class="form-text">Enter a hex color code (e.g., #007bff) or use the color picker</div>
+        </div>
+
+        {# Color Preview #}
+        <div class="mt-3">
+          <label class="form-label small">Preview:</label>
+          <div class="d-flex align-items-center gap-2">
+            <div>
+              <span class="badge" id="color-preview-badge" style="background-color: {{ form.color.value|default:'#007bff' }}; font-size: 1rem; padding: 0.5rem 1rem;">
+                {{ form.name.value|default:'Sample Tag' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save"></i> Save Tag
+        </button>
+        <a href="{% url 'academics:tag_list' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
   </div>
 </div>
+
+<script>
+  const paletteColors = [
+    {% for palette_color in palette_colors %}
+    "{{ palette_color.color }}"{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  function selectPaletteColor(color) {
+    document.getElementById('id_color_hex').value = color;
+    document.getElementById('id_color_picker').value = color;
+    updatePreview(color);
+    updatePaletteSelection(color);
+  }
+
+  function updateColorFromPicker() {
+    const color = document.getElementById('id_color_picker').value;
+    document.getElementById('id_color_hex').value = color;
+    updatePreview(color);
+    updatePaletteSelection(color);
+  }
+
+  function updatePickerFromHex() {
+    const hex = document.getElementById('id_color_hex').value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+      document.getElementById('id_color_picker').value = hex;
+      updatePreview(hex);
+      updatePaletteSelection(hex);
+    }
+  }
+
+  function randomPaletteColor() {
+    if (paletteColors.length > 0) {
+      const randomColor = paletteColors[Math.floor(Math.random() * paletteColors.length)];
+      selectPaletteColor(randomColor);
+    }
+  }
+
+  function updatePreview(color) {
+    const previewBox = document.getElementById('color-preview-box');
+    const previewBadge = document.getElementById('color-preview-badge');
+
+    if (previewBox) {
+      previewBox.style.backgroundColor = color;
+    }
+    if (previewBadge) {
+      previewBadge.style.backgroundColor = color;
+    }
+  }
+
+  function updatePaletteSelection(color) {
+    // Remove check marks from all buttons
+    document.querySelectorAll('.palette-color-btn').forEach(btn => {
+      btn.innerHTML = '';
+    });
+
+    // Add check mark to matching button
+    const matchingBtn = document.querySelector(`.palette-color-btn[data-color="${color}"]`);
+    if (matchingBtn) {
+      matchingBtn.innerHTML = '<i class="bi bi-check-lg text-white" style="text-shadow: 0 0 3px rgba(0,0,0,0.5);"></i>';
+    }
+  }
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('id_name');
+    const colorHexInput = document.getElementById('id_color_hex');
+    const previewBadge = document.getElementById('color-preview-badge');
+
+    // Update preview when tag name changes
+    if (nameInput && previewBadge) {
+      nameInput.addEventListener('input', function() {
+        const tagName = this.value || 'Sample Tag';
+        previewBadge.textContent = tagName;
+      });
+    }
+
+    // Initialize preview
+    if (colorHexInput) {
+      const currentColor = colorHexInput.value || '#007bff';
+      updatePreview(currentColor);
+      updatePaletteSelection(currentColor);
+    }
+  });
+</script>
 {% endblock academics_content %}

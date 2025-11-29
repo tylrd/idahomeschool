@@ -1,0 +1,112 @@
+{% extends "academics/base.html" %}
+
+{% block title %}Import Colors{% endblock %}
+
+{% block academics_content %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="mb-0">Import Colors</h3>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-info">
+      <h5><i class="bi bi-info-circle"></i> Instructions</h5>
+      <ul class="mb-0">
+        <li>Paste hex color codes (comma-separated or one per line)</li>
+        <li>Hex codes can start with or without the # symbol</li>
+        <li>Example: <code>27213c,5a352a,a33b20,a47963,a6a57a</code></li>
+        <li>Duplicate colors will be skipped automatically</li>
+      </ul>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label for="id_palette_choice" class="form-label">{{ form.palette_choice.label }} *</label>
+        {{ form.palette_choice }}
+        {% if form.palette_choice.help_text %}
+        <div class="form-text">{{ form.palette_choice.help_text }}</div>
+        {% endif %}
+        {% if form.palette_choice.errors %}
+        <div class="invalid-feedback d-block">
+          {{ form.palette_choice.errors }}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3" id="palette-name-container">
+        <label for="id_palette_name" class="form-label">{{ form.palette_name.label }} *</label>
+        {{ form.palette_name }}
+        {% if form.palette_name.help_text %}
+        <div class="form-text">{{ form.palette_name.help_text }}</div>
+        {% endif %}
+        {% if form.palette_name.errors %}
+        <div class="invalid-feedback d-block">
+          {{ form.palette_name.errors }}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label for="id_csv_content" class="form-label">{{ form.csv_content.label }} *</label>
+        {{ form.csv_content }}
+        {% if form.csv_content.help_text %}
+        <div class="form-text">{{ form.csv_content.help_text }}</div>
+        {% endif %}
+        {% if form.csv_content.errors %}
+        <div class="invalid-feedback d-block">
+          {{ form.csv_content.errors }}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3" id="mark-active-container">
+        <div class="form-check">
+          {{ form.mark_as_active }}
+          <label class="form-check-label" for="id_mark_as_active">
+            {{ form.mark_as_active.label }}
+          </label>
+          {% if form.mark_as_active.help_text %}
+          <div class="form-text">{{ form.mark_as_active.help_text }}</div>
+          {% endif %}
+        </div>
+        {% if form.mark_as_active.errors %}
+        <div class="invalid-feedback d-block">
+          {{ form.mark_as_active.errors }}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Live Preview Container -->
+      <div id="color-preview"
+           hx-post="{% url 'academics:color_palette_preview_htmx' %}"
+           hx-trigger="keyup changed delay:500ms from:#id_csv_content"
+           hx-include="#id_csv_content">
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">
+          <i class="bi bi-download"></i> Import Colors
+        </button>
+        <a href="{% url 'academics:color_palette_list' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Show/hide palette name and mark as active based on selection
+  const paletteChoice = document.getElementById('id_palette_choice');
+  const paletteNameContainer = document.getElementById('palette-name-container');
+  const markActiveContainer = document.getElementById('mark-active-container');
+
+  function updateVisibility() {
+    const isNewPalette = paletteChoice.value === 'new';
+    paletteNameContainer.style.display = isNewPalette ? 'block' : 'none';
+    markActiveContainer.style.display = isNewPalette ? 'block' : 'none';
+  }
+
+  paletteChoice.addEventListener('change', updateVisibility);
+  updateVisibility(); // Initial state
+</script>
+{% endblock academics_content %}

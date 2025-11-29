@@ -88,6 +88,16 @@
         </div>
         {% endif %}
 
+        <!-- Tag Filter UI -->
+        <div class="mb-2">
+          <label class="form-label small mb-1">Filter by Tags:</label>
+          <div id="tag-filter-container">
+            {% load static %}
+            {% comment %}Tags will be loaded here via JavaScript{% endcomment %}
+            <p class="text-muted small mb-0">Loading tags...</p>
+          </div>
+        </div>
+
         <input
           type="text"
           id="resource-search-input"
@@ -96,8 +106,8 @@
           placeholder="Search resources by title, author, or publisher..."
           hx-get="{% url 'academics:resource_search_htmx' %}?field_name=resources"
           hx-trigger="keyup changed delay:300ms, load"
-          hx-target="#resource-search-results"
-          hx-include="#selected-resources-container"
+          hx-target="#resource-search-results-resources"
+          hx-include="#selected-resources-container, #tag-filter-inputs"
         >
 
         <!-- Hidden container for selected resource IDs -->
@@ -105,19 +115,24 @@
           <input type="hidden" name="selected_ids" value="{% if form.instance.pk %}{% for resource in form.instance.resources.all %}{{ resource.id }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}" id="selected-ids-input">
         </div>
 
-        <div id="resource-search-results" class="border rounded p-2" style="max-height: 400px; overflow-y: auto;">
+        <!-- Hidden container for tag filter IDs -->
+        <div id="tag-filter-inputs" style="display: none;"></div>
+
+        <div id="resource-search-results-resources" class="border rounded p-2" style="max-height: 400px; overflow-y: auto;">
           <p class="text-muted">Type to search for resources...</p>
         </div>
-        <small class="text-muted">Search and select resources for this course.</small>
+        <small class="text-muted">Search and select resources for this course. Use tag filters to narrow results.</small>
         {% if form.resources.errors %}
           <div class="invalid-feedback d-block">{{ form.resources.errors }}</div>
         {% endif %}
       </div>
 
       <script>
+        let selectedTagIds = [];
+
         // Update selected IDs when checkboxes change
         document.addEventListener('htmx:afterSwap', function(event) {
-          if (event.detail.target.id === 'resource-search-results') {
+          if (event.detail.target.id === 'resource-search-results-resources') {
             const checkboxes = document.querySelectorAll('.resource-checkbox');
             checkboxes.forEach(checkbox => {
               checkbox.addEventListener('change', updateSelectedIds);
@@ -132,13 +147,18 @@
 
           // Trigger another search to update checked states
           const searchInput = document.getElementById('resource-search-input');
-          if (searchInput.value) {
-            htmx.trigger(searchInput, 'keyup');
-          }
+          triggerResourceSearch();
+        }
+
+        function triggerResourceSearch() {
+          const searchInput = document.getElementById('resource-search-input');
+          htmx.trigger(searchInput, 'keyup');
         }
 
         // Auto-populate resources when course template is selected
         document.addEventListener('DOMContentLoaded', function() {
+          loadTagFilters();
+
           const templateSelect = document.querySelector('[data-template-select]');
           if (templateSelect) {
             templateSelect.addEventListener('change', function() {
@@ -154,7 +174,7 @@
 
                 // Use HTMX trigger to force a reload with the new selected_ids
                 htmx.ajax('GET', searchInput.getAttribute('hx-get'), {
-                  target: '#resource-search-results',
+                  target: '#resource-search-results-resources',
                   swap: 'innerHTML',
                   values: {
                     search: searchInput.value,
@@ -166,7 +186,7 @@
                 // Clear selections if no template selected
                 document.getElementById('selected-ids-input').value = '';
                 htmx.ajax('GET', document.getElementById('resource-search-input').getAttribute('hx-get'), {
-                  target: '#resource-search-results',
+                  target: '#resource-search-results-resources',
                   swap: 'innerHTML',
                   values: {
                     search: '',
@@ -177,7 +197,118 @@
               }
             });
           }
+
+          // Use event delegation for clear tag filters button
+          document.getElementById('tag-filter-container').addEventListener('click', function(e) {
+            if (e.target.closest('#clear-tag-filters')) {
+              selectedTagIds = [];
+              updateTagFilterInputs();
+              updateTagFilterDisplay();
+              triggerResourceSearch();
+            }
+          });
         });
+
+        function loadTagFilters() {
+          // Fetch all tags for this user
+          fetch('/academics/tags/autocomplete/?search=', {
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            renderTagFilters(data.tags || []);
+          })
+          .catch(error => {
+            console.error('Error loading tags:', error);
+          });
+        }
+
+        function renderTagFilters(tags) {
+          const container = document.getElementById('tag-filter-container');
+          let html = '';
+
+          if (tags.length === 0) {
+            html = '<p class="text-muted small mb-0">No tags available. <a href="/academics/tags/create/">Create a tag</a> to filter resources.</p>';
+          } else {
+            tags.forEach(tag => {
+              html += `
+                <button type="button"
+                        class="btn btn-sm btn-outline-primary me-1 mb-1 tag-filter-btn"
+                        data-tag-id="${tag.id}"
+                        style="border-color: ${tag.color};"
+                        onclick="toggleTagFilter(${tag.id}, '${escapeHtml(tag.name)}', '${tag.color}')">
+                  <span class="badge" style="background-color: ${tag.color};">${escapeHtml(tag.name)}</span>
+                </button>
+              `;
+            });
+
+            html += `
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="clear-tag-filters">
+                <i class="bi bi-x-circle"></i> Clear Filters
+              </button>
+            `;
+          }
+
+          container.innerHTML = html;
+        }
+
+        function toggleTagFilter(tagId, tagName, tagColor) {
+          const index = selectedTagIds.indexOf(tagId);
+
+          if (index > -1) {
+            // Remove tag from filters
+            selectedTagIds.splice(index, 1);
+          } else {
+            // Add tag to filters
+            selectedTagIds.push(tagId);
+          }
+
+          updateTagFilterInputs();
+          updateTagFilterDisplay();
+          triggerResourceSearch();
+        }
+
+        function clearTagFilters() {
+          selectedTagIds = [];
+          updateTagFilterInputs();
+          updateTagFilterDisplay();
+          triggerResourceSearch();
+        }
+
+        function updateTagFilterInputs() {
+          const container = document.getElementById('tag-filter-inputs');
+          container.innerHTML = '';
+
+          selectedTagIds.forEach(tagId => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'tag_ids[]';
+            input.value = tagId;
+            container.appendChild(input);
+          });
+        }
+
+        function updateTagFilterDisplay() {
+          const buttons = document.querySelectorAll('.tag-filter-btn');
+          buttons.forEach(button => {
+            const tagId = parseInt(button.getAttribute('data-tag-id'));
+            if (selectedTagIds.includes(tagId)) {
+              button.classList.remove('btn-outline-primary');
+              button.classList.add('btn-primary');
+            } else {
+              button.classList.remove('btn-primary');
+              button.classList.add('btn-outline-primary');
+            }
+          });
+        }
+
+        function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
       </script>
 
       <button type="submit" class="btn btn-primary">Save Course</button>

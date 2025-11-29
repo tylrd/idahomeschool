@@ -55,17 +55,30 @@ from .grades import GradeLevelUpdateView
 from .grades import create_pk12_grades
 
 # Library views (Resources and Tags)
+from .library import color_palette_import_csv
+from .library import color_palette_preview_htmx
+from .library import ColorCreateView
+from .library import ColorDeleteView
+from .library import ColorPaletteCreateView
+from .library import ColorPaletteDeleteView
+from .library import ColorPaletteListView
+from .library import ColorPaletteUpdateView
+from .library import ColorUpdateView
+from .library import remove_color_from_palette
+from .library import resource_create_modal_htmx
+from .library import resource_search_htmx
 from .library import ResourceCreateView
 from .library import ResourceDeleteView
 from .library import ResourceDetailView
 from .library import ResourceListView
 from .library import ResourceUpdateView
+from .library import set_active_palette
+from .library import tag_autocomplete_htmx
 from .library import TagCreateView
 from .library import TagDeleteView
 from .library import TagDetailView
 from .library import TagListView
 from .library import TagUpdateView
-from .library import resource_search_htmx
 
 # SchoolYear views
 from .schoolyears import SchoolYearCreateView
@@ -88,6 +101,16 @@ __all__ = [
     "AttendanceCalendarView",
     "AttendanceReportPDFView",
     "AttendanceReportView",
+    # Color Palette
+    "color_palette_import_csv",
+    "color_palette_preview_htmx",
+    "ColorCreateView",
+    "ColorDeleteView",
+    "ColorPaletteCreateView",
+    "ColorPaletteDeleteView",
+    "ColorPaletteListView",
+    "ColorPaletteUpdateView",
+    "ColorUpdateView",
     "CourseCreateView",
     "CourseDeleteView",
     "CourseDetailView",
@@ -161,5 +184,9 @@ __all__ = [
     "attendance_save_course_notes",
     "create_pk12_grades",
     "filter_courses_by_student",
+    "remove_color_from_palette",
+    "resource_create_modal_htmx",
     "resource_search_htmx",
+    "set_active_palette",
+    "tag_autocomplete_htmx",
 ]

@@ -1,3 +1,5 @@
+import random
+
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
@@ -217,6 +219,93 @@ class StudentGradeYear(models.Model):
         return reverse("academics:student_detail", kwargs={"pk": self.student.pk})
 
 
+class ColorPalette(models.Model):
+    """Represents a named collection of colors for tag organization."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="color_palettes",
+    )
+    name = models.CharField(max_length=100)
+    is_active = models.BooleanField(
+        default=False,
+        help_text="Only colors from the active palette are used for random tag colors",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-is_active", "name"]
+        verbose_name = "Color Palette"
+        verbose_name_plural = "Color Palettes"
+        unique_together = [["user", "name"]]
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("academics:color_palette_list")
+
+
+class Color(models.Model):
+    """Represents a color in a user's custom color palette for tags."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="colors",
+    )
+    name = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Optional name for the color (e.g., 'Ocean Blue')",
+    )
+    color = models.CharField(
+        max_length=7,
+        help_text="Hex color code (e.g., #007bff)",
+    )
+    palettes = models.ManyToManyField(
+        ColorPalette,
+        blank=True,
+        related_name="colors",
+        help_text="Palettes this color belongs to",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        verbose_name = "Color"
+        verbose_name_plural = "Colors"
+
+    def __str__(self):
+        if self.name:
+            return f"{self.name} ({self.color})"
+        return self.color
+
+    def get_absolute_url(self):
+        return reverse("academics:color_palette_list")
+
+    @staticmethod
+    def get_default_colors():
+        """Returns a list of default color palette colors."""
+        return [
+            "#007bff",  # Blue
+            "#28a745",  # Green
+            "#dc3545",  # Red
+            "#ffc107",  # Yellow
+            "#17a2b8",  # Cyan
+            "#6f42c1",  # Purple
+            "#fd7e14",  # Orange
+            "#e83e8c",  # Pink
+            "#20c997",  # Teal
+            "#6c757d",  # Gray
+            "#343a40",  # Dark
+            "#f8f9fa",  # Light Gray
+        ]
+
+
 class Tag(models.Model):
     """Represents a tag for organizing resources."""
 
@@ -245,6 +334,38 @@ class Tag(models.Model):
 
     def get_absolute_url(self):
         return reverse("academics:tag_detail", kwargs={"pk": self.pk})
+
+    @staticmethod
+    def get_palette_colors_for_user(user):
+        """Get colors from user's active palette, or all colors if no active palette."""
+        # Try to get the active palette
+        active_palette = ColorPalette.objects.filter(
+            user=user,
+            is_active=True,
+        ).first()
+
+        if active_palette:
+            # Get colors from the active palette
+            palette_colors = list(
+                active_palette.colors.values_list("color", flat=True),
+            )
+        else:
+            # If no active palette, use all user's colors
+            palette_colors = list(
+                Color.objects.filter(user=user).values_list("color", flat=True),
+            )
+
+        # If still no colors, use defaults
+        if not palette_colors:
+            palette_colors = Color.get_default_colors()
+
+        return palette_colors
+
+    @staticmethod
+    def get_random_color_from_palette(user):
+        """Get a random color from the user's active colors."""
+        palette_colors = Tag.get_palette_colors_for_user(user)
+        return random.choice(palette_colors)
 
 
 class Resource(models.Model):

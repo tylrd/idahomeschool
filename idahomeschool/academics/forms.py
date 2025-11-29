@@ -1,3 +1,5 @@
+import json
+
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Column
 from crispy_forms.layout import Layout
@@ -6,6 +8,7 @@ from crispy_forms.layout import Submit
 from django import forms
 from django.forms import modelformset_factory
 
+from .models import ColorPalette
 from .models import Course
 from .models import CourseEnrollment
 from .models import CourseNote
@@ -61,6 +64,10 @@ class TagForm(forms.ModelForm):
     class Meta:
         model = Tag
         fields = ["name", "color"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "color": forms.TextInput(attrs={"class": "form-control"}),
+        }
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
@@ -85,6 +92,12 @@ class TagForm(forms.ModelForm):
 class ResourceForm(forms.ModelForm):
     """Form for creating and updating Resource instances."""
 
+    # Hidden field for tag data from tag selector component
+    tags_data = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False,
+    )
+
     class Meta:
         model = Resource
         fields = [
@@ -94,15 +107,27 @@ class ResourceForm(forms.ModelForm):
             "isbn",
             "resource_type",
             "description",
-            "tags",
         ]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control"}),
+            "author": forms.TextInput(attrs={"class": "form-control"}),
+            "publisher": forms.TextInput(attrs={"class": "form-control"}),
+            "isbn": forms.TextInput(attrs={"class": "form-control"}),
+            "resource_type": forms.Select(attrs={"class": "form-select"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+        }
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-        # Filter tags to only show those belonging to the user
-        if self.user:
-            self.fields["tags"].queryset = Tag.objects.filter(user=self.user)
+
+        # Initialize tags_data with existing tags if editing
+        if self.instance and self.instance.pk:
+            existing_tags = [
+                {"id": tag.id, "name": tag.name, "color": tag.color}
+                for tag in self.instance.tags.all()
+            ]
+            self.initial["tags_data"] = json.dumps(existing_tags)
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
@@ -117,7 +142,7 @@ class ResourceForm(forms.ModelForm):
                 Column("resource_type", css_class="col-md-6"),
             ),
             "description",
-            "tags",
+            # tags field will be rendered manually in template
             Submit("submit", "Save Resource", css_class="btn btn-primary"),
         )
 
@@ -127,7 +152,50 @@ class ResourceForm(forms.ModelForm):
             instance.user = self.user
         if commit:
             instance.save()
-            self.save_m2m()  # Save many-to-many relationships (tags)
+
+            # Process tags from tag selector
+            tags_data = self.cleaned_data.get("tags_data", "[]")
+            try:
+                tags_list = json.loads(tags_data)
+            except (json.JSONDecodeError, TypeError):
+                tags_list = []
+
+            # Clear existing tags
+            instance.tags.clear()
+
+            # Process each tag
+            for tag_data in tags_list:
+                tag_id = tag_data.get("id")
+                tag_name = tag_data.get("name", "").strip()
+
+                if not tag_name:
+                    continue
+
+                # If ID is positive, it's an existing tag
+                if tag_id and tag_id > 0:
+                    try:
+                        tag = Tag.objects.get(id=tag_id, user=self.user)
+                        instance.tags.add(tag)
+                    except Tag.DoesNotExist:
+                        # Tag doesn't exist or doesn't belong to user, create new one
+                        tag = Tag.objects.create(
+                            user=self.user,
+                            name=tag_name,
+                            color=Tag.get_random_color_from_palette(self.user),
+                        )
+                        instance.tags.add(tag)
+                else:
+                    # Negative ID or no ID means it's a new tag
+                    # Check if tag with this name already exists for this user
+                    tag, _created = Tag.objects.get_or_create(
+                        user=self.user,
+                        name=tag_name,
+                        defaults={
+                            "color": Tag.get_random_color_from_palette(self.user),
+                        },
+                    )
+                    instance.tags.add(tag)
+
         return instance
 
 
@@ -584,3 +652,67 @@ class StudentGradeYearForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+class ColorPaletteImportForm(forms.Form):
+    """Form for importing colors into a palette."""
+
+    PALETTE_CHOICE_NEW = "new"
+
+    csv_content = forms.CharField(
+        label="Color Codes",
+        help_text=(
+            "Paste hex color codes "
+            "(comma-separated or one per line, with or without # prefix)"
+        ),
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 5,
+                "placeholder": "27213c,5a352a,a33b20,a47963,a6a57a",
+            },
+        ),
+    )
+    palette_choice = forms.ChoiceField(
+        label="Add to Palette",
+        required=True,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    palette_name = forms.CharField(
+        label="New Palette Name",
+        required=False,
+        help_text="Name for the new color palette (e.g., 'Ocean Blues', 'Earth Tones')",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    mark_as_active = forms.BooleanField(
+        required=False,
+        initial=False,
+        label="Set as active palette",
+        help_text="Use this palette for random tag colors (only for new palettes)",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user:
+            # Build choices: existing palettes + "Create new"
+            palette_choices = [(self.PALETTE_CHOICE_NEW, "Create new palette")]
+            palette_choices.extend([
+                (str(palette.id), palette.name)
+                for palette in ColorPalette.objects.filter(user=user)
+            ])
+
+            self.fields["palette_choice"].choices = palette_choices
+
+    def clean(self):
+        cleaned_data = super().clean()
+        palette_choice = cleaned_data.get("palette_choice")
+        palette_name = cleaned_data.get("palette_name")
+
+        if palette_choice == self.PALETTE_CHOICE_NEW and not palette_name:
+            self.add_error(
+                "palette_name",
+                "Palette name is required when creating a new palette",
+            )
+
+        return cleaned_data

@@ -1,0 +1,191 @@
+{% extends "academics/base.html" %}
+{% load static %}
+
+{% block title %}Color Palettes{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Color Palettes</h1>
+  <div class="btn-group" role="group">
+    <a href="{% url 'academics:color_create' %}" class="btn btn-success">
+      <i class="bi bi-plus-circle"></i> Add Color
+    </a>
+    <a href="{% url 'academics:color_palette_import' %}" class="btn btn-outline-success">
+      <i class="bi bi-clipboard-plus"></i> Import Palette
+    </a>
+    <a href="{% url 'academics:color_palette_create' %}" class="btn btn-outline-primary">
+      <i class="bi bi-folder-plus"></i> New Palette
+    </a>
+  </div>
+</div>
+
+<div class="alert alert-info">
+  <i class="bi bi-info-circle"></i>
+  <strong>About Color Palettes:</strong> Organize your colors into palettes and set one as active. New tags will randomly use colors from your active palette.
+</div>
+
+{% if palettes %}
+<!-- Palette Tabs -->
+<ul class="nav nav-tabs mb-3" id="paletteTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="all-colors-tab" data-bs-toggle="tab" data-bs-target="#all-colors" type="button" role="tab">
+      All Colors ({{ all_colors_count }})
+    </button>
+  </li>
+  {% for palette in palettes %}
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {% if palette.is_active %}text-success fw-bold{% endif %}"
+            id="palette-{{ palette.id }}-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#palette-{{ palette.id }}"
+            type="button"
+            role="tab">
+      {{ palette.name }}
+      {% if palette.is_active %}<i class="bi bi-check-circle-fill text-success ms-1"></i>{% endif %}
+      ({{ palette.colors.count }})
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="paletteTabContent">
+  <!-- All Colors Tab -->
+  <div class="tab-pane fade show active" id="all-colors" role="tabpanel">
+    {% if all_colors %}
+    <div class="row g-3">
+      {% for color in all_colors %}
+      <div class="col-md-3 col-sm-4 col-6">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <div class="mb-3" style="height: 80px; background-color: {{ color.color }}; border-radius: 8px; border: 1px solid #dee2e6;"></div>
+            <h5 class="card-title">{{ color.color }}</h5>
+            {% if color.name %}
+            <p class="card-text text-muted small">{{ color.name }}</p>
+            {% endif %}
+            {% if color.palettes.all %}
+            <div class="mb-2">
+              {% for palette in color.palettes.all %}
+              <span class="badge bg-secondary small">{{ palette.name }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div class="btn-group btn-group-sm mt-2" role="group">
+              <a href="{% url 'academics:color_update' color.pk %}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Edit
+              </a>
+              <a href="{% url 'academics:color_delete' color.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Delete
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+      <h4>No colors yet</h4>
+      <p>Import a palette to get started with colors.</p>
+      <a href="{% url 'academics:color_palette_import' %}" class="btn btn-primary">Import Palette</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Palette Tabs -->
+  {% for palette in palettes %}
+  <div class="tab-pane fade" id="palette-{{ palette.id }}" role="tabpanel">
+    <!-- Palette Management Header -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h4 class="mb-1">
+              {{ palette.name }}
+              {% if palette.is_active %}
+              <span class="badge bg-success ms-2">
+                <i class="bi bi-check-circle"></i> Active Palette
+              </span>
+              {% endif %}
+            </h4>
+            <p class="text-muted mb-0">
+              {{ palette.colors.count }} color(s) in this palette
+            </p>
+          </div>
+          <div class="col-md-4 text-end">
+            <div class="btn-group btn-group-sm" role="group">
+              {% if not palette.is_active %}
+              <a href="{% url 'academics:color_palette_set_active' palette.pk %}" class="btn btn-success">
+                <i class="bi bi-check-circle"></i> Set Active
+              </a>
+              {% endif %}
+              <a href="{% url 'academics:color_palette_update' palette.pk %}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Edit
+              </a>
+              <a href="{% url 'academics:color_palette_delete' palette.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Delete
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Colors in this Palette -->
+    {% if palette.colors.all %}
+    <div class="row g-3">
+      {% for color in palette.colors.all %}
+      <div class="col-md-3 col-sm-4 col-6">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <div class="mb-3" style="height: 80px; background-color: {{ color.color }}; border-radius: 8px; border: 1px solid #dee2e6;"></div>
+            <h5 class="card-title">{{ color.color }}</h5>
+            {% if color.name %}
+            <p class="card-text text-muted small">{{ color.name }}</p>
+            {% endif %}
+            <div class="d-grid gap-1 mt-2">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="{% url 'academics:color_update' color.pk %}" class="btn btn-outline-primary">
+                  <i class="bi bi-pencil"></i> Edit
+                </a>
+                <a href="{% url 'academics:color_delete' color.pk %}" class="btn btn-outline-danger">
+                  <i class="bi bi-trash"></i> Delete
+                </a>
+              </div>
+              <a href="{% url 'academics:remove_color_from_palette' palette.pk color.pk %}" class="btn btn-outline-warning btn-sm">
+                <i class="bi bi-x-circle"></i> Remove from Palette
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i>
+      <strong>No colors in this palette yet.</strong>
+      This palette was created but doesn't have any colors assigned to it.
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<!-- No Palettes Yet -->
+<div class="alert alert-warning">
+  <h4>No color palettes</h4>
+  <p>Create or import a color palette to get started.</p>
+  <div class="btn-group" role="group">
+    <a href="{% url 'academics:color_palette_import' %}" class="btn btn-primary">
+      <i class="bi bi-clipboard-plus"></i> Import Palette
+    </a>
+    <a href="{% url 'academics:color_palette_create' %}" class="btn btn-outline-primary">
+      <i class="bi bi-folder-plus"></i> Create Empty Palette
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock academics_content %}

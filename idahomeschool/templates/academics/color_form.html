@@ -1,0 +1,80 @@
+{% extends "academics/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Edit Color{% else %}Add Color{% endif %}{% endblock %}
+
+{% block academics_content %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="mb-0">{% if form.instance.pk %}Edit Color{% else %}Add Color{% endif %}</h3>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label for="id_color" class="form-label">Color *</label>
+        <div class="input-group">
+          <input type="color" class="form-control form-control-color" id="id_color" name="color" value="{{ form.color.value|default:'#007bff' }}" required>
+          <input type="text" class="form-control" id="id_color_hex" placeholder="#007bff" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$" value="{{ form.color.value|default:'#007bff' }}">
+        </div>
+        <div class="form-text">Pick a color or enter a hex color code (e.g., #007bff)</div>
+      </div>
+
+      <div class="mb-3">
+        <label for="id_name" class="form-label">Name (optional)</label>
+        <input type="text" class="form-control" id="id_name" name="name" value="{{ form.name.value|default:'' }}" placeholder="e.g., Ocean Blue" maxlength="50">
+        <div class="form-text">Optional name to help you remember this color</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Add to Palettes (optional)</label>
+        <div class="form-text mb-2">Select which palette(s) this color should be added to</div>
+        {% for palette in form.fields.palettes.queryset %}
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="palettes" value="{{ palette.pk }}" id="palette_{{ palette.pk }}"
+                 {% if form.instance.pk and palette in form.instance.palettes.all %}checked{% endif %}>
+          <label class="form-check-label" for="palette_{{ palette.pk }}">
+            {{ palette.name }}
+            {% if palette.is_active %}
+            <span class="badge bg-success ms-1">Active</span>
+            {% endif %}
+          </label>
+        </div>
+        {% endfor %}
+        {% if not form.fields.palettes.queryset.exists %}
+        <div class="alert alert-info mt-2">
+          <i class="bi bi-info-circle"></i>
+          No palettes available. <a href="{% url 'academics:color_palette_create' %}">Create a palette</a> first.
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">{% if form.instance.pk %}Save Changes{% else %}Add Color{% endif %}</button>
+        <a href="{% url 'academics:color_palette_list' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Sync color picker with hex input
+  const colorPicker = document.getElementById('id_color');
+  const colorHex = document.getElementById('id_color_hex');
+
+  colorPicker.addEventListener('input', function() {
+    colorHex.value = this.value;
+  });
+
+  colorHex.addEventListener('input', function() {
+    const hex = this.value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+      colorPicker.value = hex;
+    }
+  });
+
+  // Initialize hex input with color picker value
+  colorHex.value = colorPicker.value;
+</script>
+{% endblock academics_content %}

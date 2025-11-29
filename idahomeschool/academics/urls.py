@@ -51,6 +51,11 @@ urlpatterns = [
         views.resource_search_htmx,
         name="resource_search_htmx",
     ),
+    path(
+        "resources/create-modal/",
+        views.resource_create_modal_htmx,
+        name="resource_create_modal_htmx",
+    ),
     # Tag URLs
     path("tags/", views.TagListView.as_view(), name="tag_list"),
     path("tags/create/", views.TagCreateView.as_view(), name="tag_create"),
@@ -64,6 +69,68 @@ urlpatterns = [
         "tags/<int:pk>/delete/",
         views.TagDeleteView.as_view(),
         name="tag_delete",
+    ),
+    path(
+        "tags/autocomplete/",
+        views.tag_autocomplete_htmx,
+        name="tag_autocomplete_htmx",
+    ),
+    # Color Palette URLs
+    path(
+        "settings/color-palette/",
+        views.ColorPaletteListView.as_view(),
+        name="color_palette_list",
+    ),
+    path(
+        "settings/color-palette/add/",
+        views.ColorPaletteCreateView.as_view(),
+        name="color_palette_create",
+    ),
+    path(
+        "settings/color-palette/import/",
+        views.color_palette_import_csv,
+        name="color_palette_import",
+    ),
+    path(
+        "settings/color-palette/preview/",
+        views.color_palette_preview_htmx,
+        name="color_palette_preview_htmx",
+    ),
+    path(
+        "settings/color-palette/<int:pk>/update/",
+        views.ColorPaletteUpdateView.as_view(),
+        name="color_palette_update",
+    ),
+    path(
+        "settings/color-palette/<int:pk>/delete/",
+        views.ColorPaletteDeleteView.as_view(),
+        name="color_palette_delete",
+    ),
+    path(
+        "settings/color-palette/<int:pk>/set-active/",
+        views.set_active_palette,
+        name="color_palette_set_active",
+    ),
+    path(
+        "settings/color-palette/<int:palette_pk>/remove-color/<int:color_pk>/",
+        views.remove_color_from_palette,
+        name="remove_color_from_palette",
+    ),
+    # Color URLs (individual colors)
+    path(
+        "settings/colors/add/",
+        views.ColorCreateView.as_view(),
+        name="color_create",
+    ),
+    path(
+        "settings/colors/<int:pk>/update/",
+        views.ColorUpdateView.as_view(),
+        name="color_update",
+    ),
+    path(
+        "settings/colors/<int:pk>/delete/",
+        views.ColorDeleteView.as_view(),
+        name="color_delete",
     ),
     # GradeLevel URLs
     path("grade-levels/", views.GradeLevelListView.as_view(), name="gradelevel_list"),
