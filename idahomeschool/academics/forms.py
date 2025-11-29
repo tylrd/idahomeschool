@@ -154,7 +154,7 @@ class StudentForm(forms.ModelForm):
         # Filter school_years to only show those belonging to the user
         if self.user:
             self.fields["school_years"].queryset = SchoolYear.objects.filter(
-                user=self.user
+                user=self.user,
             )
 
         self.helper = FormHelper()
@@ -198,7 +198,7 @@ class CourseTemplateForm(forms.ModelForm):
         # Filter resources to only show those belonging to the user
         if self.user:
             self.fields["suggested_resources"].queryset = Resource.objects.filter(
-                user=self.user
+                user=self.user,
             )
 
         self.helper = FormHelper()
@@ -296,7 +296,7 @@ class CourseEnrollmentForm(forms.ModelForm):
                 user=self.user,
             ).select_related("grade_level")
             self.fields["school_year"].queryset = SchoolYear.objects.filter(
-                user=self.user
+                user=self.user,
             )
 
         # Add HTMX attributes for dynamic course filtering
@@ -442,7 +442,7 @@ class CourseNoteForm(forms.ModelForm):
         fields = ["course", "notes"]
         widgets = {
             "notes": forms.Textarea(
-                attrs={"rows": 4, "placeholder": "What did the student work on today?"}
+                attrs={"rows": 4, "placeholder": "What did the student work on today?"},
             ),
         }
 
@@ -456,7 +456,7 @@ class CourseNoteForm(forms.ModelForm):
             self.fields["course"].queryset = Course.objects.filter(student=self.student)
         elif self.user:
             self.fields["course"].queryset = Course.objects.filter(
-                student__user=self.user
+                student__user=self.user,
             )
 
         self.helper = FormHelper()

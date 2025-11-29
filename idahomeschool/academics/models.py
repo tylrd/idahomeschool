@@ -42,7 +42,7 @@ class SchoolYear(models.Model):
         # Ensure only one active school year per user
         if self.is_active:
             SchoolYear.objects.filter(user=self.user, is_active=True).exclude(
-                pk=self.pk
+                pk=self.pk,
             ).update(is_active=False)
         super().save(*args, **kwargs)
 
@@ -210,8 +210,7 @@ class StudentGradeYear(models.Model):
 
     def __str__(self):
         return (
-            f"{self.student.name} - {self.grade_level.name} "
-            f"({self.school_year.name})"
+            f"{self.student.name} - {self.grade_level.name} ({self.school_year.name})"
         )
 
     def get_absolute_url(self):
@@ -513,10 +512,7 @@ class CourseEnrollment(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f"{self.student.name} - {self.course.name} "
-            f"({self.school_year.name})"
-        )
+        return f"{self.student.name} - {self.course.name} ({self.school_year.name})"
 
     def get_absolute_url(self):
         return reverse("academics:courseenrollment_detail", kwargs={"pk": self.pk})
@@ -623,10 +619,7 @@ class CourseNote(models.Model):
 
     def __str__(self):
         if self.course_enrollment:
-            return (
-                f"{self.course_enrollment.course.name} - "
-                f"{self.daily_log.date}"
-            )
+            return f"{self.course_enrollment.course.name} - {self.daily_log.date}"
         if self.course:
             return f"{self.course.name} - {self.daily_log.date}"
         return f"CourseNote {self.pk}"

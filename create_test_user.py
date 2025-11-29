@@ -2,7 +2,7 @@
 """Create test users for development."""
 
 import os
-import sys
+
 import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
@@ -40,7 +40,7 @@ print("Creating test users for development...\n")
 
 # Admin/superuser
 admin = create_user(
-    username="admin", email="admin@example.com", password="admin123", is_superuser=True
+    username="admin", email="admin@example.com", password="admin123", is_superuser=True,
 )
 
 # Regular test user

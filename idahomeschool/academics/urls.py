@@ -32,7 +32,9 @@ urlpatterns = [
     # Resource Library URLs
     path("library/", views.ResourceListView.as_view(), name="resource_list"),
     path("library/create/", views.ResourceCreateView.as_view(), name="library_create"),
-    path("library/<int:pk>/", views.ResourceDetailView.as_view(), name="resource_detail"),
+    path(
+        "library/<int:pk>/", views.ResourceDetailView.as_view(), name="resource_detail",
+    ),
     path(
         "library/<int:pk>/update/",
         views.ResourceUpdateView.as_view(),
@@ -173,7 +175,7 @@ urlpatterns = [
     path("students/", views.StudentListView.as_view(), name="student_list"),
     path("students/create/", views.StudentCreateView.as_view(), name="student_create"),
     path(
-        "students/<int:pk>/", views.StudentDetailView.as_view(), name="student_detail"
+        "students/<int:pk>/", views.StudentDetailView.as_view(), name="student_detail",
     ),
     path(
         "students/<int:pk>/update/",
@@ -270,7 +272,7 @@ urlpatterns = [
     ),
     path("daily-logs/", views.DailyLogListView.as_view(), name="dailylog_list"),
     path(
-        "daily-logs/create/", views.DailyLogCreateView.as_view(), name="dailylog_create"
+        "daily-logs/create/", views.DailyLogCreateView.as_view(), name="dailylog_create",
     ),
     path(
         "daily-logs/<int:pk>/",

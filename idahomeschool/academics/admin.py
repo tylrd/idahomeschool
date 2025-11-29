@@ -1,19 +1,17 @@
 from django.contrib import admin
 
-from .models import (
-    Course,
-    CourseEnrollment,
-    CourseNote,
-    CourseTemplate,
-    CurriculumResource,
-    DailyLog,
-    GradeLevel,
-    Resource,
-    SchoolYear,
-    Student,
-    StudentGradeYear,
-    Tag,
-)
+from .models import Course
+from .models import CourseEnrollment
+from .models import CourseNote
+from .models import CourseTemplate
+from .models import CurriculumResource
+from .models import DailyLog
+from .models import GradeLevel
+from .models import Resource
+from .models import SchoolYear
+from .models import Student
+from .models import StudentGradeYear
+from .models import Tag
 
 
 class CurriculumResourceInline(admin.TabularInline):
@@ -106,7 +104,14 @@ class GradeLevelAdmin(admin.ModelAdmin):
 class ResourceAdmin(admin.ModelAdmin):
     """Admin for Resource model."""
 
-    list_display = ["title", "author", "publisher", "resource_type", "user", "created_at"]
+    list_display = [
+        "title",
+        "author",
+        "publisher",
+        "resource_type",
+        "user",
+        "created_at",
+    ]
     list_filter = ["resource_type", "created_at", "user", "tags"]
     search_fields = ["title", "author", "publisher", "isbn", "description"]
     filter_horizontal = ["tags"]
@@ -116,7 +121,14 @@ class ResourceAdmin(admin.ModelAdmin):
         (
             "Resource Information",
             {
-                "fields": ["user", "title", "author", "publisher", "isbn", "resource_type"],
+                "fields": [
+                    "user",
+                    "title",
+                    "author",
+                    "publisher",
+                    "isbn",
+                    "resource_type",
+                ],
             },
         ),
         (
