@@ -51,6 +51,9 @@ module.exports = {
     ],
   },
   resolve: {
+    alias: {
+      "@/*": path.resolve(__dirname, "../idahomeschool/static/*"),
+    },
     modules: ['node_modules'],
     extensions: ['.js', '.jsx'],
   },

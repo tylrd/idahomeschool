@@ -1,5 +1,10 @@
 module.exports = {
-    content: ['./idahomeschool/static/webpack_bundles/'],
+    content: [
+      './idahomeschool/templates/**/*.html',
+      './idahomeschool/**/forms.py',
+      './idahomeschool/static/js/**/*.js',
+      './idahomeschool/static/webpack_bundles/',
+    ],
     theme: {
       extend: {},
     },

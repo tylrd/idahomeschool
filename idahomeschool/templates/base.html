@@ -54,195 +54,271 @@
         event.detail.headers['X-CSRFToken'] = csrfToken;
       }
     });
+
+    // Theme switcher initialization
+    const theme = localStorage.getItem('theme') || 'light';
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+
+    // Listen for theme toggle events
+    document.addEventListener('basecoat:theme', function() {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isDark) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      }
+    });
   });
 </script>
 
 
 {% endblock javascript %}
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body class="{% block bodyclass %}{% endblock bodyclass %}">
   {% if request.user.is_authenticated %}
-  <!-- Mobile header bar -->
-  <div class="mobile-header">
-    <button id="sidebarMenuToggle" type="button">
-      <i class="bi bi-list"></i>
-    </button>
-    <div class="mobile-header-title">OpenHomeSchool</div>
-  </div>
 
-  <div class="d-flex" id="wrapper">
-    <!-- Sidebar -->
-    <div class="bg-light border-end" id="sidebar-wrapper">
-      <!-- Close button for mobile -->
-      <button id="sidebarClose" type="button">
-        <i class="bi bi-x-lg"></i>
-      </button>
+  <!-- Basecoat Sidebar -->
+  <aside class="sidebar" data-side="left" aria-hidden="false">
+    <nav aria-label="Main navigation">
 
-      <div class="sidebar-heading border-bottom bg-primary text-white p-3">
-        <h5 class="mb-0">OpenHomeSchool</h5>
-      </div>
-      <div class="list-group list-group-flush">
-        <!-- Dashboard -->
-        <a href="{% url 'academics:dashboard' %}"
-           class="list-group-item list-group-item-action bg-light {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-          <span><i class="bi bi-speedometer2 me-2"></i><span class="nav-text">Dashboard</span></span>
+      <header>
+        <a href="{% url 'academics:dashboard' %}" class="btn-ghost p-2 h-12 w-full justify-start">
+          <div class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 20h20M3 14h8v6H3zM13 10h8v10h-8z"></path>
+            </svg>
+          </div>
+          <div class="grid flex-1 text-left text-sm leading-tight">
+            <span class="truncate font-medium">OpenHomeSchool</span>
+            <span class="truncate text-xs">{% translate "Homeschool Management" %}</span>
+          </div>
         </a>
+      </header>
 
-        <!-- School Management Section -->
-        <a href="#schoolSubmenu"
-           class="list-group-item list-group-item-action bg-light sidebar-section-toggle collapsed"
-           data-bs-toggle="collapse"
-           aria-expanded="{% if 'schoolyear' in request.resolver_match.url_name or 'gradelevel' in request.resolver_match.url_name or 'student' in request.resolver_match.url_name or 'course' in request.resolver_match.url_name %}true{% else %}false{% endif %}">
-          <span><i class="bi bi-building me-2"></i><span class="nav-text">Management</span></span>
-          <i class="bi bi-chevron-down"></i>
-        </a>
-        <div class="collapse {% if 'schoolyear' in request.resolver_match.url_name or 'gradelevel' in request.resolver_match.url_name or 'student' in request.resolver_match.url_name or 'course' in request.resolver_match.url_name %}show{% endif %}"
-             id="schoolSubmenu">
-          <a href="{% url 'academics:schoolyear_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'schoolyear' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-calendar-range me-2"></i><span class="nav-text">School Years</span></span>
-          </a>
-          <a href="{% url 'academics:gradelevel_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'gradelevel' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-award me-2"></i><span class="nav-text">Grade Levels</span></span>
-          </a>
-          <a href="{% url 'academics:student_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'student' in request.resolver_match.url_name and 'grade' not in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-people me-2"></i><span class="nav-text">Students</span></span>
-          </a>
-          <a href="{% url 'academics:course_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'course' in request.resolver_match.url_name and 'template' not in request.resolver_match.url_name and 'enrollment' not in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-book me-2"></i><span class="nav-text">Courses</span></span>
-          </a>
-          <a href="{% url 'academics:coursetemplate_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'coursetemplate' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-file-earmark-text me-2"></i><span class="nav-text">Course Templates</span></span>
-          </a>
-          <a href="{% url 'academics:courseenrollment_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'courseenrollment' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-journal-check me-2"></i><span class="nav-text">Enrollments</span></span>
-          </a>
+      <section class="scrollbar">
+        <!-- Quick Access -->
+        <div role="group" aria-labelledby="group-label-quick">
+          <h3 id="group-label-quick">Quick Access</h3>
+          <ul>
+            <li>
+              <a href="{% url 'academics:dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active" aria-current="page"{% endif %}>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:dailylog_entry' %}" {% if 'dailylog_entry' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Daily Log Entry</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Management Section -->
+        <div role="group" aria-labelledby="group-label-management">
+          <h3 id="group-label-management">Management</h3>
+          <ul>
+            <li>
+              <a href="{% url 'academics:schoolyear_list' %}" {% if 'schoolyear' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>School Years</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:gradelevel_list' %}" {% if 'gradelevel' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Grade Levels</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:student_list' %}" {% if 'student' in request.resolver_match.url_name and 'grade' not in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Students</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:course_list' %}" {% if 'course' in request.resolver_match.url_name and 'template' not in request.resolver_match.url_name and 'enrollment' not in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Courses</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:coursetemplate_list' %}" {% if 'coursetemplate' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Course Templates</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:courseenrollment_list' %}" {% if 'courseenrollment' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Enrollments</span>
+              </a>
+            </li>
+          </ul>
         </div>
 
         <!-- Attendance Section -->
-        <a href="#attendanceSubmenu"
-           class="list-group-item list-group-item-action bg-light sidebar-section-toggle collapsed"
-           data-bs-toggle="collapse"
-           aria-expanded="{% if 'attendance' in request.resolver_match.url_name or 'dailylog' in request.resolver_match.url_name %}true{% else %}false{% endif %}">
-          <span><i class="bi bi-calendar-check me-2"></i><span class="nav-text">Attendance</span></span>
-          <i class="bi bi-chevron-down"></i>
-        </a>
-        <div class="collapse {% if 'attendance' in request.resolver_match.url_name or 'dailylog' in request.resolver_match.url_name %}show{% endif %}"
-             id="attendanceSubmenu">
-          <a href="{% url 'academics:dailylog_entry' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'dailylog_entry' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-pencil-square me-2"></i><span class="nav-text">Daily Log Entry</span></span>
-          </a>
-          <a href="{% url 'academics:attendance_calendar' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'attendance_calendar' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-calendar3 me-2"></i><span class="nav-text">Calendar View</span></span>
-          </a>
-          <a href="{% url 'academics:attendance_report' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'attendance_report' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-file-earmark-text me-2"></i><span class="nav-text">Reports</span></span>
-          </a>
-          <a href="{% url 'academics:dailylog_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'dailylog_list' in request.resolver_match.url_name or 'dailylog_detail' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-list-ul me-2"></i><span class="nav-text">All Logs</span></span>
-          </a>
+        <div role="group" aria-labelledby="group-label-attendance">
+          <h3 id="group-label-attendance">Attendance</h3>
+          <ul>
+            <li>
+              <a href="{% url 'academics:attendance_calendar' %}" {% if 'attendance_calendar' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Calendar View</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:attendance_report' %}" {% if 'attendance_report' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Reports</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:dailylog_list' %}" {% if 'dailylog_list' in request.resolver_match.url_name or 'dailylog_detail' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>All Logs</span>
+              </a>
+            </li>
+          </ul>
         </div>
 
         <!-- Resource Library Section -->
-        <a href="#librarySubmenu"
-           class="list-group-item list-group-item-action bg-light sidebar-section-toggle collapsed"
-           data-bs-toggle="collapse"
-           aria-expanded="{% if 'resource' in request.resolver_match.url_name or 'library' in request.resolver_match.url_name or 'tag' in request.resolver_match.url_name or 'color_palette' in request.resolver_match.url_name or 'readinglist' in request.resolver_match.url_name or 'reading_list' in request.resolver_match.url_name %}true{% else %}false{% endif %}">
-          <span><i class="bi bi-collection me-2"></i><span class="nav-text">Resource Library</span></span>
-          <i class="bi bi-chevron-down"></i>
-        </a>
-        <div class="collapse {% if 'resource' in request.resolver_match.url_name or 'library' in request.resolver_match.url_name or 'tag' in request.resolver_match.url_name or 'color_palette' in request.resolver_match.url_name or 'readinglist' in request.resolver_match.url_name or 'reading_list' in request.resolver_match.url_name %}show{% endif %}"
-             id="librarySubmenu">
-          <a href="{% url 'academics:resource_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'resource' in request.resolver_match.url_name or 'library' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-book-half me-2"></i><span class="nav-text">Resources</span></span>
-          </a>
-          <a href="{% url 'academics:reading_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'readinglist' in request.resolver_match.url_name or 'reading_list' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-book me-2"></i><span class="nav-text">Reading List</span></span>
-          </a>
-          <a href="{% url 'academics:tag_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'tag' in request.resolver_match.url_name and 'color_palette' not in request.resolver_match.url_name and 'book_tag' not in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-tags me-2"></i><span class="nav-text">Tags</span></span>
-          </a>
-          <a href="{% url 'academics:color_palette_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'color_palette' in request.resolver_match.url_name %}active{% endif %}">
-            <span><i class="bi bi-palette me-2"></i><span class="nav-text">Color Palette</span></span>
-          </a>
+        <div role="group" aria-labelledby="group-label-library">
+          <h3 id="group-label-library">Resource Library</h3>
+          <ul>
+            <li>
+              <a href="{% url 'academics:resource_list' %}" {% if 'resource' in request.resolver_match.url_name or 'library' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Resources</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:reading_list' %}" {% if 'readinglist' in request.resolver_match.url_name or 'reading_list' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Reading List</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:tag_list' %}" {% if 'tag' in request.resolver_match.url_name and 'color_palette' not in request.resolver_match.url_name and 'book_tag' not in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Tags</span>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'academics:color_palette_list' %}" {% if 'color_palette' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
+                <span>Color Palette</span>
+              </a>
+            </li>
+          </ul>
         </div>
+      </section>
 
-        <!-- User Settings Section -->
-        <a href="#userSubmenu"
-           class="list-group-item list-group-item-action bg-light sidebar-section-toggle collapsed"
-           data-bs-toggle="collapse"
-           aria-expanded="false">
-          <span><i class="bi bi-person-circle me-2"></i><span class="nav-text">{{ request.user.username }}</span></span>
-          <i class="bi bi-chevron-down"></i>
-        </a>
-        <div class="collapse" id="userSubmenu">
-          <a href="{% url 'users:detail' request.user.username %}"
-             class="list-group-item list-group-item-action bg-light">
-            <span><i class="bi bi-person me-2"></i><span class="nav-text">{% translate "My Profile" %}</span></span>
-          </a>
-          <a href="{% url 'account_logout' %}"
-             class="list-group-item list-group-item-action bg-light">
-            <span><i class="bi bi-box-arrow-right me-2"></i><span class="nav-text">{% translate "Sign Out" %}</span></span>
-          </a>
-        </div>
-      </div>
+    </nav>
+  </aside>
 
-      <!-- Sidebar toggle button (bottom) -->
-      <div class="p-3 border-top sidebar-toggle-wrapper">
-        <button class="btn btn-sm btn-outline-secondary w-100" id="sidebarToggle">
-          <i class="bi bi-chevron-left"></i><span> Collapse</span>
+  <!-- Main Content -->
+  <main>
+    <!-- Header bar with sidebar toggle -->
+    <div class="flex h-14 w-full items-center gap-2 px-4 border-b bg-white">
+      <button type="button" onclick="document.dispatchEvent(new CustomEvent('basecoat:sidebar'))" aria-label="Toggle sidebar" data-tooltip="Toggle sidebar" data-side="bottom" data-align="start" class="btn-sm-icon-ghost size-7 -ml-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+          <path d="M9 3v18"></path>
+        </svg>
+      </button>
+
+      <div class="ml-auto flex items-center gap-2">
+        <button type="button" aria-label="Toggle dark mode" data-tooltip="Toggle dark mode" data-side="bottom" onclick="document.dispatchEvent(new CustomEvent('basecoat:theme'))" class="btn-icon-outline size-8">
+          <span class="hidden dark:block">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2"></path>
+              <path d="M12 20v2"></path>
+              <path d="m4.93 4.93 1.41 1.41"></path>
+              <path d="m17.66 17.66 1.41 1.41"></path>
+              <path d="M2 12h2"></path>
+              <path d="M20 12h2"></path>
+              <path d="m6.34 17.66-1.41 1.41"></path>
+              <path d="m19.07 4.93-1.41 1.41"></path>
+            </svg>
+          </span>
+          <span class="block dark:hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
+          </span>
         </button>
+
+        <!-- User profile dropdown -->
+        <div class="dropdown">
+          <button type="button" class="btn-ghost p-2 h-10 flex items-center gap-2" aria-label="User menu">
+            <div class="bg-sidebar-accent text-sidebar-accent-foreground flex items-center justify-center rounded-lg shrink-0 size-8">
+              <span class="text-sm font-medium">{{ request.user.username|slice:":2"|upper }}</span>
+            </div>
+            <div class="hidden md:grid flex-1 text-left text-sm leading-tight">
+              <span class="truncate font-medium">{{ request.user.username }}</span>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden md:block">
+              <path d="m6 9 6 6 6-6"></path>
+            </svg>
+          </button>
+          <div data-dropdown="" data-side="bottom" data-align="end" class="w-56">
+            <div class="grid gap-1 p-2">
+              <div class="px-2 py-1.5">
+                <p class="text-sm font-medium">{{ request.user.username }}</p>
+                <p class="text-xs text-muted-foreground">{{ request.user.email }}</p>
+              </div>
+              <div class="h-px bg-border my-1"></div>
+              <a href="{% url 'users:detail' request.user.username %}" class="dropdown-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>Profile</span>
+              </a>
+              <a href="{% url 'users:update' %}" class="dropdown-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Settings</span>
+              </a>
+              <div class="h-px bg-border my-1"></div>
+              <a href="{% url 'account_logout' %}" class="dropdown-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log out</span>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    <!-- /#sidebar-wrapper -->
 
-    <!-- Page Content -->
-    <div id="page-content-wrapper" class="w-100">
-      <div class="container-fluid p-4">
+    <div class="w-full p-4 md:p-8">
         {% if messages %}
           {% for message in messages %}
-            <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-              {{ message }}
-              <button type="button"
-                      class="btn-close"
-                      data-bs-dismiss="alert"
-                      aria-label="Close"></button>
+            <div class="rounded-lg p-4 mb-4 border {% if message.tags == 'success' %}bg-green-50 text-green-800 border-green-200{% elif message.tags == 'error' or message.tags == 'danger' %}bg-red-50 text-red-800 border-red-200{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border-yellow-200{% else %}bg-blue-50 text-blue-800 border-blue-200{% endif %}">
+              <div class="flex justify-between items-start">
+                <p>{{ message }}</p>
+                <button type="button" onclick="this.closest('div').remove()" class="text-current opacity-50 hover:opacity-100">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
             </div>
           {% endfor %}
         {% endif %}
-        {% block content %}
-          <p>Use this document as a way to quick start any new project.</p>
-        {% endblock content %}
-      </div>
+      {% block content %}
+        <p>Use this document as a way to quick start any new project.</p>
+      {% endblock content %}
     </div>
-    <!-- /#page-content-wrapper -->
-  </div>
+  </main>
   {% else %}
   <!-- Not authenticated - show minimal layout -->
-  <div class="container mt-5">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
     {% if messages %}
       {% for message in messages %}
-        <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-          {{ message }}
-          <button type="button"
-                  class="btn-close"
-                  data-bs-dismiss="alert"
-                  aria-label="Close"></button>
+        <div class="rounded-lg p-4 mb-4 border {% if message.tags == 'success' %}bg-green-50 text-green-800 border-green-200{% elif message.tags == 'error' or message.tags == 'danger' %}bg-red-50 text-red-800 border-red-200{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border-yellow-200{% else %}bg-blue-50 text-blue-800 border-blue-200{% endif %}">
+          <div class="flex justify-between items-start">
+            <p>{{ message }}</p>
+            <button type="button" onclick="this.closest('div').remove()" class="text-current opacity-50 hover:opacity-100">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
         </div>
       {% endfor %}
     {% endif %}

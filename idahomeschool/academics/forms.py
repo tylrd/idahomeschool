@@ -41,14 +41,15 @@ class SchoolYearForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             "name",
             Row(
-                Column("start_date", css_class="col-md-6"),
-                Column("end_date", css_class="col-md-6"),
+                Column("start_date", css_class="w-full md:w-1/2"),
+                Column("end_date", css_class="w-full md:w-1/2"),
             ),
             "is_active",
-            Submit("submit", "Save School Year", css_class="btn btn-primary"),
+            Submit("submit", "Save School Year", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -66,20 +67,17 @@ class TagForm(forms.ModelForm):
     class Meta:
         model = Tag
         fields = ["name", "color"]
-        widgets = {
-            "name": forms.TextInput(attrs={"class": "form-control"}),
-            "color": forms.TextInput(attrs={"class": "form-control"}),
-        }
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             "name",
             "color",
-            Submit("submit", "Save Tag", css_class="btn btn-primary"),
+            Submit("submit", "Save Tag", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -112,13 +110,7 @@ class ResourceForm(forms.ModelForm):
             "image",
         ]
         widgets = {
-            "title": forms.TextInput(attrs={"class": "form-control"}),
-            "author": forms.TextInput(attrs={"class": "form-control"}),
-            "publisher": forms.TextInput(attrs={"class": "form-control"}),
-            "isbn": forms.TextInput(attrs={"class": "form-control"}),
-            "resource_type": forms.Select(attrs={"class": "form-select"}),
-            "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-            "image": forms.FileInput(attrs={"class": "form-control"}),
+            "description": forms.Textarea(attrs={"rows": 3}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -135,21 +127,22 @@ class ResourceForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.form_enctype = "multipart/form-data"  # Required for file uploads
         self.helper.layout = Layout(
             "title",
             Row(
-                Column("author", css_class="col-md-6"),
-                Column("publisher", css_class="col-md-6"),
+                Column("author", css_class="w-full md:w-1/2"),
+                Column("publisher", css_class="w-full md:w-1/2"),
             ),
             Row(
-                Column("isbn", css_class="col-md-6"),
-                Column("resource_type", css_class="col-md-6"),
+                Column("isbn", css_class="w-full md:w-1/2"),
+                Column("resource_type", css_class="w-full md:w-1/2"),
             ),
             "description",
             "image",
             # tags field will be rendered manually in template
-            Submit("submit", "Save Resource", css_class="btn btn-primary"),
+            Submit("submit", "Save Resource", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -233,17 +226,18 @@ class StudentForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.form_enctype = "multipart/form-data"  # Required for file uploads
         self.helper.layout = Layout(
             "name",
             Row(
-                Column("date_of_birth", css_class="col-md-6"),
-                Column("grade_level", css_class="col-md-6"),
+                Column("date_of_birth", css_class="w-full md:w-1/2"),
+                Column("grade_level", css_class="w-full md:w-1/2"),
             ),
             "photo",
             "school_years",
             "paperless_tag_id",
-            Submit("submit", "Save Student", css_class="btn btn-primary"),
+            Submit("submit", "Save Student", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -277,11 +271,12 @@ class CourseTemplateForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             "name",
             "description",
             "suggested_resources",
-            Submit("submit", "Save Course Template", css_class="btn btn-primary"),
+            Submit("submit", "Save Course Template", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -319,15 +314,16 @@ class CourseForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             Row(
-                Column("name", css_class="col-md-8"),
-                Column("grade_level", css_class="col-md-4"),
+                Column("name", css_class="w-full md:w-2/3"),
+                Column("grade_level", css_class="w-full md:w-1/3"),
             ),
             "course_template",
             "description",
             "resources",
-            Submit("submit", "Save Course", css_class="btn btn-primary"),
+            Submit("submit", "Save Course", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -414,24 +410,25 @@ class CourseEnrollmentForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             Row(
-                Column("student", css_class="col-md-6"),
-                Column("course", css_class="col-md-6"),
+                Column("student", css_class="w-full md:w-1/2"),
+                Column("course", css_class="w-full md:w-1/2"),
             ),
             Row(
-                Column("school_year", css_class="col-md-6"),
-                Column("status", css_class="col-md-6"),
+                Column("school_year", css_class="w-full md:w-1/2"),
+                Column("status", css_class="w-full md:w-1/2"),
             ),
             Row(
-                Column("started_date", css_class="col-md-6"),
-                Column("completed_date", css_class="col-md-6"),
+                Column("started_date", css_class="w-full md:w-1/2"),
+                Column("completed_date", css_class="w-full md:w-1/2"),
             ),
             Row(
-                Column("final_grade", css_class="col-md-6"),
-                Column("completion_percentage", css_class="col-md-6"),
+                Column("final_grade", css_class="w-full md:w-1/2"),
+                Column("completion_percentage", css_class="w-full md:w-1/2"),
             ),
-            Submit("submit", "Save Enrollment", css_class="btn btn-primary"),
+            Submit("submit", "Save Enrollment", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -457,15 +454,16 @@ class CurriculumResourceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             "title",
             Row(
-                Column("author", css_class="col-md-6"),
-                Column("publisher", css_class="col-md-6"),
+                Column("author", css_class="w-full md:w-1/2"),
+                Column("publisher", css_class="w-full md:w-1/2"),
             ),
             "isbn",
             "notes",
-            Submit("submit", "Save Resource", css_class="btn btn-primary"),
+            Submit("submit", "Save Resource", css_class="btn"),
         )
 
 
@@ -489,14 +487,15 @@ class DailyLogForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             Row(
-                Column("student", css_class="col-md-6"),
-                Column("date", css_class="col-md-6"),
+                Column("student", css_class="w-full md:w-1/2"),
+                Column("date", css_class="w-full md:w-1/2"),
             ),
             "status",
             "general_notes",
-            Submit("submit", "Save Daily Log", css_class="btn btn-primary"),
+            Submit("submit", "Save Daily Log", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -535,10 +534,11 @@ class CourseNoteForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             "course",
             "notes",
-            Submit("submit", "Save Course Note", css_class="btn btn-primary"),
+            Submit("submit", "Save Course Note", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -557,7 +557,7 @@ CourseNoteFormSet = modelformset_factory(
     extra=0,
     can_delete=True,
     widgets={
-        "notes": forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
+        "notes": forms.Textarea(attrs={"rows": 3}),
     },
 )
 
@@ -574,13 +574,14 @@ class GradeLevelForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             Row(
-                Column("name", css_class="col-md-8"),
-                Column("order", css_class="col-md-4"),
+                Column("name", css_class="w-full md:w-2/3"),
+                Column("order", css_class="w-full md:w-1/3"),
             ),
             "description",
-            Submit("submit", "Save Grade Level", css_class="btn btn-primary"),
+            Submit("submit", "Save Grade Level", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -623,31 +624,32 @@ class StudentGradeYearForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
 
         if self.student:
             self.helper.layout = Layout(
                 "student",
                 Row(
-                    Column("school_year", css_class="col-md-6"),
-                    Column("grade_level", css_class="col-md-6"),
+                    Column("school_year", css_class="w-full md:w-1/2"),
+                    Column("grade_level", css_class="w-full md:w-1/2"),
                 ),
                 Submit(
                     "submit",
                     "Assign Grade",
-                    css_class="btn btn-primary",
+                    css_class="btn",
                 ),
             )
         else:
             self.helper.layout = Layout(
                 "student",
                 Row(
-                    Column("school_year", css_class="col-md-6"),
-                    Column("grade_level", css_class="col-md-6"),
+                    Column("school_year", css_class="w-full md:w-1/2"),
+                    Column("grade_level", css_class="w-full md:w-1/2"),
                 ),
                 Submit(
                     "submit",
                     "Assign Grade",
-                    css_class="btn btn-primary",
+                    css_class="btn",
                 ),
             )
 
@@ -673,7 +675,6 @@ class ColorPaletteImportForm(forms.Form):
         ),
         widget=forms.Textarea(
             attrs={
-                "class": "form-control",
                 "rows": 5,
                 "placeholder": "27213c,5a352a,a33b20,a47963,a6a57a",
             },
@@ -682,20 +683,17 @@ class ColorPaletteImportForm(forms.Form):
     palette_choice = forms.ChoiceField(
         label="Add to Palette",
         required=True,
-        widget=forms.Select(attrs={"class": "form-control"}),
     )
     palette_name = forms.CharField(
         label="New Palette Name",
         required=False,
         help_text="Name for the new color palette (e.g., 'Ocean Blues', 'Earth Tones')",
-        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     mark_as_active = forms.BooleanField(
         required=False,
         initial=False,
         label="Set as active palette",
         help_text="Use this palette for random tag colors (only for new palettes)",
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
 
     def __init__(self, *args, user=None, **kwargs):
@@ -751,9 +749,10 @@ class BookTagPreferenceForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             # tags field will be rendered manually in template
-            Submit("submit", "Save Book Tags", css_class="btn btn-primary"),
+            Submit("submit", "Save Book Tags", css_class="btn"),
         )
 
     def save(self, commit=True):
@@ -866,22 +865,23 @@ class ReadingListForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_class = "form"
         self.helper.layout = Layout(
             Row(
-                Column("student", css_class="col-md-6"),
-                Column("resource", css_class="col-md-6"),
+                Column("student", css_class="w-full md:w-1/2"),
+                Column("resource", css_class="w-full md:w-1/2"),
             ),
             Row(
-                Column("status", css_class="col-md-6"),
-                Column("school_year", css_class="col-md-6"),
+                Column("status", css_class="w-full md:w-1/2"),
+                Column("school_year", css_class="w-full md:w-1/2"),
             ),
             Row(
-                Column("started_date", css_class="col-md-6"),
-                Column("completed_date", css_class="col-md-6"),
+                Column("started_date", css_class="w-full md:w-1/2"),
+                Column("completed_date", css_class="w-full md:w-1/2"),
             ),
             "rating",
             "notes",
-            Submit("submit", "Save to Reading List", css_class="btn btn-primary"),
+            Submit("submit", "Save to Reading List", css_class="btn"),
         )
 
     def save(self, commit=True):

@@ -1,5 +1,5 @@
-import '../sass/project.scss';
-import '../css/style.css';
+import '@/sass/project.scss';
+import '@/css/style.css';
 import 'basecoat-css/all';
 import Alpine from 'alpinejs'
 import htmx from 'htmx.org';
