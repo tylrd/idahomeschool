@@ -15,7 +15,9 @@
         hx-post="/academics/resources/create-modal/?field_name={{ field_name }}&selected_ids={{ selected_ids }}"
         hx-target="#resource-search-results-{{ field_name }}"
         hx-swap="innerHTML"
+        hx-encoding="multipart/form-data"
         method="post"
+        enctype="multipart/form-data"
       >
         <div class="modal-body">
           {% csrf_token %}
@@ -79,6 +81,16 @@
             {% if form.description.errors %}
             <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
             {% endif %}
+          </div>
+
+          {# Image field #}
+          <div class="mb-3">
+            <label for="id_image" class="form-label">Cover Image / Thumbnail</label>
+            <input type="file" class="form-control {% if form.image.errors %}is-invalid{% endif %}" id="id_image" name="image" accept="image/*">
+            {% if form.image.errors %}
+            <div class="invalid-feedback">{{ form.image.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">Optional cover image or thumbnail for this resource</div>
           </div>
 
           {# Tags field - use custom tag selector component #}

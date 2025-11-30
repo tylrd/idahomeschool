@@ -118,7 +118,7 @@
   </div>
 </div>
 
-<div class="card">
+<div class="card mb-4">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0">Course Enrollments</h5>
     <a href="{% url 'academics:courseenrollment_create' %}" class="btn btn-sm btn-success">Add Enrollment</a>
@@ -164,6 +164,59 @@
     {% else %}
       <p class="text-muted">No course enrollments yet.</p>
       <a href="{% url 'academics:courseenrollment_create' %}" class="btn btn-primary">Add First Enrollment</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Recent Books</h5>
+    <a href="{% url 'academics:student_reading_list' student.pk %}" class="btn btn-sm btn-primary">View All</a>
+  </div>
+  <div class="card-body">
+    {% if recent_books %}
+      <div class="list-group list-group-flush">
+        {% for entry in recent_books %}
+        <div class="list-group-item">
+          <div class="d-flex w-100 justify-content-between align-items-start">
+            <div class="d-flex">
+              {% if entry.resource.image %}
+              <img src="{{ entry.resource.image.url }}" alt="{{ entry.resource.title }}" class="me-3 img-thumbnail" style="width: 60px; height: 80px; object-fit: cover;">
+              {% else %}
+              <div class="me-3 bg-light border rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 80px;">
+                <i class="bi bi-book text-muted"></i>
+              </div>
+              {% endif %}
+              <div>
+                <h6 class="mb-1">
+                  <a href="{% url 'academics:resource_detail' entry.resource.pk %}">{{ entry.resource.title }}</a>
+                </h6>
+                {% if entry.resource.author %}
+                <p class="mb-1 text-muted small">by {{ entry.resource.author }}</p>
+                {% endif %}
+                {% include "academics/partials/reading_status_badge.html" with entry=entry %}
+                {% if entry.rating %}
+                  <span class="ms-2">
+                    {% for i in "12345" %}
+                      {% if forloop.counter <= entry.rating %}⭐{% else %}☆{% endif %}
+                    {% endfor %}
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+            <div>
+              <a href="{% url 'academics:readinglist_update' entry.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="mt-3">
+        <a href="{% url 'academics:student_reading_list' student.pk %}" class="btn btn-outline-primary">View Full Reading List</a>
+      </div>
+    {% else %}
+      <p class="text-muted">No books in reading list yet.</p>
+      <a href="{% url 'academics:readinglist_create' %}?student={{ student.pk }}" class="btn btn-primary">Add First Book</a>
     {% endif %}
   </div>
 </div>

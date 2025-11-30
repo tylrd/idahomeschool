@@ -40,3 +40,8 @@ $red: #b94a48;
 
 // Sidebar navigation styles
 @import 'sidebar';
+
+// Alpine.js - Hide elements with x-cloak until Alpine is initialized
+[x-cloak] {
+  display: none !important;
+}

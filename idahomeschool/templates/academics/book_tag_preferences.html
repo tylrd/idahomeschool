@@ -1,0 +1,73 @@
+{% extends "academics/base.html" %}
+{% load static %}
+{% load academics_extras %}
+
+{% block title %}Book Tag Preferences{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Book Tag Preferences</h1>
+</div>
+
+<div class="alert alert-info" role="alert">
+  <h4 class="alert-heading">Configure Book Tags</h4>
+  <p>
+    Select which tags identify resources as "books" for your reading list.
+    Only resources with at least one of these tags will be available to add to student reading lists.
+  </p>
+  <hr>
+  <p class="mb-0">
+    <strong>Tip:</strong> If you don't have appropriate tags yet,
+    <a href="{% url 'academics:tag_list' %}" class="alert-link">create tags</a>
+    like "Fiction", "Nonfiction", "Literature", "Chapter Books", etc.
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Book Tags</h5>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+
+      {# Tags field - use custom tag selector component #}
+      <div class="mb-3">
+        <label class="form-label">Select Tags that Identify Books</label>
+        <p class="text-muted small">
+          Choose one or more tags. Resources with ANY of these tags will be considered books.
+        </p>
+        {% if form.instance.pk %}
+          {% include "academics/partials/tag_selector.html" with field_name="tags" selected_tags=form.instance.tags.all selected_tags_json=form.initial.tags_data allow_create=False %}
+        {% else %}
+          {% include "academics/partials/tag_selector.html" with field_name="tags" allow_create=False %}
+        {% endif %}
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Save Book Tags</button>
+        <a href="{% url 'academics:reading_list' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if all_tags %}
+<div class="card mt-3">
+  <div class="card-header">
+    <h5 class="mb-0">All Available Tags</h5>
+  </div>
+  <div class="card-body">
+    <p class="text-muted">
+      Select from these existing tags, or <a href="{% url 'academics:tag_create' %}">create new tags</a>.
+    </p>
+    <div class="d-flex flex-wrap gap-2">
+      {% for tag in all_tags %}
+        {% tag_badge tag size="sm" %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

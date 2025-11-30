@@ -1,5 +1,6 @@
 {% extends "academics/base.html" %}
 {% load static %}
+{% load academics_extras %}
 
 {% block title %}Attendance Report{% endblock %}
 
@@ -71,11 +72,9 @@
             <th>Student</th>
             <th class="text-center">Total Days Logged</th>
             <th class="text-center">Instructional Days</th>
-            <th class="text-center">Present</th>
-            <th class="text-center">Field Trips</th>
-            <th class="text-center">Absent</th>
-            <th class="text-center">Sick</th>
-            <th class="text-center">Holiday</th>
+            {% for status in attendance_statuses %}
+            <th class="text-center">{{ status.label }}</th>
+            {% endfor %}
           </tr>
         </thead>
         <tbody>
@@ -89,21 +88,15 @@
             <td class="text-center">
               <strong class="text-success">{{ data.instructional_days }}</strong>
             </td>
+            {% for status in attendance_statuses %}
             <td class="text-center">
-              <span class="badge bg-success">{{ data.present_days }}</span>
+              {% with count_data=data.status_counts|get_item:status.code %}
+                <span class="badge" style="background-color: {{ status.color }}; color: {{ status.color|contrast_text_color }};">
+                  {% if count_data %}{{ count_data.count }}{% else %}0{% endif %}
+                </span>
+              {% endwith %}
             </td>
-            <td class="text-center">
-              <span class="badge bg-primary">{{ data.field_trip_days }}</span>
-            </td>
-            <td class="text-center">
-              <span class="badge bg-danger">{{ data.absent_days }}</span>
-            </td>
-            <td class="text-center">
-              <span class="badge bg-warning">{{ data.sick_days }}</span>
-            </td>
-            <td class="text-center">
-              <span class="badge bg-info">{{ data.holiday_days }}</span>
-            </td>
+            {% endfor %}
           </tr>
           {% endfor %}
         </tbody>
@@ -116,7 +109,10 @@
 <div class="alert alert-light mt-4">
   <h6>Idaho Homeschool Compliance Note:</h6>
   <p class="mb-0">
-    <strong>Instructional Days</strong> include days marked as "Present" or "Field Trip".
+    <strong>Instructional Days</strong> include days marked with instructional status types
+    {% if attendance_statuses %}
+      ({% for status in attendance_statuses %}{% if status.is_instructional %}{{ status.label }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}).
+    {% endif %}
     Idaho recommends homeschools provide instruction for a comparable number of days as public schools
     (typically 150-180 days per school year).
   </p>

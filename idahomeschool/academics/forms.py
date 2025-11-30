@@ -8,6 +8,7 @@ from crispy_forms.layout import Submit
 from django import forms
 from django.forms import modelformset_factory
 
+from .models import BookTagPreference
 from .models import ColorPalette
 from .models import Course
 from .models import CourseEnrollment
@@ -16,6 +17,7 @@ from .models import CourseTemplate
 from .models import CurriculumResource
 from .models import DailyLog
 from .models import GradeLevel
+from .models import ReadingList
 from .models import Resource
 from .models import SchoolYear
 from .models import Student
@@ -107,6 +109,7 @@ class ResourceForm(forms.ModelForm):
             "isbn",
             "resource_type",
             "description",
+            "image",
         ]
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-control"}),
@@ -115,6 +118,7 @@ class ResourceForm(forms.ModelForm):
             "isbn": forms.TextInput(attrs={"class": "form-control"}),
             "resource_type": forms.Select(attrs={"class": "form-select"}),
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "image": forms.FileInput(attrs={"class": "form-control"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -131,6 +135,7 @@ class ResourceForm(forms.ModelForm):
 
         self.helper = FormHelper()
         self.helper.form_method = "post"
+        self.helper.form_enctype = "multipart/form-data"  # Required for file uploads
         self.helper.layout = Layout(
             "title",
             Row(
@@ -142,6 +147,7 @@ class ResourceForm(forms.ModelForm):
                 Column("resource_type", css_class="col-md-6"),
             ),
             "description",
+            "image",
             # tags field will be rendered manually in template
             Submit("submit", "Save Resource", css_class="btn btn-primary"),
         )
@@ -716,3 +722,172 @@ class ColorPaletteImportForm(forms.Form):
             )
 
         return cleaned_data
+
+
+class BookTagPreferenceForm(forms.ModelForm):
+    """Form for managing which tags identify books for the reading list."""
+
+    # Hidden field for tag data from tag selector component
+    tags_data = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False,
+    )
+
+    class Meta:
+        model = BookTagPreference
+        fields = []  # Only using tags_data
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+        # Initialize tags_data with existing tags if editing
+        if self.instance and self.instance.pk:
+            existing_tags = [
+                {"id": tag.id, "name": tag.name, "color": tag.color}
+                for tag in self.instance.tags.all()
+            ]
+            self.initial["tags_data"] = json.dumps(existing_tags)
+
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.layout = Layout(
+            # tags field will be rendered manually in template
+            Submit("submit", "Save Book Tags", css_class="btn btn-primary"),
+        )
+
+    def save(self, commit=True):
+        # Get or create the preference for this user
+        if self.instance and self.instance.pk:
+            instance = self.instance
+        else:
+            instance, _created = BookTagPreference.objects.get_or_create(
+                user=self.user,
+            )
+
+        if commit:
+            instance.save()
+
+            # Process tags from tag selector
+            tags_data = self.cleaned_data.get("tags_data", "[]")
+            try:
+                tags_list = json.loads(tags_data)
+            except (json.JSONDecodeError, TypeError):
+                tags_list = []
+
+            # Clear existing tags
+            instance.tags.clear()
+
+            # Process each tag
+            for tag_data in tags_list:
+                tag_id = tag_data.get("id")
+                tag_name = tag_data.get("name", "").strip()
+
+                if not tag_name:
+                    continue
+
+                # If ID is positive, it's an existing tag
+                if tag_id and tag_id > 0:
+                    try:
+                        tag = Tag.objects.get(id=tag_id, user=self.user)
+                        instance.tags.add(tag)
+                    except Tag.DoesNotExist:
+                        # Tag doesn't exist or doesn't belong to user
+                        pass
+                else:
+                    # Try to find existing tag by name
+                    try:
+                        tag = Tag.objects.get(user=self.user, name=tag_name)
+                        instance.tags.add(tag)
+                    except Tag.DoesNotExist:
+                        # Tag doesn't exist - user needs to create it first
+                        pass
+
+        return instance
+
+
+class ReadingListForm(forms.ModelForm):
+    """Form for creating and updating ReadingList entries."""
+
+    class Meta:
+        model = ReadingList
+        fields = [
+            "student",
+            "resource",
+            "status",
+            "started_date",
+            "completed_date",
+            "rating",
+            "notes",
+            "school_year",
+        ]
+        widgets = {
+            "started_date": forms.DateInput(attrs={"type": "date"}),
+            "completed_date": forms.DateInput(attrs={"type": "date"}),
+            "notes": forms.Textarea(attrs={"rows": 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        self.student = kwargs.pop("student", None)
+        super().__init__(*args, **kwargs)
+
+        # Filter querysets to user's data
+        if self.user:
+            self.fields["student"].queryset = Student.objects.filter(
+                user=self.user,
+            )
+            # Filter resources to only show books (based on tag preferences)
+            book_resources = BookTagPreference.get_book_resources_for_user(
+                self.user,
+            )
+            self.fields["resource"].queryset = book_resources.order_by("title")
+            self.fields["school_year"].queryset = SchoolYear.objects.filter(
+                user=self.user,
+            )
+
+        # Pre-select student if provided
+        if self.student:
+            self.fields["student"].initial = self.student
+            # Optionally hide student field if coming from student detail page
+            # self.fields["student"].widget = forms.HiddenInput()
+
+        # Add help text for resource field
+        self.fields["resource"].help_text = (
+            "Only resources tagged with your configured book tags are shown. "
+            "Configure book tags in settings."
+        )
+
+        # Rating field with choices 1-5
+        self.fields["rating"].widget = forms.Select(
+            choices=[("", "No rating")] + [(i, f"{i} star{'s' if i > 1 else ''}")
+                                           for i in range(1, 6)],
+        )
+
+        self.helper = FormHelper()
+        self.helper.form_method = "post"
+        self.helper.layout = Layout(
+            Row(
+                Column("student", css_class="col-md-6"),
+                Column("resource", css_class="col-md-6"),
+            ),
+            Row(
+                Column("status", css_class="col-md-6"),
+                Column("school_year", css_class="col-md-6"),
+            ),
+            Row(
+                Column("started_date", css_class="col-md-6"),
+                Column("completed_date", css_class="col-md-6"),
+            ),
+            "rating",
+            "notes",
+            Submit("submit", "Save to Reading List", css_class="btn btn-primary"),
+        )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user and not instance.pk:
+            instance.user = self.user
+        if commit:
+            instance.save()
+        return instance

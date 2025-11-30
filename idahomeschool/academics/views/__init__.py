@@ -84,6 +84,16 @@ from .library import TagDetailView
 from .library import TagListView
 from .library import TagUpdateView
 
+# Reading List views
+from .reading_list import BookTagPreferenceView
+from .reading_list import reading_list_quick_update_htmx
+from .reading_list import ReadingListCreateView
+from .reading_list import ReadingListDeleteView
+from .reading_list import ReadingListDetailView
+from .reading_list import ReadingListUpdateView
+from .reading_list import ReadingListView
+from .reading_list import StudentReadingListView
+
 # SchoolYear views
 from .schoolyears import SchoolYearCreateView
 from .schoolyears import SchoolYearDeleteView
@@ -109,6 +119,8 @@ __all__ = [
     "AttendanceStatusDeleteView",
     "AttendanceStatusListView",
     "AttendanceStatusUpdateView",
+    # Book Tag Preferences
+    "BookTagPreferenceView",
     # Color Palette
     "color_palette_import_csv",
     "color_palette_preview_htmx",
@@ -156,6 +168,12 @@ __all__ = [
     # Grade Levels
     "GradeLevelListView",
     "GradeLevelUpdateView",
+    # Reading List
+    "ReadingListCreateView",
+    "ReadingListDeleteView",
+    "ReadingListDetailView",
+    "ReadingListUpdateView",
+    "ReadingListView",
     "ResourceCreateView",
     "ResourceDeleteView",
     "ResourceDetailView",
@@ -177,6 +195,7 @@ __all__ = [
     "StudentGradeYearUpdateView",
     # Students
     "StudentListView",
+    "StudentReadingListView",
     "StudentUpdateView",
     "TagCreateView",
     "TagDeleteView",
@@ -192,6 +211,7 @@ __all__ = [
     "attendance_save_course_notes",
     "create_pk12_grades",
     "filter_courses_by_student",
+    "reading_list_quick_update_htmx",
     "remove_color_from_palette",
     "resource_create_modal_htmx",
     "resource_search_htmx",

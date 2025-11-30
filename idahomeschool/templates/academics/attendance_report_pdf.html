@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load academics_extras %}<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -169,36 +169,16 @@
               <td><strong>{{ data.instructional_days }}</strong></td>
             {% endfor %}
           </tr>
+          {% for status in attendance_statuses %}
           <tr>
-            <td style="text-align: left;">Present</td>
+            <td style="text-align: left;">{{ status.label }}</td>
             {% for data in chunk %}
-              <td>{{ data.present_days }}</td>
+              {% with count_data=data.status_counts|get_item:status.code %}
+              <td>{% if count_data %}{{ count_data.count }}{% else %}0{% endif %}</td>
+              {% endwith %}
             {% endfor %}
           </tr>
-          <tr>
-            <td style="text-align: left;">Field Trips</td>
-            {% for data in chunk %}
-              <td>{{ data.field_trip_days }}</td>
-            {% endfor %}
-          </tr>
-          <tr>
-            <td style="text-align: left;">Absent</td>
-            {% for data in chunk %}
-              <td>{{ data.absent_days }}</td>
-            {% endfor %}
-          </tr>
-          <tr>
-            <td style="text-align: left;">Sick</td>
-            {% for data in chunk %}
-              <td>{{ data.sick_days }}</td>
-            {% endfor %}
-          </tr>
-          <tr>
-            <td style="text-align: left;">Holiday</td>
-            {% for data in chunk %}
-              <td>{{ data.holiday_days }}</td>
-            {% endfor %}
-          </tr>
+          {% endfor %}
         </tbody>
       </table>
     {% endfor %}
@@ -207,7 +187,10 @@
       <h3>Summary</h3>
       <p>
         This attendance report documents homeschool instructional days for compliance purposes.
-        <strong>Instructional Days</strong> include days marked as "Present" or "Field Trip".
+        <strong>Instructional Days</strong> include days marked with instructional status types
+        {% if attendance_statuses %}
+          ({% for status in attendance_statuses %}{% if status.is_instructional %}{{ status.label }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}).
+        {% endif %}
       </p>
       {% if school_year %}
       <p>

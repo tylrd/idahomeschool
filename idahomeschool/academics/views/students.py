@@ -13,6 +13,7 @@ from django.views.generic import UpdateView
 
 from idahomeschool.academics.forms import StudentForm
 from idahomeschool.academics.forms import StudentGradeYearForm
+from idahomeschool.academics.models import ReadingList
 from idahomeschool.academics.models import SchoolYear
 from idahomeschool.academics.models import Student
 from idahomeschool.academics.models import StudentGradeYear
@@ -83,6 +84,13 @@ class StudentDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
             "school_year",
             "grade_level",
         ).all()
+
+        # Add recent books from reading list
+        context["recent_books"] = (
+            ReadingList.objects.filter(student=student)
+            .select_related("resource", "school_year")
+            .order_by("-updated_at")[:5]
+        )
 
         return context
 

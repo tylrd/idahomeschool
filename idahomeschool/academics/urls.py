@@ -254,6 +254,46 @@ urlpatterns = [
         views.StudentDeleteView.as_view(),
         name="student_delete",
     ),
+    # Student Reading List URLs
+    path(
+        "students/<int:pk>/reading-list/",
+        views.StudentReadingListView.as_view(),
+        name="student_reading_list",
+    ),
+    # Reading List URLs
+    path("reading-list/", views.ReadingListView.as_view(), name="reading_list"),
+    path(
+        "reading-list/add/",
+        views.ReadingListCreateView.as_view(),
+        name="readinglist_create",
+    ),
+    path(
+        "reading-list/<int:pk>/",
+        views.ReadingListDetailView.as_view(),
+        name="readinglist_detail",
+    ),
+    path(
+        "reading-list/<int:pk>/update/",
+        views.ReadingListUpdateView.as_view(),
+        name="readinglist_update",
+    ),
+    path(
+        "reading-list/<int:pk>/delete/",
+        views.ReadingListDeleteView.as_view(),
+        name="readinglist_delete",
+    ),
+    # HTMX endpoint for reading list quick updates
+    path(
+        "reading-list/<int:pk>/quick-update/",
+        views.reading_list_quick_update_htmx,
+        name="reading_list_quick_update",
+    ),
+    # Book Tag Preferences (Settings)
+    path(
+        "settings/book-tags/",
+        views.BookTagPreferenceView.as_view(),
+        name="book_tag_preferences",
+    ),
     # Course URLs
     path("courses/", views.CourseListView.as_view(), name="course_list"),
     path("courses/create/", views.CourseCreateView.as_view(), name="course_create"),

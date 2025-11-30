@@ -217,12 +217,18 @@ class DailyLogEntryView(LoginRequiredMixin, View):
                 },
             )
 
+        # Get user's custom attendance statuses
+        attendance_statuses = AttendanceStatus.objects.filter(
+            user=request.user,
+        ).order_by("display_order")
+
         context = {
             "daily_log": daily_log,
             "student": student,
             "students": students,
             "entry_date": entry_date,
             "course_notes_data": course_notes_data,
+            "attendance_statuses": attendance_statuses,
         }
 
         return render(request, self.template_name, context)
@@ -246,16 +252,36 @@ class DailyLogEntryView(LoginRequiredMixin, View):
             return redirect("academics:dailylog_entry")
 
         # Get or create daily log
+        # Use the default attendance status for this user
+        default_status = AttendanceStatus.objects.filter(
+            user=request.user,
+            is_default=True,
+        ).first()
+
+        # Fallback to first status if no default is set
+        if not default_status:
+            default_status = AttendanceStatus.objects.filter(
+                user=request.user,
+            ).order_by("display_order").first()
+
         daily_log, created = DailyLog.objects.get_or_create(
             student=student,
             date=entry_date,
-            defaults={"user": request.user, "status": "PRESENT"},
+            defaults={"user": request.user, "attendance_status": default_status},
         )
 
         # Update daily log fields
-        status = request.POST.get("status", "PRESENT")
+        status_code = request.POST.get("status")
+        if status_code:
+            # Get the AttendanceStatus object by code
+            attendance_status = AttendanceStatus.objects.filter(
+                user=request.user,
+                code=status_code,
+            ).first()
+            if attendance_status:
+                daily_log.attendance_status = attendance_status
+
         general_notes = request.POST.get("general_notes", "")
-        daily_log.status = status
         daily_log.general_notes = general_notes
         daily_log.save()
 
@@ -420,34 +446,43 @@ class AttendanceReportView(LoginRequiredMixin, TemplateView):
         if student_id:
             students_queryset = students_queryset.filter(pk=student_id)
 
+        # Get user's custom attendance statuses
+        attendance_statuses = AttendanceStatus.objects.filter(
+            user=user,
+        ).order_by("display_order")
+
         # Build report data
         report_data = []
         for student in students_queryset:
             # Get daily logs for this student in the school year
-            logs_query = DailyLog.objects.filter(student=student)
+            logs_query = DailyLog.objects.filter(student=student).select_related("attendance_status")
             if school_year:
                 logs_query = logs_query.filter(
                     date__gte=school_year.start_date, date__lte=school_year.end_date,
                 )
 
             total_days = logs_query.count()
-            present_days = logs_query.filter(status="PRESENT").count()
-            field_trip_days = logs_query.filter(status="FIELD_TRIP").count()
-            absent_days = logs_query.filter(status="ABSENT").count()
-            sick_days = logs_query.filter(status="SICK").count()
-            holiday_days = logs_query.filter(status="HOLIDAY").count()
-            instructional_days = present_days + field_trip_days
+
+            # Calculate counts for each custom status
+            status_counts = {}
+            instructional_days = 0
+            for status in attendance_statuses:
+                count = logs_query.filter(attendance_status=status).count()
+                status_counts[status.code] = {
+                    "count": count,
+                    "label": status.label,
+                    "abbreviation": status.abbreviation,
+                    "color": status.color,
+                }
+                if status.is_instructional:
+                    instructional_days += count
 
             report_data.append(
                 {
                     "student": student,
                     "total_days": total_days,
                     "instructional_days": instructional_days,
-                    "present_days": present_days,
-                    "field_trip_days": field_trip_days,
-                    "absent_days": absent_days,
-                    "sick_days": sick_days,
-                    "holiday_days": holiday_days,
+                    "status_counts": status_counts,
                 },
             )
 
@@ -456,6 +491,7 @@ class AttendanceReportView(LoginRequiredMixin, TemplateView):
         context["students"] = Student.objects.filter(user=user)
         context["selected_student_id"] = int(student_id) if student_id else None
         context["report_data"] = report_data
+        context["attendance_statuses"] = attendance_statuses
 
         return context
 
@@ -480,22 +516,35 @@ class AttendanceReportPDFView(LoginRequiredMixin, View):
         if student_id:
             students_queryset = students_queryset.filter(pk=student_id)
 
+        # Get user's custom attendance statuses
+        attendance_statuses = AttendanceStatus.objects.filter(
+            user=user,
+        ).order_by("display_order")
+
         # Build report data (same logic as AttendanceReportView)
         report_data = []
         for student in students_queryset:
-            logs_query = DailyLog.objects.filter(student=student)
+            logs_query = DailyLog.objects.filter(student=student).select_related("attendance_status")
             if school_year:
                 logs_query = logs_query.filter(
                     date__gte=school_year.start_date, date__lte=school_year.end_date,
                 )
 
             total_days = logs_query.count()
-            present_days = logs_query.filter(status="PRESENT").count()
-            field_trip_days = logs_query.filter(status="FIELD_TRIP").count()
-            absent_days = logs_query.filter(status="ABSENT").count()
-            sick_days = logs_query.filter(status="SICK").count()
-            holiday_days = logs_query.filter(status="HOLIDAY").count()
-            instructional_days = present_days + field_trip_days
+
+            # Calculate counts for each custom status
+            status_counts = {}
+            instructional_days = 0
+            for status in attendance_statuses:
+                count = logs_query.filter(attendance_status=status).count()
+                status_counts[status.code] = {
+                    "count": count,
+                    "label": status.label,
+                    "abbreviation": status.abbreviation,
+                    "color": status.color,
+                }
+                if status.is_instructional:
+                    instructional_days += count
 
             # Get enrollments for this student in the school year
             enrollments_query = (
@@ -515,11 +564,7 @@ class AttendanceReportPDFView(LoginRequiredMixin, View):
                     "student": student,
                     "total_days": total_days,
                     "instructional_days": instructional_days,
-                    "present_days": present_days,
-                    "field_trip_days": field_trip_days,
-                    "absent_days": absent_days,
-                    "sick_days": sick_days,
-                    "holiday_days": holiday_days,
+                    "status_counts": status_counts,
                     "enrollments": enrollments_query,
                 },
             )
@@ -534,6 +579,7 @@ class AttendanceReportPDFView(LoginRequiredMixin, View):
             "school_year": school_year,
             "report_data": report_data,
             "report_data_chunks": report_data_chunks,
+            "attendance_statuses": attendance_statuses,
             "user": user,
             "generated_date": date.today(),
         }
@@ -576,11 +622,17 @@ def attendance_quick_toggle(request, student_pk, log_date):
     # Get existing log if any
     daily_log = DailyLog.objects.filter(student=student, date=date_obj).first()
 
+    # Get user's custom attendance statuses
+    attendance_statuses = AttendanceStatus.objects.filter(
+        user=request.user,
+    ).order_by("display_order")
+
     context = {
         "student": student,
         "date": date_obj,
         "date_str": log_date,
-        "current_status": daily_log.status if daily_log else None,
+        "current_status": daily_log.attendance_status.code if (daily_log and daily_log.attendance_status) else None,
+        "attendance_statuses": attendance_statuses,
     }
 
     return render(request, "academics/partials/status_selector.html", context)
@@ -602,15 +654,22 @@ def attendance_quick_update(request, student_pk, log_date):
         return HttpResponse("Invalid date format", status=400)
 
     # Get new status from form
-    new_status = request.POST.get("status")
-    if new_status not in ["PRESENT", "ABSENT", "SICK", "HOLIDAY", "FIELD_TRIP"]:
+    new_status_code = request.POST.get("status")
+
+    # Get the AttendanceStatus object for this user
+    attendance_status = AttendanceStatus.objects.filter(
+        user=request.user,
+        code=new_status_code,
+    ).first()
+
+    if not attendance_status:
         return HttpResponse("Invalid status", status=400)
 
     # Update or create daily log
     daily_log, created = DailyLog.objects.update_or_create(
         student=student,
         date=date_obj,
-        defaults={"status": new_status, "user": request.user},
+        defaults={"attendance_status": attendance_status, "user": request.user},
     )
 
     # Check if there are any course notes for this log
@@ -728,10 +787,22 @@ def attendance_save_course_notes(request, student_pk, log_date):
         return HttpResponse("Invalid date format", status=400)
 
     # Get or create daily log
+    # Use the default attendance status for this user
+    default_status = AttendanceStatus.objects.filter(
+        user=request.user,
+        is_default=True,
+    ).first()
+
+    # Fallback to first status if no default is set
+    if not default_status:
+        default_status = AttendanceStatus.objects.filter(
+            user=request.user,
+        ).order_by("display_order").first()
+
     daily_log, created = DailyLog.objects.get_or_create(
         student=student,
         date=date_obj,
-        defaults={"status": "PRESENT", "user": request.user},
+        defaults={"attendance_status": default_status, "user": request.user},
     )
 
     # Get active school year

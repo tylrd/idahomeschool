@@ -10,7 +10,7 @@
     <h3 class="mb-0">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Resource</h3>
   </div>
   <div class="card-body">
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
 
       {# Title field #}
@@ -65,6 +65,22 @@
         {% if form.description.errors %}
           <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
         {% endif %}
+      </div>
+
+      {# Image field #}
+      <div class="mb-3">
+        <label for="id_image" class="form-label">Cover Image / Thumbnail</label>
+        {% if form.instance.image %}
+          <div class="mb-2">
+            <img src="{{ form.instance.image.url }}" alt="Current image" class="img-thumbnail" style="max-height: 150px;">
+            <p class="text-muted small">Current image (select a new file to replace)</p>
+          </div>
+        {% endif %}
+        {{ form.image }}
+        {% if form.image.errors %}
+          <div class="invalid-feedback d-block">{{ form.image.errors.0 }}</div>
+        {% endif %}
+        <div class="form-text">Optional cover image or thumbnail for this resource</div>
       </div>
 
       {# Tags field - use custom tag selector component #}

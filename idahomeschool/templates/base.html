@@ -158,18 +158,22 @@
         <a href="#librarySubmenu"
            class="list-group-item list-group-item-action bg-light sidebar-section-toggle collapsed"
            data-bs-toggle="collapse"
-           aria-expanded="{% if 'resource' in request.resolver_match.url_name or 'library' in request.resolver_match.url_name or 'tag' in request.resolver_match.url_name or 'color_palette' in request.resolver_match.url_name %}true{% else %}false{% endif %}">
+           aria-expanded="{% if 'resource' in request.resolver_match.url_name or 'library' in request.resolver_match.url_name or 'tag' in request.resolver_match.url_name or 'color_palette' in request.resolver_match.url_name or 'readinglist' in request.resolver_match.url_name or 'reading_list' in request.resolver_match.url_name %}true{% else %}false{% endif %}">
           <span><i class="bi bi-collection me-2"></i><span class="nav-text">Resource Library</span></span>
           <i class="bi bi-chevron-down"></i>
         </a>
-        <div class="collapse {% if 'resource' in request.resolver_match.url_name or 'library' in request.resolver_match.url_name or 'tag' in request.resolver_match.url_name or 'color_palette' in request.resolver_match.url_name %}show{% endif %}"
+        <div class="collapse {% if 'resource' in request.resolver_match.url_name or 'library' in request.resolver_match.url_name or 'tag' in request.resolver_match.url_name or 'color_palette' in request.resolver_match.url_name or 'readinglist' in request.resolver_match.url_name or 'reading_list' in request.resolver_match.url_name %}show{% endif %}"
              id="librarySubmenu">
           <a href="{% url 'academics:resource_list' %}"
              class="list-group-item list-group-item-action bg-light {% if 'resource' in request.resolver_match.url_name or 'library' in request.resolver_match.url_name %}active{% endif %}">
             <span><i class="bi bi-book-half me-2"></i><span class="nav-text">Resources</span></span>
           </a>
+          <a href="{% url 'academics:reading_list' %}"
+             class="list-group-item list-group-item-action bg-light {% if 'readinglist' in request.resolver_match.url_name or 'reading_list' in request.resolver_match.url_name %}active{% endif %}">
+            <span><i class="bi bi-book me-2"></i><span class="nav-text">Reading List</span></span>
+          </a>
           <a href="{% url 'academics:tag_list' %}"
-             class="list-group-item list-group-item-action bg-light {% if 'tag' in request.resolver_match.url_name and 'color_palette' not in request.resolver_match.url_name %}active{% endif %}">
+             class="list-group-item list-group-item-action bg-light {% if 'tag' in request.resolver_match.url_name and 'color_palette' not in request.resolver_match.url_name and 'book_tag' not in request.resolver_match.url_name %}active{% endif %}">
             <span><i class="bi bi-tags me-2"></i><span class="nav-text">Tags</span></span>
           </a>
           <a href="{% url 'academics:color_palette_list' %}"

@@ -229,7 +229,7 @@ def resource_create_modal_htmx(request):
     selected_ids = request.GET.get("selected_ids", "")
 
     if request.method == "POST":
-        form = ResourceForm(request.POST, user=request.user)
+        form = ResourceForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             resource = form.save()
 

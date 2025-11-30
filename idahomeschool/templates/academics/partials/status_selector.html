@@ -23,40 +23,15 @@ Variables expected:
           {% csrf_token %}
 
           <div class="d-grid gap-2">
+            {% for status in attendance_statuses %}
             <button type="submit"
                     name="status"
-                    value="PRESENT"
-                    class="btn {% if current_status == 'PRESENT' %}btn-success{% else %}btn-outline-success{% endif %}">
-              <strong>P</strong> Present
+                    value="{{ status.code }}"
+                    class="btn {% if current_status == status.code %}btn{% else %}btn-outline{% endif %}"
+                    style="{% if current_status == status.code %}background-color: {{ status.color }}; border-color: {{ status.color }};{% else %}color: {{ status.color }}; border-color: {{ status.color }};{% endif %} {% if status.color|slice:':4' == '#ffc' or status.color|slice:':4' == '#ff0' or status.color|slice:':4' == '#fff' %}{% if current_status == status.code %}color: #000;{% endif %}{% else %}{% if current_status == status.code %}color: #fff;{% endif %}{% endif %}">
+              <strong>{{ status.abbreviation }}</strong> {{ status.label }}
             </button>
-
-            <button type="submit"
-                    name="status"
-                    value="ABSENT"
-                    class="btn {% if current_status == 'ABSENT' %}btn-danger{% else %}btn-outline-danger{% endif %}">
-              <strong>A</strong> Absent
-            </button>
-
-            <button type="submit"
-                    name="status"
-                    value="SICK"
-                    class="btn {% if current_status == 'SICK' %}btn-warning{% else %}btn-outline-warning{% endif %}">
-              <strong>S</strong> Sick
-            </button>
-
-            <button type="submit"
-                    name="status"
-                    value="HOLIDAY"
-                    class="btn {% if current_status == 'HOLIDAY' %}btn-info{% else %}btn-outline-info{% endif %}">
-              <strong>H</strong> Holiday
-            </button>
-
-            <button type="submit"
-                    name="status"
-                    value="FIELD_TRIP"
-                    class="btn {% if current_status == 'FIELD_TRIP' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-              <strong>F</strong> Field Trip
-            </button>
+            {% endfor %}
           </div>
         </form>
 

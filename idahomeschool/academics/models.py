@@ -11,6 +11,12 @@ def student_photo_path(instance, filename):
     return f"students/{instance.user.id}/{instance.id or 'new'}_{filename}"
 
 
+def resource_image_path(instance, filename):
+    """Generate upload path for resource images."""
+    # Store images in: media/resources/<user_id>/<resource_id>_<filename>
+    return f"resources/{instance.user.id}/{instance.id or 'new'}_{filename}"
+
+
 class SchoolYear(models.Model):
     """Represents an academic school year (e.g., 2024-2025)."""
 
@@ -547,6 +553,12 @@ class Resource(models.Model):
         blank=True,
         help_text="Optional description or notes",
     )
+    image = models.ImageField(
+        upload_to=resource_image_path,
+        blank=True,
+        null=True,
+        help_text="Optional cover image or thumbnail",
+    )
     tags = models.ManyToManyField(
         Tag,
         blank=True,
@@ -906,3 +918,138 @@ class CourseNote(models.Model):
         if self.course:
             return f"{self.course.name} - {self.daily_log.date}"
         return f"CourseNote {self.pk}"
+
+
+class BookTagPreference(models.Model):
+    """Stores which tags identify resources as 'books' for the reading list."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="book_tag_preference",
+    )
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name="book_preferences",
+        help_text="Tags that identify resources as books for the reading list",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Book Tag Preference"
+        verbose_name_plural = "Book Tag Preferences"
+
+    def __str__(self):
+        tag_names = ", ".join(self.tags.values_list("name", flat=True))
+        if tag_names:
+            return f"Book tags for {self.user}: {tag_names}"
+        return f"Book tags for {self.user}: (none)"
+
+    @classmethod
+    def get_book_tags_for_user(cls, user):
+        """Get the tags that identify books for this user."""
+        pref, _created = cls.objects.get_or_create(user=user)
+        return pref.tags.all()
+
+    @classmethod
+    def get_book_resources_for_user(cls, user):
+        """Get all resources that match the user's book tag preferences."""
+        book_tags = cls.get_book_tags_for_user(user)
+        if book_tags.exists():
+            return Resource.objects.filter(
+                user=user,
+                tags__in=book_tags,
+            ).distinct()
+        return Resource.objects.none()
+
+
+class ReadingList(models.Model):
+    """Tracks which books a student has read or is reading."""
+
+    STATUS_CHOICES = [
+        ("TO_READ", "To Read"),
+        ("READING", "Currently Reading"),
+        ("COMPLETED", "Completed"),
+        ("DID_NOT_FINISH", "Did Not Finish"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reading_lists",
+    )
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="reading_list",
+    )
+    resource = models.ForeignKey(
+        Resource,
+        on_delete=models.CASCADE,
+        related_name="reading_list_entries",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="TO_READ",
+    )
+    started_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Date the student started reading this book",
+    )
+    completed_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Date the student completed or stopped reading this book",
+    )
+    rating = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Rating from 1-5 stars",
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Personal notes, review, or thoughts about the book",
+    )
+    school_year = models.ForeignKey(
+        SchoolYear,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reading_list_entries",
+        help_text="Optional school year when this book was read",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at", "student__name"]
+        verbose_name = "Reading List Entry"
+        verbose_name_plural = "Reading List Entries"
+        unique_together = [["student", "resource"]]
+        indexes = [
+            models.Index(fields=["student", "status"]),
+            models.Index(fields=["user", "status"]),
+            models.Index(fields=["student", "school_year"]),
+        ]
+
+    def __str__(self):
+        status_display = self.get_status_display()
+        return f"{self.student.name} - {self.resource.title} ({status_display})"
+
+    def get_absolute_url(self):
+        return reverse("academics:readinglist_detail", kwargs={"pk": self.pk})
+
+    @property
+    def status_badge_class(self):
+        """Return Bootstrap badge class based on status."""
+        badge_map = {
+            "TO_READ": "secondary",
+            "READING": "primary",
+            "COMPLETED": "success",
+            "DID_NOT_FINISH": "warning",
+        }
+        return badge_map.get(self.status, "secondary")

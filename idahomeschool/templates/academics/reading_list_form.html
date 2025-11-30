@@ -1,0 +1,34 @@
+{% extends "academics/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if object %}Update{% else %}Add to{% endif %} Reading List{% endblock %}
+
+{% block academics_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{% if object %}Update Reading List Entry{% else %}Add to Reading List{% endif %}</h1>
+</div>
+
+{% if not has_book_tags %}
+<div class="alert alert-warning" role="alert">
+  <h4 class="alert-heading">Book Tags Not Configured</h4>
+  <p>
+    You haven't configured which tags identify books yet.
+    The resource dropdown may be empty.
+    Please <a href="{% url 'academics:book_tag_preferences' %}" class="alert-link">configure book tags</a>
+    in settings to specify which resource tags should be included in the reading list.
+  </p>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-body">
+    {% crispy form %}
+  </div>
+</div>
+
+<div class="mt-3">
+  <a href="{% if object %}{% url 'academics:student_reading_list' object.student.pk %}{% else %}{% url 'academics:reading_list' %}{% endif %}"
+     class="btn btn-secondary">Cancel</a>
+</div>
+
+{% endblock %}
