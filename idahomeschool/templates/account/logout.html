@@ -5,14 +5,15 @@
   {% trans "Sign Out" %}
 {% endblock head_title %}
 
-{% block bodyclass %}bg-light{% endblock bodyclass %}
-
 {% block unauthenticated_content %}
-  <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-      <div class="card shadow-sm mt-5">
-        <div class="card-body p-5 text-center">
-          <h1 class="h3 mb-4">{% trans "Sign Out" %}</h1>
+  <div class="flex justify-center">
+    <div class="w-full max-w-md">
+      <div class="card mt-8">
+        <header>
+          <h1 class="text-2xl font-semibold text-center">{% trans "Sign Out" %}</h1>
+        </header>
+
+        <section class="text-center">
           <p class="mb-4">{% trans "Are you sure you want to sign out?" %}</p>
 
           <form method="post" action="{% url 'account_logout' %}">
@@ -20,12 +21,13 @@
             {% if redirect_field_value %}
               <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
             {% endif %}
-            <button class="btn btn-primary w-100" type="submit">{% trans "Sign Out" %}</button>
+            <button class="btn w-full" type="submit">{% trans "Sign Out" %}</button>
           </form>
+        </section>
 
-          <hr class="my-4">
-          <a href="/" class="text-decoration-none">{% trans "Cancel" %}</a>
-        </div>
+        <footer class="border-t pt-4 text-center">
+          <a href="/">{% trans "Cancel" %}</a>
+        </footer>
       </div>
     </div>
   </div>
