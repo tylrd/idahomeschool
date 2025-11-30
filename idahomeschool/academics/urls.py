@@ -300,6 +300,27 @@ urlpatterns = [
         views.AttendanceReportPDFView.as_view(),
         name="attendance_report_pdf",
     ),
+    # Attendance Status Management URLs
+    path(
+        "settings/attendance-statuses/",
+        views.AttendanceStatusListView.as_view(),
+        name="attendance_status_list",
+    ),
+    path(
+        "settings/attendance-statuses/add/",
+        views.AttendanceStatusCreateView.as_view(),
+        name="attendance_status_create",
+    ),
+    path(
+        "settings/attendance-statuses/<int:pk>/update/",
+        views.AttendanceStatusUpdateView.as_view(),
+        name="attendance_status_update",
+    ),
+    path(
+        "settings/attendance-statuses/<int:pk>/delete/",
+        views.AttendanceStatusDeleteView.as_view(),
+        name="attendance_status_delete",
+    ),
     path("attendance/entry/", views.DailyLogEntryView.as_view(), name="dailylog_entry"),
     path(
         "attendance/entry/<int:student_pk>/",

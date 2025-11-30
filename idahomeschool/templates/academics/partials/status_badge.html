@@ -8,25 +8,14 @@ Variables expected:
 {% endcomment %}
 
 <div id="cell-{{ student.id }}-{{ date_str }}" class="d-inline-block">
-  {% if log %}
-    <span class="badge
-            {% if log.status == 'PRESENT' %}bg-success
-            {% elif log.status == 'ABSENT' %}bg-danger
-            {% elif log.status == 'SICK' %}bg-warning text-dark
-            {% elif log.status == 'HOLIDAY' %}bg-info
-            {% elif log.status == 'FIELD_TRIP' %}bg-primary
-            {% endif %} position-relative"
+  {% if log and log.attendance_status %}
+    <span class="badge position-relative"
           hx-get="{% url 'academics:attendance_quick_toggle' student.id date_str %}"
           hx-target="#status-selector-container"
           hx-swap="innerHTML"
-          style="cursor: pointer; display: inline-block; padding: 8px; min-width: 40px;"
-          title="{{ log.get_status_display }} - Click to change">
-      {% if log.status == 'PRESENT' %}P
-      {% elif log.status == 'ABSENT' %}A
-      {% elif log.status == 'SICK' %}S
-      {% elif log.status == 'HOLIDAY' %}H
-      {% elif log.status == 'FIELD_TRIP' %}F
-      {% endif %}
+          style="cursor: pointer; display: inline-block; padding: 8px; min-width: 40px; background-color: {{ log.attendance_status.color }}; {% if log.attendance_status.color|slice:':4' == '#ffc' or log.attendance_status.color|slice:':4' == '#ff0' or log.attendance_status.color|slice:':4' == '#fff' %}color: #000;{% endif %}"
+          title="{{ log.attendance_status.label }} - Click to change">
+      {{ log.attendance_status.abbreviation }}
       {% if has_notes %}
         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" style="font-size: 0.6em;">
           <i class="bi bi-pencil-fill"></i>

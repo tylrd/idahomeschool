@@ -1,0 +1,77 @@
+{% extends "academics/base.html" %}
+
+{% block title %}Delete Attendance Status{% endblock %}
+
+{% block academics_content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card border-danger">
+      <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">
+          <i class="bi bi-exclamation-triangle"></i> Confirm Deletion
+        </h4>
+      </div>
+      <div class="card-body">
+        <h5>Are you sure you want to delete this attendance status?</h5>
+
+        <div class="alert alert-light my-3">
+          <div class="d-flex align-items-center mb-2">
+            <span class="badge me-2" style="background-color: {{ object.color }}; {% if object.color|slice:':4' == '#ffc' or object.color|slice:':4' == '#ff0' or object.color|slice:':4' == '#fff' %}color: #000;{% endif %} min-width: 40px; padding: 8px;">
+              {{ object.abbreviation }}
+            </span>
+            <strong>{{ object.label }}</strong>
+          </div>
+          <dl class="row mb-0 small">
+            <dt class="col-sm-4">Code:</dt>
+            <dd class="col-sm-8"><code>{{ object.code }}</code></dd>
+
+            <dt class="col-sm-4">Color:</dt>
+            <dd class="col-sm-8">
+              <div class="d-flex align-items-center">
+                <div style="width: 20px; height: 20px; background-color: {{ object.color }}; border: 1px solid #dee2e6; border-radius: 3px; margin-right: 8px;"></div>
+                <code>{{ object.color }}</code>
+              </div>
+            </dd>
+
+            <dt class="col-sm-4">Instructional:</dt>
+            <dd class="col-sm-8">
+              {% if object.is_instructional %}
+                <i class="bi bi-check-circle-fill text-success"></i> Yes
+              {% else %}
+                <i class="bi bi-x-circle text-muted"></i> No
+              {% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Default:</dt>
+            <dd class="col-sm-8">
+              {% if object.is_default %}
+                <span class="badge bg-primary">Yes</span>
+              {% else %}
+                No
+              {% endif %}
+            </dd>
+          </dl>
+        </div>
+
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle"></i>
+          <strong>Warning:</strong> Deleting this status may affect existing daily logs that use it. Make sure you have a replacement status before deleting.
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="{% url 'academics:attendance_status_list' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> Yes, Delete Status
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock academics_content %}

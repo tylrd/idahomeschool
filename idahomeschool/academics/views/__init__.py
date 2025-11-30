@@ -10,6 +10,10 @@ organized into logical submodules for better maintainability.
 from .attendance import AttendanceCalendarView
 from .attendance import AttendanceReportPDFView
 from .attendance import AttendanceReportView
+from .attendance import AttendanceStatusCreateView
+from .attendance import AttendanceStatusDeleteView
+from .attendance import AttendanceStatusListView
+from .attendance import AttendanceStatusUpdateView
 from .attendance import DailyLogCreateView
 from .attendance import DailyLogDeleteView
 from .attendance import DailyLogDetailView
@@ -101,6 +105,10 @@ __all__ = [
     "AttendanceCalendarView",
     "AttendanceReportPDFView",
     "AttendanceReportView",
+    "AttendanceStatusCreateView",
+    "AttendanceStatusDeleteView",
+    "AttendanceStatusListView",
+    "AttendanceStatusUpdateView",
     # Color Palette
     "color_palette_import_csv",
     "color_palette_preview_htmx",

@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.db.models import Max
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -23,6 +24,8 @@ from django.views.generic import UpdateView
 from weasyprint import HTML
 
 from idahomeschool.academics.forms import DailyLogForm
+from idahomeschool.academics.models import AttendanceStatus
+from idahomeschool.academics.models import ColorPalette
 from idahomeschool.academics.models import CourseEnrollment
 from idahomeschool.academics.models import CourseNote
 from idahomeschool.academics.models import DailyLog
@@ -386,6 +389,11 @@ class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
             start_date - timedelta(days=7 if view_type == "week" else 30)
         ).isoformat()
         context["next_date"] = (end_date + timedelta(days=1)).isoformat()
+
+        # Get user's custom attendance statuses for legend
+        context["attendance_statuses"] = AttendanceStatus.objects.filter(
+            user=user,
+        ).order_by("display_order")
 
         return context
 
@@ -782,3 +790,138 @@ def attendance_save_course_notes(request, student_pk, log_date):
 
     # Return updated badge HTML with OOB swap to update the badge, and closes modal
     return HttpResponse(badge_html_with_oob)
+
+
+# =============================================================================
+# Attendance Status Management Views
+# =============================================================================
+
+
+class AttendanceStatusListView(LoginRequiredMixin, ListView):
+    """List all attendance statuses for the current user."""
+
+    model = AttendanceStatus
+    template_name = "academics/attendance_status_list.html"
+    context_object_name = "statuses"
+
+    def get_queryset(self):
+        return AttendanceStatus.objects.filter(
+            user=self.request.user,
+        ).order_by("display_order")
+
+
+class AttendanceStatusCreateView(LoginRequiredMixin, CreateView):
+    """Create a new attendance status."""
+
+    model = AttendanceStatus
+    template_name = "academics/attendance_status_form.html"
+    fields = [
+        "code",
+        "label",
+        "abbreviation",
+        "color",
+        "is_instructional",
+        "is_default",
+    ]
+    success_url = reverse_lazy("academics:attendance_status_list")
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # Add help text and widgets
+        form.fields["code"].widget.attrs["class"] = "form-control"
+        form.fields["label"].widget.attrs["class"] = "form-control"
+        form.fields["abbreviation"].widget.attrs["class"] = "form-control"
+        form.fields["abbreviation"].widget.attrs["maxlength"] = "3"
+        form.fields["color"].widget.attrs["class"] = "form-control"
+        form.fields["color"].widget.attrs["type"] = "color"
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get colors from active palette
+        active_palette = ColorPalette.objects.filter(
+            user=self.request.user,
+            is_active=True,
+        ).first()
+        if active_palette:
+            context["palette_colors"] = active_palette.colors.all()
+        return context
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        # Set display_order to last
+        max_order = AttendanceStatus.objects.filter(
+            user=self.request.user,
+        ).aggregate(max_order=Max("display_order"))["max_order"]
+        form.instance.display_order = (max_order or 0) + 1
+        messages.success(
+            self.request,
+            f"Attendance status '{form.instance.label}' created successfully!",
+        )
+        return super().form_valid(form)
+
+
+class AttendanceStatusUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """Update an existing attendance status."""
+
+    model = AttendanceStatus
+    template_name = "academics/attendance_status_form.html"
+    fields = [
+        "code",
+        "label",
+        "abbreviation",
+        "color",
+        "is_instructional",
+        "is_default",
+    ]
+    success_url = reverse_lazy("academics:attendance_status_list")
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["code"].widget.attrs["class"] = "form-control"
+        form.fields["label"].widget.attrs["class"] = "form-control"
+        form.fields["abbreviation"].widget.attrs["class"] = "form-control"
+        form.fields["abbreviation"].widget.attrs["maxlength"] = "3"
+        form.fields["color"].widget.attrs["class"] = "form-control"
+        form.fields["color"].widget.attrs["type"] = "color"
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get colors from active palette
+        active_palette = ColorPalette.objects.filter(
+            user=self.request.user,
+            is_active=True,
+        ).first()
+        if active_palette:
+            context["palette_colors"] = active_palette.colors.all()
+        return context
+
+    def form_valid(self, form):
+        messages.success(
+            self.request,
+            f"Attendance status '{form.instance.label}' updated successfully!",
+        )
+        return super().form_valid(form)
+
+
+class AttendanceStatusDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Delete an attendance status."""
+
+    model = AttendanceStatus
+    template_name = "academics/attendance_status_confirm_delete.html"
+    success_url = reverse_lazy("academics:attendance_status_list")
+
+    def test_func(self):
+        return self.get_object().user == self.request.user
+
+    def delete(self, request, *args, **kwargs):
+        status = self.get_object()
+        messages.success(
+            self.request,
+            f"Attendance status '{status.label}' deleted successfully!",
+        )
+        return super().delete(request, *args, **kwargs)

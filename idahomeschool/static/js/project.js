@@ -1,8 +1,13 @@
 import '../sass/project.scss';
+import Alpine from 'alpinejs'
 import htmx from 'htmx.org';
+ 
+window.Alpine = Alpine
+window.htmx = htmx;
+ 
+Alpine.start()
 
 /* Expose HTMX globally so it can be used by other scripts */
-window.htmx = htmx;
 
 /* Project specific Javascript goes here. */
 

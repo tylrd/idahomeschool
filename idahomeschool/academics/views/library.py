@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count
 from django.db.models import Q
+from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.shortcuts import render
@@ -766,6 +767,9 @@ def remove_color_from_palette(request, palette_pk, color_pk):
 
     if not palette or not color:
         messages.error(request, "Palette or color not found")
+        # For HTMX DELETE requests, return 404
+        if request.method == "DELETE":
+            return HttpResponse(status=404)
         return redirect("academics:color_palette_list")
 
     # Remove the color from this palette
@@ -775,4 +779,9 @@ def remove_color_from_palette(request, palette_pk, color_pk):
         request,
         f"Removed {color.color} from palette '{palette.name}'",
     )
+
+    # For HTMX DELETE requests, return empty response (element removed via swap)
+    if request.method == "DELETE":
+        return HttpResponse(status=200)
+
     return redirect("academics:color_palette_list")

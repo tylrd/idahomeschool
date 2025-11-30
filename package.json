@@ -39,6 +39,7 @@
     "build": "webpack --config webpack/prod.config.js"
   },
   "dependencies": {
+    "alpinejs": "^3.15.2",
     "htmx.org": "^2.0.8"
   }
 }

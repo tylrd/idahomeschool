@@ -306,6 +306,151 @@ class Color(models.Model):
         ]
 
 
+class AttendanceStatus(models.Model):
+    """User-defined attendance status types with custom colors."""
+
+    # Default statuses that will be created for new users
+    DEFAULT_STATUSES = [
+        {
+            "code": "PRESENT",
+            "label": "Present",
+            "abbreviation": "P",
+            "color": "#198754",  # Bootstrap success green
+            "is_instructional": True,
+            "is_default": True,
+        },
+        {
+            "code": "ABSENT",
+            "label": "Absent",
+            "abbreviation": "A",
+            "color": "#dc3545",  # Bootstrap danger red
+            "is_instructional": False,
+            "is_default": False,
+        },
+        {
+            "code": "SICK",
+            "label": "Sick",
+            "abbreviation": "S",
+            "color": "#ffc107",  # Bootstrap warning yellow
+            "is_instructional": False,
+            "is_default": False,
+        },
+        {
+            "code": "HOLIDAY",
+            "label": "Holiday",
+            "abbreviation": "H",
+            "color": "#0dcaf0",  # Bootstrap info cyan
+            "is_instructional": False,
+            "is_default": False,
+        },
+        {
+            "code": "FIELD_TRIP",
+            "label": "Field Trip",
+            "abbreviation": "F",
+            "color": "#0d6efd",  # Bootstrap primary blue
+            "is_instructional": True,
+            "is_default": False,
+        },
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="attendance_statuses",
+    )
+    code = models.CharField(
+        max_length=50,
+        help_text="Internal code for this status (e.g., 'PRESENT', 'SICK')",
+    )
+    label = models.CharField(
+        max_length=50,
+        help_text="Display name for this status (e.g., 'Present', 'Sick')",
+    )
+    abbreviation = models.CharField(
+        max_length=3,
+        help_text="Short code shown on calendar (e.g., 'P', 'A', 'S')",
+    )
+    color = models.CharField(
+        max_length=7,
+        help_text="Hex color code for the status badge (e.g., #007bff)",
+    )
+    is_instructional = models.BooleanField(
+        default=True,
+        help_text="Whether this status counts as an instructional day",
+    )
+    is_default = models.BooleanField(
+        default=False,
+        help_text="Whether this is the default status for new daily logs",
+    )
+    display_order = models.IntegerField(
+        default=0,
+        help_text="Order in which statuses are displayed",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["user", "display_order", "label"]
+        verbose_name = "Attendance Status"
+        verbose_name_plural = "Attendance Statuses"
+        unique_together = [["user", "code"]]
+        indexes = [
+            models.Index(fields=["user", "is_default"]),
+            models.Index(fields=["user", "display_order"]),
+        ]
+
+    def __str__(self):
+        return f"{self.label} ({self.abbreviation})"
+
+    def save(self, *args, **kwargs):
+        # If setting this as default, unset all other defaults for this user
+        if self.is_default:
+            AttendanceStatus.objects.filter(
+                user=self.user,
+            ).exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def create_defaults_for_user(cls, user):
+        """Create default attendance statuses for a new user."""
+        for idx, status_data in enumerate(cls.DEFAULT_STATUSES):
+            # Try to find a color in user's active palette
+            color_value = status_data["color"]
+            active_palette = ColorPalette.objects.filter(
+                user=user,
+                is_active=True,
+            ).first()
+
+            if active_palette:
+                # Try to find a close match in the palette
+                palette_color = active_palette.colors.filter(
+                    color=color_value,
+                ).first()
+                if palette_color:
+                    color_value = palette_color.color
+
+            cls.objects.create(
+                user=user,
+                code=status_data["code"],
+                label=status_data["label"],
+                abbreviation=status_data["abbreviation"],
+                color=color_value,
+                is_instructional=status_data["is_instructional"],
+                is_default=status_data["is_default"],
+                display_order=idx,
+            )
+
+    @classmethod
+    def get_default_for_user(cls, user):
+        """Get the default status for a user, or create defaults if none exist."""
+        default_status = cls.objects.filter(user=user, is_default=True).first()
+        if not default_status:
+            # No statuses exist, create defaults
+            cls.create_defaults_for_user(user)
+            default_status = cls.objects.filter(user=user, is_default=True).first()
+        return default_status
+
+
 class Tag(models.Model):
     """Represents a tag for organizing resources."""
 
@@ -642,6 +787,7 @@ class CourseEnrollment(models.Model):
 class DailyLog(models.Model):
     """Represents daily attendance for a student."""
 
+    # Legacy STATUS_CHOICES kept for migration purposes
     STATUS_CHOICES = [
         ("PRESENT", "Present"),
         ("ABSENT", "Absent"),
@@ -656,10 +802,21 @@ class DailyLog(models.Model):
         related_name="daily_logs",
     )
     date = models.DateField()
+    # NEW: Use custom AttendanceStatus
+    attendance_status = models.ForeignKey(
+        AttendanceStatus,
+        on_delete=models.PROTECT,
+        related_name="daily_logs",
+        null=True,  # Temporarily nullable for migration
+        blank=True,
+        help_text="Attendance status for this day",
+    )
+    # OLD: Keep old status field temporarily for migration
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="PRESENT",
+        blank=True,
     )
     general_notes = models.TextField(
         blank=True,
@@ -684,6 +841,8 @@ class DailyLog(models.Model):
         ]
 
     def __str__(self):
+        if self.attendance_status:
+            return f"{self.student.name} - {self.date} ({self.attendance_status.label})"
         return f"{self.student.name} - {self.date} ({self.get_status_display()})"
 
     def get_absolute_url(self):
@@ -691,7 +850,10 @@ class DailyLog(models.Model):
 
     @property
     def is_instructional_day(self):
-        """Returns True if this counts as an instructional day (Present or Field Trip)."""
+        """Returns True if this counts as an instructional day."""
+        if self.attendance_status:
+            return self.attendance_status.is_instructional
+        # Fallback for old status field during migration
         return self.status in ["PRESENT", "FIELD_TRIP"]
 
 

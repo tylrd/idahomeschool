@@ -135,7 +135,7 @@
     {% if palette.colors.all %}
     <div class="row g-3">
       {% for color in palette.colors.all %}
-      <div class="col-md-3 col-sm-4 col-6">
+      <div class="col-md-3 col-sm-4 col-6" id="color-{{ color.pk }}-palette-{{ palette.pk }}">
         <div class="card h-100">
           <div class="card-body text-center">
             <div class="mb-3" style="height: 80px; background-color: {{ color.color }}; border-radius: 8px; border: 1px solid #dee2e6;"></div>
@@ -152,9 +152,14 @@
                   <i class="bi bi-trash"></i> Delete
                 </a>
               </div>
-              <a href="{% url 'academics:remove_color_from_palette' palette.pk color.pk %}" class="btn btn-outline-warning btn-sm">
+              <button
+                hx-delete="{% url 'academics:remove_color_from_palette' palette.pk color.pk %}"
+                hx-target="#color-{{ color.pk }}-palette-{{ palette.pk }}"
+                hx-swap="outerHTML swap:500ms"
+                hx-confirm="Remove {{ color.color }} from this palette?"
+                class="btn btn-outline-warning btn-sm">
                 <i class="bi bi-x-circle"></i> Remove from Palette
-              </a>
+              </button>
             </div>
           </div>
         </div>
