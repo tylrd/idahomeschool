@@ -154,9 +154,20 @@ class DailyLogEntryView(LoginRequiredMixin, View):
     """View for entering daily log with course notes for all student's courses."""
 
     template_name = "academics/dailylog_entry.html"
+    partial_template_name = "academics/partials/dailylog_entry_form.html"
 
     def get(self, request, student_pk=None, log_date=None):
         """Display the daily log entry form."""
+        # Check for query parameters (HTMX requests)
+        query_student_id = request.GET.get("student_id")
+        query_date = request.GET.get("date")
+
+        # Use query params if available, otherwise use URL params
+        if query_student_id:
+            student_pk = query_student_id
+        if query_date:
+            log_date = query_date
+
         # Get or set the date
         if log_date:
             try:
@@ -230,6 +241,14 @@ class DailyLogEntryView(LoginRequiredMixin, View):
             "course_notes_data": course_notes_data,
             "attendance_statuses": attendance_statuses,
         }
+
+        # If this is an HTMX request, return just the form partial
+        if request.headers.get("HX-Request"):
+            response = render(request, self.partial_template_name, context)
+            # Set the proper URL for browser history
+            proper_url = f"/academics/dailylog_entry/{student.pk}/{entry_date.isoformat()}/"
+            response["HX-Push-Url"] = proper_url
+            return response
 
         return render(request, self.template_name, context)
 

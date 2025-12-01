@@ -4,48 +4,44 @@
 {% block title %}Dashboard - Academic Records{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Dashboard</h1>
+<div class="flex justify-between items-center mb-3">
+  <h1 class="text-3xl font-bold">Dashboard</h1>
 </div>
 
-<div class="row mb-4">
-  <div class="col-md-4">
-    <div class="card text-center">
-      <div class="card-body">
-        <h5 class="card-title">Active School Year</h5>
-        {% if active_year %}
-          <p class="card-text h4">{{ active_year.name }}</p>
-          <small class="text-muted">{{ active_year.start_date }} to {{ active_year.end_date }}</small>
-        {% else %}
-          <p class="card-text text-muted">No active year</p>
-          <a href="{% url 'academics:schoolyear_create' %}" class="btn btn-success btn-sm">Create One</a>
-        {% endif %}
-      </div>
-    </div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+  <div class="card text-center">
+    <section class="py-3">
+      <h5 class="font-semibold text-base mb-2">Active School Year</h5>
+      {% if active_year %}
+        <p class="text-2xl font-bold mb-1">{{ active_year.name }}</p>
+        <small class="text-muted-foreground text-xs">{{ active_year.start_date }} to {{ active_year.end_date }}</small>
+      {% else %}
+        <p class="text-muted-foreground mb-2">No active year</p>
+        <a href="{% url 'academics:schoolyear_create' %}" class="btn btn-sm">Create One</a>
+      {% endif %}
+    </section>
   </div>
   {% if active_year %}
-  <div class="col-md-6">
-    <div class="card text-center">
-      <div class="card-body">
-        <h5 class="card-title">Quick Actions</h5>
-        <div class="d-grid gap-2">
-          <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-success">Log Today's Attendance</a>
-          <a href="{% url 'academics:attendance_calendar' %}" class="btn btn-outline-primary">View Calendar</a>
-        </div>
+  <div class="md:col-span-2 card text-center">
+    <section class="py-3">
+      <h5 class="font-semibold text-base mb-2">Quick Actions</h5>
+      <div class="flex flex-col gap-2">
+        <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-sm">Log Today's Attendance</a>
+        <a href="{% url 'academics:attendance_calendar' %}" class="btn-outline btn-sm">View Calendar</a>
       </div>
-    </div>
+    </section>
   </div>
   {% endif %}
 </div>
 
 {% if active_year and active_courses %}
 <div class="card mb-4">
-  <div class="card-header">
-    <h5 class="mb-0">Active Courses ({{ active_year.name }})</h5>
-  </div>
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-striped">
+  <header>
+    <h5 class="text-base font-semibold">Active Courses ({{ active_year.name }})</h5>
+  </header>
+  <section class="p-0">
+    <div class="overflow-x-auto">
+      <table class="table [&_th]:py-2 [&_td]:py-2 text-sm">
         <thead>
           <tr>
             <th>Course</th>
@@ -57,143 +53,135 @@
         <tbody>
           {% for enrollment in active_enrollments %}
           <tr>
-            <td><a href="{% url 'academics:course_detail' enrollment.course.pk %}">{{ enrollment.course.name }}</a></td>
+            <td><a href="{% url 'academics:course_detail' enrollment.course.pk %}" class="link">{{ enrollment.course.name }}</a></td>
             <td>
-              <div class="d-flex align-items-center">
-                <div class="flex-shrink-0 me-2">
-                  {% if enrollment.student.photo %}
-                    <img src="{{ enrollment.student.photo.url }}" alt="{{ enrollment.student.name }}" class="rounded-circle" style="width: 28px; height: 28px; object-fit: cover;">
-                  {% else %}
-                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; color: white; font-size: 12px; font-weight: bold;">
-                      {{ enrollment.student.name.0 }}
-                    </div>
-                  {% endif %}
-                </div>
-                <a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a>
+              <div class="flex items-center gap-2">
+                {% if enrollment.student.photo %}
+                  <img src="{{ enrollment.student.photo.url }}" alt="{{ enrollment.student.name }}" class="rounded-full size-6 object-cover">
+                {% else %}
+                  <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-6 text-xs font-bold">
+                    {{ enrollment.student.name.0 }}
+                  </div>
+                {% endif %}
+                <a href="{% url 'academics:student_detail' enrollment.student.pk %}" class="link">{{ enrollment.student.name }}</a>
               </div>
             </td>
-            <td><span class="badge bg-primary">{{ enrollment.get_status_display }}</span></td>
+            <td><span class="badge badge-sm">{{ enrollment.get_status_display }}</span></td>
             <td>
-              <a href="{% url 'academics:courseenrollment_detail' enrollment.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+              <a href="{% url 'academics:courseenrollment_detail' enrollment.pk %}" class="btn-outline btn-sm">View</a>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
 </div>
 {% endif %}
 
-<div class="row">
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Recent Students</h5>
-      </div>
-      <div class="list-group list-group-flush">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+  <div class="card">
+    <header>
+      <h5 class="text-base font-semibold">Recent Students</h5>
+    </header>
+    <section class="p-0">
+      <div class="divide-y">
         {% for student in recent_students %}
-        <a href="{% url 'academics:student_detail' student.pk %}" class="list-group-item list-group-item-action">
-          <div class="d-flex align-items-center">
-            <div class="flex-shrink-0 me-3">
-              {% if student.photo %}
-                <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
-              {% else %}
-                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; color: white; font-size: 16px; font-weight: bold;">
-                  {{ student.name.0 }}
-                </div>
-              {% endif %}
-            </div>
-            <div class="flex-grow-1">
-              <div class="d-flex w-100 justify-content-between">
-                <h6 class="mb-1">{{ student.name }}</h6>
-                <small>Grade {{ student.grade_level }}</small>
+        <a href="{% url 'academics:student_detail' student.pk %}" class="block p-3 hover:bg-muted transition-colors">
+          <div class="flex items-center gap-2">
+            {% if student.photo %}
+              <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="rounded-full size-8 object-cover shrink-0">
+            {% else %}
+              <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-8 text-sm font-bold shrink-0">
+                {{ student.name.0 }}
               </div>
-              <small class="text-muted">Age {{ student.age }}</small>
+            {% endif %}
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-start gap-2">
+                <h6 class="font-medium text-sm truncate">{{ student.name }}</h6>
+                <small class="text-muted-foreground text-xs shrink-0">Grade {{ student.grade_level }}</small>
+              </div>
+              <small class="text-muted-foreground text-xs">Age {{ student.age }}</small>
             </div>
           </div>
         </a>
         {% empty %}
-        <div class="list-group-item">
-          <p class="mb-0 text-muted">No students yet.</p>
-          <a href="{% url 'academics:student_create' %}" class="btn btn-sm btn-primary mt-2">Add First Student</a>
+        <div class="p-3">
+          <p class="text-muted-foreground text-sm mb-2">No students yet.</p>
+          <a href="{% url 'academics:student_create' %}" class="btn btn-sm">Add First Student</a>
         </div>
         {% endfor %}
       </div>
-    </div>
+    </section>
   </div>
 
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Recent Courses</h5>
-      </div>
-      <div class="list-group list-group-flush">
+  <div class="card">
+    <header>
+      <h5 class="text-base font-semibold">Recent Courses</h5>
+    </header>
+    <section class="p-0">
+      <div class="divide-y">
         {% for course in recent_courses %}
-        <a href="{% url 'academics:course_detail' course.pk %}" class="list-group-item list-group-item-action">
-          <div class="d-flex w-100 justify-content-between">
-            <h6 class="mb-1">{{ course.name }}</h6>
-            <small class="badge bg-secondary">{{ course.enrollments.count }} enrollment{{ course.enrollments.count|pluralize }}</small>
+        <a href="{% url 'academics:course_detail' course.pk %}" class="block p-3 hover:bg-muted transition-colors">
+          <div class="flex justify-between items-start gap-2 mb-0.5">
+            <h6 class="font-medium text-sm">{{ course.name }}</h6>
+            <span class="badge badge-sm shrink-0">{{ course.enrollments.count }}</span>
           </div>
           {% if course.course_template %}
-            <small class="text-muted">Template: {{ course.course_template.name }}</small>
+            <small class="text-muted-foreground text-xs">Template: {{ course.course_template.name }}</small>
           {% endif %}
         </a>
         {% empty %}
-        <div class="list-group-item">
-          <p class="mb-0 text-muted">No courses yet.</p>
-          <a href="{% url 'academics:course_create' %}" class="btn btn-sm btn-primary mt-2">Add First Course</a>
+        <div class="p-3">
+          <p class="text-muted-foreground text-sm mb-2">No courses yet.</p>
+          <a href="{% url 'academics:course_create' %}" class="btn btn-sm">Add First Course</a>
         </div>
         {% endfor %}
       </div>
-    </div>
+    </section>
   </div>
 
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Recent Attendance</h5>
-      </div>
-      <div class="list-group list-group-flush">
+  <div class="card">
+    <header>
+      <h5 class="text-base font-semibold">Recent Attendance</h5>
+    </header>
+    <section class="p-0">
+      <div class="divide-y">
         {% for log in recent_daily_logs %}
-        <a href="{% url 'academics:dailylog_detail' log.pk %}" class="list-group-item list-group-item-action">
-          <div class="d-flex align-items-center">
-            <div class="flex-shrink-0 me-2">
-              {% if log.student.photo %}
-                <img src="{{ log.student.photo.url }}" alt="{{ log.student.name }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
-              {% else %}
-                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; color: white; font-size: 14px; font-weight: bold;">
-                  {{ log.student.name.0 }}
-                </div>
-              {% endif %}
-            </div>
-            <div class="flex-grow-1">
-              <div class="d-flex w-100 justify-content-between">
-                <h6 class="mb-1">{{ log.student.name }}</h6>
-                <small>
-                  <span class="badge
-                    {% if log.status == 'PRESENT' %}bg-success
-                    {% elif log.status == 'ABSENT' %}bg-danger
-                    {% elif log.status == 'SICK' %}bg-warning
-                    {% elif log.status == 'HOLIDAY' %}bg-info
-                    {% elif log.status == 'FIELD_TRIP' %}bg-primary
-                    {% endif %}">
-                    {{ log.get_status_display }}
-                  </span>
-                </small>
+        <a href="{% url 'academics:dailylog_detail' log.pk %}" class="block p-3 hover:bg-muted transition-colors">
+          <div class="flex items-center gap-2">
+            {% if log.student.photo %}
+              <img src="{{ log.student.photo.url }}" alt="{{ log.student.name }}" class="rounded-full size-7 object-cover shrink-0">
+            {% else %}
+              <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-7 text-xs font-bold shrink-0">
+                {{ log.student.name.0 }}
               </div>
-              <small class="text-muted">{{ log.date|date:"F j, Y" }}</small>
+            {% endif %}
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-start gap-2">
+                <h6 class="font-medium text-sm truncate">{{ log.student.name }}</h6>
+                <span class="badge badge-sm shrink-0
+                  {% if log.status == 'PRESENT' %}badge-success
+                  {% elif log.status == 'ABSENT' %}badge-destructive
+                  {% elif log.status == 'SICK' %}badge-warning
+                  {% elif log.status == 'HOLIDAY' %}badge-info
+                  {% elif log.status == 'FIELD_TRIP' %}badge-primary
+                  {% endif %}">
+                  {{ log.get_status_display }}
+                </span>
+              </div>
+              <small class="text-muted-foreground text-xs">{{ log.date|date:"F j, Y" }}</small>
             </div>
           </div>
         </a>
         {% empty %}
-        <div class="list-group-item">
-          <p class="mb-0 text-muted">No attendance logs yet.</p>
-          <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-sm btn-primary mt-2">Log Attendance</a>
+        <div class="p-3">
+          <p class="text-muted-foreground text-sm mb-2">No attendance logs yet.</p>
+          <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-sm">Log Attendance</a>
         </div>
         {% endfor %}
       </div>
-    </div>
+    </section>
   </div>
 </div>
 {% endblock academics_content %}

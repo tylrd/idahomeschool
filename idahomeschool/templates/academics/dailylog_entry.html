@@ -4,132 +4,52 @@
 {% block title %}Daily Log Entry{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Daily Log Entry</h1>
-  <div>
-    <a href="{% url 'academics:attendance_calendar' %}" class="btn btn-outline-primary">Calendar View</a>
-    <a href="{% url 'academics:dailylog_list' %}" class="btn btn-outline-secondary">All Logs</a>
+<div class="flex justify-between items-center mb-3">
+  <h1 class="text-3xl font-bold">Daily Log Entry</h1>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:attendance_calendar' %}" class="btn btn-sm bg-secondary text-secondary-foreground">Calendar View</a>
+    <a href="{% url 'academics:dailylog_list' %}" class="btn btn-sm bg-secondary text-secondary-foreground">All Logs</a>
   </div>
 </div>
 
 <!-- Student and Date Selection -->
-<div class="card mb-4">
-  <div class="card-body">
-    <div class="row">
-      <div class="col-md-6">
-        <label for="student_select" class="form-label">Student:</label>
-        <select id="student_select" class="form-select" onchange="changeStudent(this.value)">
+<div class="card mb-3">
+  <section class="py-3">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid gap-2">
+        <label for="student_select">Student</label>
+        <select id="student_select" name="student_id"
+                hx-get="{% url 'academics:dailylog_entry' %}"
+                hx-target="#dailylog-form-container"
+                hx-push-url="true"
+                hx-include="#date_input"
+                hx-trigger="change">
           {% for s in students %}
             <option value="{{ s.id }}" {% if s.id == student.id %}selected{% endif %}>{{ s.name }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-6">
-        <label for="date_input" class="form-label">Date:</label>
-        <div class="input-group">
-          <input type="date" id="date_input" class="form-control" value="{{ entry_date|date:'Y-m-d' }}" onchange="changeDate(this.value)">
-          <button class="btn btn-outline-secondary" type="button" onclick="changeDate('{{ entry_date|date:'Y-m-d' }}', -1)">← Prev</button>
-          <button class="btn btn-outline-primary" type="button" onclick="setToday()">Today</button>
-          <button class="btn btn-outline-secondary" type="button" onclick="changeDate('{{ entry_date|date:'Y-m-d' }}', 1)">Next →</button>
+      <div class="grid gap-2">
+        <label for="date_input">Date</label>
+        <div class="flex gap-1">
+          <input type="date"
+                 id="date_input"
+                 name="date"
+                 class="flex-1 min-w-0"
+                 value="{{ entry_date|date:'Y-m-d' }}"
+                 hx-get="{% url 'academics:dailylog_entry' %}"
+                 hx-target="#dailylog-form-container"
+                 hx-push-url="true"
+                 hx-include="#student_select"
+                 hx-trigger="change">
         </div>
       </div>
     </div>
-  </div>
+  </section>
 </div>
 
-<!-- Daily Log Entry Form -->
-<form method="post" action="{% url 'academics:dailylog_entry_date' student.pk entry_date|date:'Y-m-d' %}">
-  {% csrf_token %}
-
-  <div class="card mb-4">
-    <div class="card-header">
-      <h5 class="mb-0">Attendance for {{ student.name }} - {{ entry_date|date:"l, F j, Y" }}</h5>
-    </div>
-    <div class="card-body">
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label for="status" class="form-label">Status *</label>
-          <select name="status" id="status" class="form-select" required>
-            {% for status in attendance_statuses %}
-            <option value="{{ status.code }}" {% if daily_log and daily_log.attendance_status and daily_log.attendance_status.code == status.code or not daily_log and status.is_default %}selected{% endif %}>
-              {{ status.label }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-12">
-          <label for="general_notes" class="form-label">General Notes (Optional)</label>
-          <textarea name="general_notes" id="general_notes" class="form-control" rows="3" placeholder="Optional notes about the day...">{% if daily_log %}{{ daily_log.general_notes }}{% endif %}</textarea>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Course Notes -->
-  {% if course_notes_data %}
-  <div class="card mb-4">
-    <div class="card-header">
-      <h5 class="mb-0">Course Notes</h5>
-      <small class="text-muted">Enter notes for each course worked on today</small>
-    </div>
-    <div class="card-body">
-      {% for item in course_notes_data %}
-      <div class="mb-3">
-        <label for="course_notes_{{ item.enrollment.id }}" class="form-label">
-          <strong>{{ item.enrollment.course.name }}</strong>
-          <span class="badge bg-secondary">{{ item.enrollment.school_year.name }}</span>
-        </label>
-        <textarea
-          name="course_notes_{{ item.enrollment.id }}"
-          id="course_notes_{{ item.enrollment.id }}"
-          class="form-control"
-          rows="3"
-          placeholder="What did {{ student.name }} work on in {{ item.enrollment.course.name }} today?"
-        >{{ item.notes_text }}</textarea>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% else %}
-  <div class="alert alert-info">
-    <strong>No courses found.</strong> Add courses for {{ student.name }} to track course notes.
-    <a href="{% url 'academics:course_create' %}" class="alert-link">Add Course</a>
-  </div>
-  {% endif %}
-
-  <!-- Form Actions -->
-  <div class="d-flex justify-content-between mb-4">
-    <a href="{% url 'academics:attendance_calendar' %}" class="btn btn-secondary">Cancel</a>
-    <button type="submit" class="btn btn-primary btn-lg">Save Daily Log</button>
-  </div>
-</form>
-
-<script>
-function changeStudent(studentId) {
-  const date = document.getElementById('date_input').value;
-  window.location.href = `{% url 'academics:dailylog_entry' %}${studentId}/${date}/`;
-}
-
-function changeDate(currentDate, offset = 0) {
-  const dateInput = document.getElementById('date_input');
-  let date;
-
-  if (offset !== 0) {
-    date = new Date(currentDate);
-    date.setDate(date.getDate() + offset);
-  } else {
-    date = new Date(currentDate);
-  }
-
-  const dateStr = date.toISOString().split('T')[0];
-  const studentId = {{ student.id }};
-  window.location.href = `{% url 'academics:dailylog_entry' %}${studentId}/${dateStr}/`;
-}
-
-function setToday() {
-  const today = new Date().toISOString().split('T')[0];
-  const studentId = {{ student.id }};
-  window.location.href = `{% url 'academics:dailylog_entry' %}${studentId}/${today}/`;
-}
-</script>
+<!-- Daily Log Entry Form Container -->
+<div id="dailylog-form-container">
+  {% include "academics/partials/dailylog_entry_form.html" %}
+</div>
 {% endblock academics_content %}
