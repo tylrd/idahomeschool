@@ -15,10 +15,11 @@
 <!-- Student and Date Selection -->
 <div class="card mb-3">
   <section class="py-3">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="grid gap-2">
-        <label for="student_select">Student</label>
+    <form class="form grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid gap-2 md:col-span-2">
+        <label for="student_select" class="text-sm font-semibold">Student</label>
         <select id="student_select" name="student_id"
+        class="w-full"
                 hx-get="{% url 'academics:dailylog_entry' %}"
                 hx-target="#dailylog-form-container"
                 hx-push-url="true"
@@ -30,21 +31,18 @@
         </select>
       </div>
       <div class="grid gap-2">
-        <label for="date_input">Date</label>
-        <div class="flex gap-1">
-          <input type="date"
-                 id="date_input"
-                 name="date"
-                 class="flex-1 min-w-0"
-                 value="{{ entry_date|date:'Y-m-d' }}"
-                 hx-get="{% url 'academics:dailylog_entry' %}"
-                 hx-target="#dailylog-form-container"
-                 hx-push-url="true"
-                 hx-include="#student_select"
-                 hx-trigger="change">
-        </div>
+        <label for="date_input" class="text-sm font-semibold">Date</label>
+        <input type="date"
+               id="date_input"
+               name="date"
+               value="{{ entry_date|date:'Y-m-d' }}"
+               hx-get="{% url 'academics:dailylog_entry' %}"
+               hx-target="#dailylog-form-container"
+               hx-push-url="true"
+               hx-include="#student_select"
+               hx-trigger="change">
       </div>
-    </div>
+    </form>
   </section>
 </div>
 

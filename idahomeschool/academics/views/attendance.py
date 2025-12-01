@@ -246,7 +246,11 @@ class DailyLogEntryView(LoginRequiredMixin, View):
         if request.headers.get("HX-Request"):
             response = render(request, self.partial_template_name, context)
             # Set the proper URL for browser history
-            proper_url = f"/academics/dailylog_entry/{student.pk}/{entry_date.isoformat()}/"
+            from django.urls import reverse
+            proper_url = reverse(
+                "academics:dailylog_entry_date",
+                kwargs={"student_pk": student.pk, "log_date": entry_date.isoformat()},
+            )
             response["HX-Push-Url"] = proper_url
             return response
 
