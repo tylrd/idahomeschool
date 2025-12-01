@@ -23,20 +23,7 @@
           <label for="general_notes" class="text-sm font-semibold">General Notes *</label>
           <textarea name="general_notes" id="general_notes" rows="3" placeholder="Optional notes about the day...">{% if daily_log %}{{ daily_log.general_notes }}{% endif %}</textarea>
         </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- Course Notes -->
-  {% if course_notes_data %}
-  <div class="card">
-    <header>
-      <div class="flex flex-col gap-1">
-        <h5 class="text-base font-semibold">Course Notes</h5>
-      </div>
-    </header>
-    <section>
-      <div class="grid gap-4">
+        {% if course_notes_data %}
         {% for item in course_notes_data %}
         <div class="grid gap-2">
           <label for="course_notes_{{ item.enrollment.id }}" class="text-sm font-semibold">
@@ -53,7 +40,7 @@
     </section>
   </div>
   {% else %}
-  <div class="rounded-lg p-3 border bg-muted text-muted-foreground border-border">
+  <div class="rounded-lg p-3 border border-border text-sm">
     <strong>No courses found.</strong> Add courses for {{ student.name }} to track course notes.
     <a href="{% url 'academics:course_create' %}" class="link">Add Course</a>
   </div>

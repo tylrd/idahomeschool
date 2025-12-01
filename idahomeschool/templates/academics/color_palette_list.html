@@ -57,105 +57,42 @@
   </nav>
 
   {% for palette in palettes %}
-    {% if palette.is_active %}
-  <div role="tabpanel" id="palette-{{ palette.id }}" aria-labelledby="palette-{{ palette.id }}-tab" tabindex="-1" aria-selected="true">
+  <div role="tabpanel"
+       id="palette-{{ palette.id }}"
+       aria-labelledby="palette-{{ palette.id }}-tab"
+       tabindex="-1"
+       aria-selected="{% if palette.is_active %}true{% else %}false{% endif %}"
+       {% if not palette.is_active %}hidden{% endif %}>
     <div class="flex gap-1 mb-4">
       <a href="{% url 'academics:color_create' %}"
-         class="btn-icon-outline size-8"
+         class="btn-icon-outline size-8 bg-primary text-primary-foreground"
          data-tooltip="Add color"
          data-side="bottom">
         <i data-lucide="plus-circle" class="size-4"></i>
       </a>
-      <a href="{% url 'academics:color_palette_update' palette.pk %}"
-         class="btn-icon-outline size-8"
-         data-tooltip="Edit palette"
-         data-side="bottom">
-        <i data-lucide="pencil" class="size-4"></i>
-      </a>
-    </div>
-    <!-- Colors in this Palette -->
-    {% if palette.colors.all %}
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-      {% for color in palette.colors.all %}
-      <div id="color-{{ color.pk }}-palette-{{ palette.pk }}">
-        <div class="card h-full">
-          <section class="text-center">
-            <div class="mb-3 h-20 rounded-lg border" style="background-color: {{ color.color }};"></div>
-            <h3 class="text-sm font-medium">{{ color.color }}</h3>
-            {% if color.name %}
-            <p class="text-muted-foreground text-xs mt-1">{{ color.name }}</p>
-            {% endif %}
-            <div class="flex gap-1 mt-3 justify-center">
-              <a
-                href="{% url 'academics:color_update' color.pk %}"
-                class="btn-icon-outline size-8"
-                data-tooltip="Edit color"
-                data-side="bottom">
-                <i data-lucide="pencil"></i>
-              </a>
-              <button
-                hx-delete="{% url 'academics:remove_color_from_palette' palette.pk color.pk %}"
-                hx-target="#color-{{ color.pk }}-palette-{{ palette.pk }}"
-                hx-swap="outerHTML swap:500ms"
-                hx-confirm="Remove {{ color.color }} from this palette?"
-                class="btn-icon-outline size-8"
-                data-tooltip="Remove from palette"
-                data-side="bottom">
-                <i data-lucide="x-circle"></i>
-              </button>
-              <a
-                href="{% url 'academics:color_delete' color.pk %}"
-                class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10"
-                data-tooltip="Delete color"
-                data-side="bottom">
-                <i data-lucide="trash-2"></i>
-              </a>
-            </div>
-          </section>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="rounded-lg border bg-muted/50 p-4">
-      <div class="flex gap-3">
-        <i data-lucide="info"></i>
-        <div>
-          <p class="text-sm">
-            <strong>No colors in this palette yet.</strong>
-            This palette was created but doesn't have any colors assigned to it.
-          </p>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-    {% endif %}
-  {% endfor %}
-
-  {% for palette in palettes %}
-    {% if not palette.is_active %}
-  <div role="tabpanel" id="palette-{{ palette.id }}" aria-labelledby="palette-{{ palette.id }}-tab" tabindex="-1" aria-selected="false" hidden>
-    <div class="flex gap-1 mb-4">
-      <a href="{% url 'academics:color_create' %}"
-         class="btn-icon-outline size-8"
-         data-tooltip="Add color"
-         data-side="bottom">
-        <i data-lucide="plus-circle" class="size-4"></i>
-      </a>
+      {% if not palette.is_active %}
       <a href="{% url 'academics:color_palette_set_active' palette.pk %}"
          class="btn-icon-outline size-8"
          data-tooltip="Set as active"
          data-side="bottom">
         <i data-lucide="check" class="size-4"></i>
       </a>
+      {% endif %}
       <a href="{% url 'academics:color_palette_update' palette.pk %}"
          class="btn-icon-outline size-8"
          data-tooltip="Edit palette"
          data-side="bottom">
         <i data-lucide="pencil" class="size-4"></i>
       </a>
+      <button type="button"
+              onclick="document.getElementById('delete-palette-{{ palette.pk }}').showModal()"
+              class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10"
+              data-tooltip="Delete palette"
+              data-side="bottom">
+        <i data-lucide="trash-2" class="size-4"></i>
+      </button>
     </div>
+
     <!-- Colors in this Palette -->
     {% if palette.colors.all %}
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -169,28 +106,25 @@
             <p class="text-muted-foreground text-xs mt-1">{{ color.name }}</p>
             {% endif %}
             <div class="flex gap-1 mt-3 justify-center">
-              <a
-                href="{% url 'academics:color_update' color.pk %}"
-                class="btn-icon-outline size-8"
-                data-tooltip="Edit color"
-                data-side="bottom">
+              <a href="{% url 'academics:color_update' color.pk %}"
+                 class="btn-icon-outline size-8"
+                 data-tooltip="Edit color"
+                 data-side="bottom">
                 <i data-lucide="pencil"></i>
               </a>
-              <button
-                hx-delete="{% url 'academics:remove_color_from_palette' palette.pk color.pk %}"
-                hx-target="#color-{{ color.pk }}-palette-{{ palette.pk }}"
-                hx-swap="outerHTML swap:500ms"
-                hx-confirm="Remove {{ color.color }} from this palette?"
-                class="btn-icon-outline size-8"
-                data-tooltip="Remove from palette"
-                data-side="bottom">
+              <button hx-delete="{% url 'academics:remove_color_from_palette' palette.pk color.pk %}"
+                      hx-target="#color-{{ color.pk }}-palette-{{ palette.pk }}"
+                      hx-swap="outerHTML swap:500ms"
+                      hx-confirm="Remove {{ color.color }} from this palette?"
+                      class="btn-icon-outline size-8"
+                      data-tooltip="Remove from palette"
+                      data-side="bottom">
                 <i data-lucide="x-circle"></i>
               </button>
-              <a
-                href="{% url 'academics:color_delete' color.pk %}"
-                class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10"
-                data-tooltip="Delete color"
-                data-side="bottom">
+              <a href="{% url 'academics:color_delete' color.pk %}"
+                 class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10"
+                 data-tooltip="Delete color"
+                 data-side="bottom">
                 <i data-lucide="trash-2"></i>
               </a>
             </div>
@@ -213,7 +147,6 @@
     </div>
     {% endif %}
   </div>
-    {% endif %}
   {% endfor %}
 
   <!-- All Colors Tab -->
@@ -267,6 +200,23 @@
     </div>
     {% endif %}
   </div>
+
+  <!-- Delete Palette Dialogs -->
+  {% for palette in palettes %}
+  <dialog id="delete-palette-{{ palette.pk }}" class="dialog" aria-labelledby="delete-palette-{{ palette.pk }}-title" aria-describedby="delete-palette-{{ palette.pk }}-description">
+    <div>
+      <header>
+        <h2 id="delete-palette-{{ palette.pk }}-title">Delete "{{ palette.name }}"?</h2>
+        <p id="delete-palette-{{ palette.pk }}-description">This action cannot be undone. This will permanently delete this color palette.</p>
+      </header>
+
+      <footer>
+        <button class="btn-outline" onclick="document.getElementById('delete-palette-{{ palette.pk }}').close()">Cancel</button>
+        <a href="{% url 'academics:color_palette_delete' palette.pk %}" class="btn text-destructive-foreground bg-destructive hover:bg-destructive/90">Delete Palette</a>
+      </footer>
+    </div>
+  </dialog>
+  {% endfor %}
 </div>
 
 {% else %}
