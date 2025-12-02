@@ -4,16 +4,15 @@
 {% block title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Course{% endblock %}
 
 {% block academics_content %}
-<div class="card">
-  <header>
-    <h2>{% if form.instance.pk %}Edit{% else %}Add{% endif %} Course</h2>
-  </header>
-  <section>
-    <form method="post">
+<div class="mb-6">
+  <h1 class="text-3xl font-bold tracking-tight">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Course</h1>
+</div>
+
+<form method="post" class="form space-y-6">
       {% csrf_token %}
 
       <div class="grid gap-2">
-        <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+        <label for="{{ form.name.id_for_label }}" class="text-sm font-medium">{{ form.name.label }}</label>
         <input type="text" name="{{ form.name.name }}" class="{% if form.name.errors %}border-destructive{% endif %}"
                id="{{ form.name.id_for_label }}" value="{{ form.name.value|default:'' }}" required>
         {% if form.name.errors %}
@@ -21,8 +20,8 @@
         {% endif %}
       </div>
 
-      <div class="grid gap-2 mt-4">
-        <label for="{{ form.grade_level.id_for_label }}">{{ form.grade_level.label }}</label>
+      <div class="grid gap-2">
+        <label for="{{ form.grade_level.id_for_label }}" class="text-sm font-medium">{{ form.grade_level.label }}</label>
         <select name="{{ form.grade_level.name }}" class="{% if form.grade_level.errors %}border-destructive{% endif %}"
                 id="{{ form.grade_level.id_for_label }}">
           <option value="">--------- (Grade-agnostic)</option>
@@ -41,8 +40,8 @@
         {% endif %}
       </div>
 
-      <div class="grid gap-2 mt-4">
-        <label for="{{ form.course_template.id_for_label }}">{{ form.course_template.label }}</label>
+      <div class="grid gap-2">
+        <label for="{{ form.course_template.id_for_label }}" class="text-sm font-medium">{{ form.course_template.label }}</label>
         <select name="{{ form.course_template.name }}" class="{% if form.course_template.errors %}border-destructive{% endif %}"
                 id="{{ form.course_template.id_for_label }}" data-template-select>
           <option value="">---------</option>
@@ -62,8 +61,8 @@
         {% endif %}
       </div>
 
-      <div class="grid gap-2 mt-4">
-        <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+      <div class="grid gap-2">
+        <label for="{{ form.description.id_for_label }}" class="text-sm font-medium">{{ form.description.label }}</label>
         <textarea name="{{ form.description.name }}" class="{% if form.description.errors %}border-destructive{% endif %}"
                   id="{{ form.description.id_for_label }}" rows="3">{{ form.description.value|default:'' }}</textarea>
         {% if form.description.errors %}
@@ -71,8 +70,8 @@
         {% endif %}
       </div>
 
-      <div class="grid gap-2 mt-4">
-        <label>Resources</label>
+      <div class="grid gap-2">
+        <label class="text-sm font-medium">Resources</label>
 
         <!-- Currently Selected Resources -->
         {% if form.instance.pk %}
@@ -113,13 +112,13 @@
           >
           <button
             type="button"
-            class="btn-primary"
+            class="btn"
             id="create-resource-btn"
             hx-get="{% url 'academics:resource_create_modal_htmx' %}?field_name=resources"
             hx-target="#modal-container"
             hx-swap="innerHTML"
           >
-            <i class="bi bi-plus-circle"></i> Create New Resource
+            <i data-lucide="plus-circle"></i> Create New Resource
           </button>
         </div>
 
@@ -307,8 +306,8 @@
             });
 
             html += `
-              <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="clear-tag-filters">
-                <i class="bi bi-x-circle"></i> Clear Filters
+              <button type="button" class="btn-outline btn-sm" id="clear-tag-filters">
+                <i data-lucide="x-circle"></i> Clear Filters
               </button>
             `;
           }
@@ -377,40 +376,41 @@
         }
       </script>
 
-      <div class="flex gap-2 mt-6">
-        <button type="submit" class="btn-primary">Save Course</button>
-        <a href="{% url 'academics:course_list' %}" class="btn-secondary">Cancel</a>
+      <div class="flex gap-2">
+        <button type="submit" class="btn">
+          <i data-lucide="save"></i> Save Course
+        </button>
+        <a href="{% url 'academics:course_list' %}" class="btn-outline">
+          <i data-lucide="x"></i> Cancel
+        </a>
       </div>
     </form>
-  </section>
-</div>
 
-<!-- Modal Container -->
-<div id="modal-container"></div>
+<!-- Dialog Container -->
+<dialog id="resource-create-dialog" class="dialog w-full sm:max-w-2xl max-h-[90vh]" aria-labelledby="resource-create-dialog-title" onclick="if (event.target === this) this.close()">
+  <div id="resource-dialog-content">
+    <!-- Content will be loaded via HTMX -->
+  </div>
+</dialog>
 
 <script>
-  // Handle modal show/hide and resource creation
-  let resourceModal = null;
+  // Handle dialog show/hide and resource creation
+  const resourceDialog = document.getElementById('resource-create-dialog');
 
-  // Show modal after HTMX loads it
+  // Show dialog after HTMX loads content
   document.addEventListener('htmx:afterSwap', function(event) {
-    if (event.detail.target.id === 'modal-container') {
-      const modalElement = document.getElementById('resourceCreateModal');
-      if (modalElement) {
-        resourceModal = new bootstrap.Modal(modalElement);
-        resourceModal.show();
-      }
+    if (event.detail.target.id === 'resource-dialog-content') {
+      resourceDialog.showModal();
     }
 
     // Handle successful resource creation
     if (event.detail.target.id === 'resource-search-results-resources') {
-      // Close modal if it's open
-      if (resourceModal) {
-        resourceModal.hide();
-        resourceModal = null;
-        // Clear modal container after closing
+      // Close dialog if it's open
+      if (resourceDialog.open) {
+        resourceDialog.close();
+        // Clear dialog content after closing
         setTimeout(() => {
-          document.getElementById('modal-container').innerHTML = '';
+          document.getElementById('resource-dialog-content').innerHTML = '';
         }, 300);
       }
 

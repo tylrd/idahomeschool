@@ -4,102 +4,203 @@
 {% block title %}Students{% endblock %}
 
 {% block academics_content %}
-<div class="flex justify-between items-center mb-4">
-  <h1 class="text-3xl font-bold">Students</h1>
-  <a href="{% url 'academics:student_create' %}" class="btn-primary">Add Student</a>
-</div>
+<div x-data="{
+  view: localStorage.getItem('studentView') || 'cards',
+  setView(newView) {
+    this.view = newView;
+    localStorage.setItem('studentView', newView);
+  }
+}">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold tracking-tight">Students</h1>
+    <div class="flex items-center gap-2">
+      {% if students %}
+      <div class="inline-flex rounded-lg border p-1 gap-1">
+        <button @click="setView('cards')"
+                :class="view === 'cards' ? 'bg-primary text-primary-foreground' : 'bg-transparent'"
+                class="btn-icon-ghost size-8">
+          <i data-lucide="layout-grid"></i>
+        </button>
+        <button @click="setView('table')"
+                :class="view === 'table' ? 'bg-primary text-primary-foreground' : 'bg-transparent'"
+                class="btn-icon-ghost size-8">
+          <i data-lucide="table"></i>
+        </button>
+      </div>
+      {% endif %}
+      <a href="{% url 'academics:student_create' %}" class="btn-outline">
+        <i data-lucide="plus-circle"></i> Add Student
+      </a>
+    </div>
+  </div>
 
-{% if students %}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-  {% for student in students %}
-  <div class="card h-full">
-    <section class="flex flex-col">
+  {% if students %}
+  <!-- Card View -->
+  <div x-show="view === 'cards'" x-cloak class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for student in students %}
+    <div class="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
       <div class="flex items-start mb-3">
         <div class="flex-shrink-0 mr-3">
           {% if student.photo %}
-            <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="rounded-full" style="width: 60px; height: 60px; object-fit: cover;">
+            <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="rounded-full size-16 object-cover">
           {% else %}
-            <div class="rounded-full bg-secondary flex items-center justify-center" style="width: 60px; height: 60px; color: white; font-size: 24px; font-weight: bold;">
+            <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-16 text-xl font-bold">
               {{ student.name.0 }}
             </div>
           {% endif %}
         </div>
-        <div class="flex-1">
+        <div class="flex-1 min-w-0">
           <h3 class="text-lg font-semibold mb-1">
-            <a href="{% url 'academics:student_detail' student.pk %}">{{ student.name }}</a>
+            <a href="{% url 'academics:student_detail' student.pk %}" class="link">{{ student.name }}</a>
           </h3>
-          <p class="text-muted-foreground text-sm mb-0">
+          <p class="text-muted-foreground text-sm">
             {% if student.current_grade %}
               {{ student.current_grade.name }}
             {% elif active_year %}
-              <span class="text-muted-foreground">Not assigned</span>
+              <span class="text-muted-foreground/50">Not assigned</span>
             {% else %}
-              <span class="text-muted-foreground">No active year</span>
+              <span class="text-muted-foreground/50">No active year</span>
             {% endif %}
           </p>
         </div>
       </div>
-      <p class="text-sm">
-        <strong>Age:</strong> {{ student.age }}<br>
-        <strong>Date of Birth:</strong> {{ student.date_of_birth }}<br>
-        <strong>Courses:</strong> {{ student.course_count }}
-      </p>
-    </section>
-    <footer>
-      <div class="flex gap-2">
-        <a href="{% url 'academics:student_update' student.pk %}" class="btn-sm-outline flex-1">Edit</a>
-        <a href="{% url 'academics:student_delete' student.pk %}" class="btn-sm-outline flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
+      <div class="space-y-1 text-sm mb-4">
+        <div class="flex justify-between">
+          <span class="text-muted-foreground">Age</span>
+          <span class="font-medium">{{ student.age }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-muted-foreground">Date of Birth</span>
+          <span class="font-medium">{{ student.date_of_birth }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-muted-foreground">Courses</span>
+          <span class="font-medium">{{ student.course_count }}</span>
+        </div>
       </div>
-    </footer>
+      <div class="flex gap-1 pt-3 border-t">
+        <a href="{% url 'academics:student_update' student.pk %}"
+           class="btn-icon-outline size-8">
+          <i data-lucide="pencil"></i>
+        </a>
+        <a href="{% url 'academics:student_delete' student.pk %}"
+           class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
+          <i data-lucide="trash-2"></i>
+        </a>
+      </div>
+    </div>
+    {% endfor %}
   </div>
-  {% endfor %}
-</div>
 
-{% if is_paginated %}
-<nav role="navigation" aria-label="pagination" class="mx-auto flex w-full justify-center mt-4">
+  <!-- Table View -->
+  <div x-show="view === 'table'" x-cloak style="display: none;" class="relative w-full overflow-x-auto">
+    <table class="table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Grade</th>
+        <th>Age</th>
+        <th>Date of Birth</th>
+        <th>Courses</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in students %}
+      <tr>
+        <td>
+          <div class="flex items-center gap-3">
+            {% if student.photo %}
+              <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="rounded-full size-10 object-cover shrink-0">
+            {% else %}
+              <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-10 text-sm font-bold shrink-0">
+                {{ student.name.0 }}
+              </div>
+            {% endif %}
+            <a href="{% url 'academics:student_detail' student.pk %}" class="link font-medium">{{ student.name }}</a>
+          </div>
+        </td>
+        <td class="text-muted-foreground">
+          {% if student.current_grade %}
+            {{ student.current_grade.name }}
+          {% elif active_year %}
+            <span class="text-muted-foreground/50">Not assigned</span>
+          {% else %}
+            <span class="text-muted-foreground/50">No active year</span>
+          {% endif %}
+        </td>
+        <td class="text-muted-foreground">{{ student.age }}</td>
+        <td class="text-muted-foreground">{{ student.date_of_birth }}</td>
+        <td>{{ student.course_count }}</td>
+        <td>
+          <div class="flex gap-1 justify-end">
+            <a href="{% url 'academics:student_update' student.pk %}"
+               class="btn-icon-outline size-8">
+              <i data-lucide="pencil"></i>
+            </a>
+            <a href="{% url 'academics:student_delete' student.pk %}"
+               class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
+              <i data-lucide="trash-2"></i>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+  <nav role="navigation" aria-label="pagination" class="mx-auto flex w-full justify-center mt-6">
   <ul class="flex flex-row items-center gap-1">
     {% if page_obj.has_previous %}
       <li>
-        <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="btn-ghost">First</a>
+        <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="btn-ghost btn-sm">First</a>
       </li>
       <li>
-        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="btn-ghost">Previous</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="btn-ghost btn-sm">Previous</a>
       </li>
     {% endif %}
 
     <li>
-      <span class="btn-outline size-auto px-4">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <span class="btn-outline btn-sm">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
     </li>
 
     {% if page_obj.has_next %}
       <li>
-        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="btn-ghost">Next</a>
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="btn-ghost btn-sm">Next</a>
       </li>
       <li>
-        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="btn-ghost">Last</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="btn-ghost btn-sm">Last</a>
       </li>
     {% endif %}
-  </ul>
-</nav>
-{% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 
-{% else %}
-<div class="alert">
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" x2="12" y1="8" y2="12" />
-    <line x1="12" x2="12.01" y1="16" y2="16" />
-  </svg>
-  <h2>No students found</h2>
-  <section>
-    {% if request.GET.search %}
-      <p>No students match your search criteria.</p>
-      <a href="{% url 'academics:student_list' %}" class="btn-secondary mt-3">Clear Search</a>
-    {% else %}
-      <p>Get started by adding your first student.</p>
-      <a href="{% url 'academics:student_create' %}" class="btn-primary mt-3">Add Student</a>
-    {% endif %}
-  </section>
+  {% else %}
+  <div class="p-12 text-center">
+    <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+      <div class="flex size-12 items-center justify-center rounded-full bg-muted">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <h2 class="text-xl font-semibold">No students found</h2>
+      {% if request.GET.search %}
+        <p class="text-sm text-muted-foreground mb-2">No students match your search criteria.</p>
+        <a href="{% url 'academics:student_list' %}" class="btn-outline">Clear Search</a>
+      {% else %}
+        <p class="text-sm text-muted-foreground mb-2">Get started by adding your first student to begin tracking their academic progress.</p>
+        <a href="{% url 'academics:student_create' %}" class="btn">
+          <i data-lucide="plus-circle"></i> Add Student
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 </div>
-{% endif %}
 {% endblock academics_content %}

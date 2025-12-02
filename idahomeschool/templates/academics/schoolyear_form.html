@@ -1,19 +1,24 @@
 {% extends "academics/base.html" %}
-{% load crispy_forms_tags %}
 
 {% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} School Year{% endblock %}
 
 {% block academics_content %}
-<div class="card">
-  <header>
-    <h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} School Year</h2>
-  </header>
-  <section>
-    {% crispy form %}
-  </section>
+<div class="mb-6">
+  <h1 class="text-3xl font-bold tracking-tight">{% if form.instance.pk %}Edit{% else %}Create{% endif %} School Year</h1>
 </div>
 
-<div class="mt-3">
-  <a href="{% url 'academics:schoolyear_list' %}" class="btn-secondary">Cancel</a>
-</div>
+<form method="post" class="form space-y-6">
+  {% csrf_token %}
+
+  {% include "academics/partials/schoolyear_form_fields.html" %}
+
+  <div class="flex gap-2">
+    <button type="submit" class="btn">
+      <i data-lucide="save"></i> Save School Year
+    </button>
+    <a href="{% url 'academics:schoolyear_list' %}" class="btn-outline">
+      <i data-lucide="x"></i> Cancel
+    </a>
+  </div>
+</form>
 {% endblock academics_content %}

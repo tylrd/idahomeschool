@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count
+from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from django.views.generic import DeleteView
@@ -86,10 +87,20 @@ class SchoolYearUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
+        response = super().form_valid(form)
+
+        # For HTMX requests, return the updated table row
+        if self.request.htmx:
+            return render(
+                self.request,
+                "academics/partials/schoolyear_row.html",
+                {"school_year": self.object},
+            )
+
         messages.success(
             self.request, f"School year '{form.instance.name}' updated successfully!",
         )
-        return super().form_valid(form)
+        return response
 
 
 class SchoolYearDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -103,5 +114,12 @@ class SchoolYearDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.get_object().user == self.request.user
 
     def delete(self, request, *args, **kwargs):
+        response = super().delete(request, *args, **kwargs)
+
+        # For HTMX requests, return empty content to trigger row removal
+        if self.request.htmx:
+            from django.http import HttpResponse
+            return HttpResponse("")
+
         messages.success(self.request, "School year deleted successfully!")
-        return super().delete(request, *args, **kwargs)
+        return response

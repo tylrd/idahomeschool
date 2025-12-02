@@ -1,0 +1,43 @@
+<div class="grid gap-2">
+  <label for="{{ form.name.id_for_label }}" class="text-sm font-medium">{{ form.name.label }}</label>
+  <input type="text" name="{{ form.name.name }}" class="{% if form.name.errors %}border-destructive{% endif %}"
+         id="{{ form.name.id_for_label }}" value="{{ form.name.value|default:'' }}" required>
+  {% if form.name.errors %}
+    <p class="text-destructive text-sm">{{ form.name.errors.0 }}</p>
+  {% endif %}
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="grid gap-2">
+    <label for="{{ form.start_date.id_for_label }}" class="text-sm font-medium">{{ form.start_date.label }}</label>
+    <input type="date" name="{{ form.start_date.name }}" class="{% if form.start_date.errors %}border-destructive{% endif %}"
+           id="{{ form.start_date.id_for_label }}" value="{% if form.start_date.value %}{{ form.start_date.value|date:"Y-m-d" }}{% endif %}" required>
+    {% if form.start_date.errors %}
+      <p class="text-destructive text-sm">{{ form.start_date.errors.0 }}</p>
+    {% endif %}
+  </div>
+
+  <div class="grid gap-2">
+    <label for="{{ form.end_date.id_for_label }}" class="text-sm font-medium">{{ form.end_date.label }}</label>
+    <input type="date" name="{{ form.end_date.name }}" class="{% if form.end_date.errors %}border-destructive{% endif %}"
+           id="{{ form.end_date.id_for_label }}" value="{% if form.end_date.value %}{{ form.end_date.value|date:"Y-m-d" }}{% endif %}" required>
+    {% if form.end_date.errors %}
+      <p class="text-destructive text-sm">{{ form.end_date.errors.0 }}</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid gap-2">
+  <label class="flex items-center gap-2 text-sm font-medium cursor-pointer">
+    <input type="checkbox" name="{{ form.is_active.name }}" class="size-4"
+           id="{{ form.is_active.id_for_label }}"
+           {% if form.is_active.value %}checked{% endif %}>
+    {{ form.is_active.label }}
+  </label>
+  {% if form.is_active.help_text %}
+    <p class="text-muted-foreground text-sm">{{ form.is_active.help_text }}</p>
+  {% endif %}
+  {% if form.is_active.errors %}
+    <p class="text-destructive text-sm">{{ form.is_active.errors.0 }}</p>
+  {% endif %}
+</div>

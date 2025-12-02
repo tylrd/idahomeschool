@@ -4,9 +4,13 @@
 {% block title %}Grade Levels{% endblock %}
 
 {% block academics_content %}
-<div class="flex justify-between items-center mb-4">
-  <h1 class="text-3xl font-bold">Grade Levels</h1>
-  <a href="{% url 'academics:gradelevel_create' %}" class="btn-primary">Create Grade Level</a>
+<div class="flex justify-between items-center mb-6">
+  <h1 class="text-3xl font-bold tracking-tight">Grade Levels</h1>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:gradelevel_create' %}" class="btn-outline">
+      <i data-lucide="plus-circle"></i> Add Grade Level
+    </a>
+  </div>
 </div>
 
 {% if grade_levels %}
@@ -17,21 +21,27 @@
         <th>Name</th>
         <th>Order</th>
         <th>Description</th>
-        <th>Actions</th>
+        <th class="text-right">Actions</th>
       </tr>
     </thead>
     <tbody>
       {% for grade in grade_levels %}
       <tr>
         <td>
-          <a href="{% url 'academics:gradelevel_detail' grade.pk %}" class="underline">{{ grade.name }}</a>
+          <a href="{% url 'academics:gradelevel_detail' grade.pk %}" class="link font-medium">{{ grade.name }}</a>
         </td>
-        <td>{{ grade.order }}</td>
-        <td>{{ grade.description|truncatewords:10 }}</td>
+        <td class="text-muted-foreground">{{ grade.order }}</td>
+        <td class="text-muted-foreground">{{ grade.description|truncatewords:10 }}</td>
         <td>
-          <div class="flex gap-2">
-            <a href="{% url 'academics:gradelevel_update' grade.pk %}" class="btn-sm-outline">Edit</a>
-            <a href="{% url 'academics:gradelevel_delete' grade.pk %}" class="btn-sm-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
+          <div class="flex gap-1 justify-end">
+            <a href="{% url 'academics:gradelevel_update' grade.pk %}"
+               class="btn-icon-outline size-8">
+              <i data-lucide="pencil"></i>
+            </a>
+            <a href="{% url 'academics:gradelevel_delete' grade.pk %}"
+               class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
+              <i data-lucide="trash-2"></i>
+            </a>
           </div>
         </td>
       </tr>
@@ -40,23 +50,30 @@
   </table>
 </div>
 {% else %}
-<div class="alert">
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" x2="12" y1="8" y2="12" />
-    <line x1="12" x2="12.01" y1="16" y2="16" />
-  </svg>
-  <h2>No grade levels found</h2>
-  <section>
-    <p>Create grade levels to organize your students and courses by grade.</p>
-    <div class="flex gap-2 mt-3">
-      <a href="{% url 'academics:gradelevel_create' %}" class="btn-primary">Create Grade Level</a>
+<div class="p-12 text-center">
+  <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+    <div class="flex size-12 items-center justify-center rounded-full bg-muted">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    </div>
+    <h2 class="text-xl font-semibold">No grade levels found</h2>
+    <p class="text-sm text-muted-foreground mb-2">Create grade levels to organize your students and courses by grade.</p>
+    <div class="flex gap-2">
+      <a href="{% url 'academics:gradelevel_create' %}" class="btn">
+        <i data-lucide="plus-circle"></i> Create Grade Level
+      </a>
       <form method="post" action="{% url 'academics:gradelevel_create_pk12' %}" class="inline">
         {% csrf_token %}
-        <button type="submit" class="btn-outline">Create PK-12 Grades</button>
+        <button type="submit" class="btn-outline">
+          <i data-lucide="list-ordered"></i> Create PK-12 Grades
+        </button>
       </form>
     </div>
-  </section>
+  </div>
 </div>
 {% endif %}
 {% endblock academics_content %}

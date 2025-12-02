@@ -4,48 +4,54 @@
 {% block title %}Course Enrollments{% endblock %}
 
 {% block academics_content %}
-<div class="flex justify-between items-center mb-4">
-  <h1 class="text-3xl font-bold">Course Enrollments</h1>
-  <a href="{% url 'academics:courseenrollment_create' %}" class="btn-primary">Add Enrollment</a>
+<div class="flex justify-between items-center mb-6">
+  <h1 class="text-3xl font-bold tracking-tight">Course Enrollments</h1>
+  <a href="{% url 'academics:courseenrollment_create' %}" class="btn-outline">
+    <i data-lucide="plus-circle"></i> Add Enrollment
+  </a>
 </div>
 
-<div class="card mb-3">
-  <section>
-    <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-      <div>
-        <select name="student">
-          <option value="">All Students</option>
-          {% for student in students %}
-            <option value="{{ student.pk }}" {% if selected_student == student.pk|stringformat:"s" %}selected{% endif %}>{{ student.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <select name="school_year">
-          <option value="">All School Years</option>
-          {% for year in school_years %}
-            <option value="{{ year.pk }}" {% if selected_school_year == year.pk|stringformat:"s" %}selected{% endif %}>{{ year.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <select name="status">
-          <option value="">All Statuses</option>
-          {% for value, label in statuses %}
-            <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <button type="submit" class="btn-primary w-full">Filter</button>
-      </div>
+<!-- Filters -->
+<div class="mb-6 pb-4 border-b">
+  <form method="get" class="form grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid gap-2">
+      <label for="student" class="text-sm font-medium">Student</label>
+      <select name="student" id="student" class="w-full">
+        <option value="">All Students</option>
+        {% for student in students %}
+          <option value="{{ student.pk }}" {% if selected_student == student.pk|stringformat:"s" %}selected{% endif %}>{{ student.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="grid gap-2">
+      <label for="school_year" class="text-sm font-medium">School Year</label>
+      <select name="school_year" id="school_year" class="w-full">
+        <option value="">All School Years</option>
+        {% for year in school_years %}
+          <option value="{{ year.pk }}" {% if selected_school_year == year.pk|stringformat:"s" %}selected{% endif %}>{{ year.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="grid gap-2">
+      <label for="status" class="text-sm font-medium">Status</label>
+      <select name="status" id="status" class="w-full">
+        <option value="">All Statuses</option>
+        {% for value, label in statuses %}
+          <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="flex items-end gap-2">
+      <button type="submit" class="btn flex-1">
+        <i data-lucide="filter"></i> Filter
+      </button>
       {% if selected_student or selected_school_year or selected_status %}
-      <div class="col-span-full">
-        <a href="{% url 'academics:courseenrollment_list' %}" class="btn-secondary">Clear Filters</a>
-      </div>
+      <a href="{% url 'academics:courseenrollment_list' %}" class="btn-outline flex-1">
+        <i data-lucide="x-circle"></i> Clear
+      </a>
       {% endif %}
-    </form>
-  </section>
+    </div>
+  </form>
 </div>
 
 {% if enrollments %}
@@ -59,53 +65,61 @@
         <th>School Year</th>
         <th>Status</th>
         <th>Progress</th>
-        <th>Actions</th>
+        <th class="text-right">Actions</th>
       </tr>
     </thead>
     <tbody>
       {% for enrollment in enrollments %}
       <tr>
         <td>
-          <div class="flex items-center">
-            <div class="flex-shrink-0 mr-2">
-              {% if enrollment.student.photo %}
-                <img src="{{ enrollment.student.photo.url }}" alt="{{ enrollment.student.name }}" class="rounded-full" style="width: 32px; height: 32px; object-fit: cover;">
-              {% else %}
-                <div class="rounded-full bg-secondary flex items-center justify-center" style="width: 32px; height: 32px; color: white; font-size: 14px; font-weight: bold;">
-                  {{ enrollment.student.name.0 }}
-                </div>
-              {% endif %}
-            </div>
-            <div>
-              <a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a>
-            </div>
+          <div class="flex items-center gap-3">
+            {% if enrollment.student.photo %}
+              <img src="{{ enrollment.student.photo.url }}" alt="{{ enrollment.student.name }}" class="rounded-full size-8 object-cover shrink-0">
+            {% else %}
+              <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-8 text-sm font-bold shrink-0">
+                {{ enrollment.student.name.0 }}
+              </div>
+            {% endif %}
+            <a href="{% url 'academics:student_detail' enrollment.student.pk %}" class="link font-medium">{{ enrollment.student.name }}</a>
           </div>
         </td>
-        <td><a href="{% url 'academics:course_detail' enrollment.course.pk %}">{{ enrollment.course.name }}</a></td>
         <td>
+          <a href="{% url 'academics:course_detail' enrollment.course.pk %}" class="link">{{ enrollment.course.name }}</a>
+        </td>
+        <td class="text-muted-foreground">
           {% if enrollment.course.grade_level %}
-            <a href="{% url 'academics:gradelevel_detail' enrollment.course.grade_level.pk %}">{{ enrollment.course.grade_level.name }}</a>
+            <a href="{% url 'academics:gradelevel_detail' enrollment.course.grade_level.pk %}" class="link text-sm">{{ enrollment.course.grade_level.name }}</a>
           {% else %}
-            <span class="text-muted-foreground">Any</span>
+            <span class="text-muted-foreground/50">Any</span>
           {% endif %}
         </td>
-        <td><a href="{% url 'academics:schoolyear_detail' enrollment.school_year.pk %}">{{ enrollment.school_year.name }}</a></td>
+        <td class="text-muted-foreground">
+          <a href="{% url 'academics:schoolyear_detail' enrollment.school_year.pk %}" class="link text-sm">{{ enrollment.school_year.name }}</a>
+        </td>
         <td>
           {% if enrollment.status == 'COMPLETED' %}
-            <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-600 text-white">{{ enrollment.get_status_display }}</span>
+            <span class="badge badge-sm bg-green-600 text-white">{{ enrollment.get_status_display }}</span>
           {% elif enrollment.status == 'PAUSED' %}
-            <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-yellow-600 text-white">{{ enrollment.get_status_display }}</span>
+            <span class="badge badge-sm bg-yellow-600 text-white">{{ enrollment.get_status_display }}</span>
           {% else %}
-            <span class="badge">{{ enrollment.get_status_display }}</span>
+            <span class="badge badge-sm">{{ enrollment.get_status_display }}</span>
           {% endif %}
         </td>
-        <td>
+        <td class="text-muted-foreground">
           {% if enrollment.completion_percentage %}{{ enrollment.completion_percentage }}%{% else %}-{% endif %}
         </td>
         <td>
-          <div class="flex gap-2">
-            <a href="{% url 'academics:courseenrollment_detail' enrollment.pk %}" class="btn-sm-secondary">View</a>
-            <a href="{% url 'academics:courseenrollment_update' enrollment.pk %}" class="btn-sm-outline">Edit</a>
+          <div class="flex gap-1 justify-end">
+            <a href="{% url 'academics:courseenrollment_detail' enrollment.pk %}"
+               class="btn-icon-outline size-8"
+               data-tooltip="View details"
+               data-side="bottom">
+              <i data-lucide="eye"></i>
+            </a>
+            <a href="{% url 'academics:courseenrollment_update' enrollment.pk %}"
+               class="btn-icon-outline size-8">
+              <i data-lucide="pencil"></i>
+            </a>
           </div>
         </td>
       </tr>
@@ -115,27 +129,27 @@
 </div>
 
 {% if is_paginated %}
-<nav role="navigation" aria-label="pagination" class="mx-auto flex w-full justify-center mt-4">
+<nav role="navigation" aria-label="pagination" class="mx-auto flex w-full justify-center mt-6">
   <ul class="flex flex-row items-center gap-1">
     {% if page_obj.has_previous %}
       <li>
-        <a href="?page=1{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="btn-ghost">First</a>
+        <a href="?page=1{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="btn-ghost btn-sm">First</a>
       </li>
       <li>
-        <a href="?page={{ page_obj.previous_page_number }}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="btn-ghost">Previous</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="btn-ghost btn-sm">Previous</a>
       </li>
     {% endif %}
 
     <li>
-      <span class="btn-outline size-auto px-4">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <span class="btn-outline btn-sm">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
     </li>
 
     {% if page_obj.has_next %}
       <li>
-        <a href="?page={{ page_obj.next_page_number }}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="btn-ghost">Next</a>
+        <a href="?page={{ page_obj.next_page_number }}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="btn-ghost btn-sm">Next</a>
       </li>
       <li>
-        <a href="?page={{ page_obj.paginator.num_pages }}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="btn-ghost">Last</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_school_year %}&school_year={{ selected_school_year }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="btn-ghost btn-sm">Last</a>
       </li>
     {% endif %}
   </ul>
@@ -143,22 +157,27 @@
 {% endif %}
 
 {% else %}
-<div class="alert">
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" x2="12" y1="8" y2="12" />
-    <line x1="12" x2="12.01" y1="16" y2="16" />
-  </svg>
-  <h2>No course enrollments found</h2>
-  <section>
+<div class="p-12 text-center">
+  <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+    <div class="flex size-12 items-center justify-center rounded-full bg-muted">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground">
+        <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        <rect width="20" height="8" x="2" y="14" rx="2"/>
+      </svg>
+    </div>
+    <h2 class="text-xl font-semibold">No course enrollments found</h2>
     {% if selected_student or selected_school_year or selected_status %}
-      <p>No enrollments match your filters.</p>
-      <a href="{% url 'academics:courseenrollment_list' %}" class="btn-secondary mt-3">Clear Filters</a>
+      <p class="text-sm text-muted-foreground mb-2">No enrollments match your filters.</p>
+      <a href="{% url 'academics:courseenrollment_list' %}" class="btn-outline">
+        <i data-lucide="x-circle"></i> Clear Filters
+      </a>
     {% else %}
-      <p>Get started by enrolling a student in a course.</p>
-      <a href="{% url 'academics:courseenrollment_create' %}" class="btn-primary mt-3">Add Enrollment</a>
+      <p class="text-sm text-muted-foreground mb-2">Get started by enrolling a student in a course to track their academic progress.</p>
+      <a href="{% url 'academics:courseenrollment_create' %}" class="btn">
+        <i data-lucide="plus-circle"></i> Add Enrollment
+      </a>
     {% endif %}
-  </section>
+  </div>
 </div>
 {% endif %}
 {% endblock academics_content %}
