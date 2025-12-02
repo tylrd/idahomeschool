@@ -5,33 +5,33 @@
 
 {% block academics_content %}
 <div class="card">
-  <div class="card-header">
-    <h3 class="mb-0">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Course Template</h3>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>{% if form.instance.pk %}Edit{% else %}Add{% endif %} Course Template</h2>
+  </header>
+  <section>
     <form method="post">
       {% csrf_token %}
 
-      <div class="mb-3">
-        <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
-        <input type="text" name="{{ form.name.name }}" class="form-control{% if form.name.errors %} is-invalid{% endif %}"
+      <div class="grid gap-2">
+        <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+        <input type="text" name="{{ form.name.name }}" class="{% if form.name.errors %}border-destructive{% endif %}"
                id="{{ form.name.id_for_label }}" value="{{ form.name.value|default:'' }}" required>
         {% if form.name.errors %}
-          <div class="invalid-feedback">{{ form.name.errors.0 }}</div>
+          <p class="text-destructive text-sm">{{ form.name.errors.0 }}</p>
         {% endif %}
       </div>
 
-      <div class="mb-3">
-        <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
-        <textarea name="{{ form.description.name }}" class="form-control{% if form.description.errors %} is-invalid{% endif %}"
+      <div class="grid gap-2 mt-4">
+        <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+        <textarea name="{{ form.description.name }}" class="{% if form.description.errors %}border-destructive{% endif %}"
                   id="{{ form.description.id_for_label }}" rows="3">{{ form.description.value|default:'' }}</textarea>
         {% if form.description.errors %}
-          <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
+          <p class="text-destructive text-sm">{{ form.description.errors.0 }}</p>
         {% endif %}
       </div>
 
-      <div class="mb-3">
-        <label class="form-label">Suggested Resources</label>
+      <div class="grid gap-2 mt-4">
+        <label>Suggested Resources</label>
 
         <!-- Currently Selected Resources -->
         {% if form.instance.pk %}
@@ -41,7 +41,7 @@
             {% for resource in form.instance.suggested_resources.all %}
               <span class="badge bg-info me-1">{{ resource.title }}</span>
             {% empty %}
-              <span class="text-muted">None</span>
+              <span class="text-muted-foreground">None</span>
             {% endfor %}
           </div>
         </div>
@@ -49,21 +49,21 @@
 
         <!-- Tag Filter UI -->
         <div class="mb-2">
-          <label class="form-label small mb-1">Filter by Tags:</label>
+          <label class="text-sm mb-1">Filter by Tags:</label>
           <div id="tag-filter-container">
             {% load static %}
             {% comment %}Tags will be loaded here via JavaScript{% endcomment %}
-            <p class="text-muted small mb-0">Loading tags...</p>
+            <p class="text-muted-foreground text-sm mb-0">Loading tags...</p>
           </div>
         </div>
 
         <!-- Search input with Create button -->
-        <div class="input-group mb-2">
+        <div class="flex gap-2 mb-2">
           <input
             type="text"
             id="resource-search-input"
             name="search"
-            class="form-control"
+            class="flex-1"
             placeholder="Search resources by title, author, or publisher..."
             hx-get="{% url 'academics:resource_search_htmx' %}?field_name=suggested_resources"
             hx-trigger="keyup changed delay:300ms, load"
@@ -72,7 +72,7 @@
           >
           <button
             type="button"
-            class="btn btn-success"
+            class="btn-primary"
             id="create-resource-btn"
             hx-get="{% url 'academics:resource_create_modal_htmx' %}?field_name=suggested_resources"
             hx-target="#modal-container"
@@ -91,11 +91,11 @@
         <div id="tag-filter-inputs" style="display: none;"></div>
 
         <div id="resource-search-results-suggested_resources" style="max-height: 400px; overflow-y: auto;">
-          <p class="text-muted">Type to search for resources...</p>
+          <p class="text-muted-foreground">Type to search for resources...</p>
         </div>
-        <small class="text-muted">Search and select resources to suggest for this template. Use tag filters to narrow results.</small>
+        <p class="text-muted-foreground text-sm">Search and select resources to suggest for this template. Use tag filters to narrow results.</p>
         {% if form.suggested_resources.errors %}
-          <div class="invalid-feedback d-block">{{ form.suggested_resources.errors }}</div>
+          <p class="text-destructive text-sm">{{ form.suggested_resources.errors }}</p>
         {% endif %}
       </div>
 
@@ -297,10 +297,12 @@
         }
       </script>
 
-      <button type="submit" class="btn btn-primary">Save Course Template</button>
-      <a href="{% url 'academics:coursetemplate_list' %}" class="btn btn-secondary">Cancel</a>
+      <div class="flex gap-2 mt-6">
+        <button type="submit" class="btn-primary">Save Course Template</button>
+        <a href="{% url 'academics:coursetemplate_list' %}" class="btn-secondary">Cancel</a>
+      </div>
     </form>
-  </div>
+  </section>
 </div>
 
 <!-- Modal Container -->

@@ -7,36 +7,37 @@
   <input type="hidden" name="{{ field_name|default:'tags' }}_data" id="{{ field_name|default:'tags' }}_data" value="{{ selected_tags_json|default:'[]' }}">
 
   <!-- Display selected tags as pills -->
-  <div class="selected-tags mb-2" id="selected-tags-{{ field_name|default:'tags' }}">
+  <div class="selected-tags mb-2 flex flex-wrap gap-1" id="selected-tags-{{ field_name|default:'tags' }}">
     {% if selected_tags %}
       {% for tag in selected_tags %}
-      <span class="badge me-1 mb-1" style="background-color: {{ tag.color }}; color: {{ tag.color|contrast_text_color }}; font-size: 0.9rem; padding: 0.4rem 0.6rem;" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name }}" data-tag-color="{{ tag.color }}">
+      <span class="inline-flex items-center rounded-md text-sm font-medium px-3 py-1.5" style="background-color: {{ tag.color }}; color: {{ tag.color|contrast_text_color }};" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name }}" data-tag-color="{{ tag.color }}">
         {{ tag.name }}
-        <button type="button" class="btn-close {% if tag.color|contrast_text_color == '#ffffff' %}btn-close-white{% endif %} ms-1" style="font-size: 0.6rem; padding: 0;" onclick="removeTag{{ field_name|default:'tags'|capfirst }}({{ tag.id }})"></button>
+        <button type="button" class="ml-1.5 inline-flex items-center justify-center hover:opacity-100 opacity-80" style="font-size: 0.6rem; padding: 0; background: none; border: none; cursor: pointer;" onclick="removeTag{{ field_name|default:'tags'|capfirst }}({{ tag.id }})">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
       </span>
       {% endfor %}
     {% endif %}
   </div>
 
   <!-- Input for typing new tags -->
-  <div class="position-relative">
+  <div class="relative">
     <input
       type="text"
-      class="form-control"
       id="tag-input-{{ field_name|default:'tags' }}"
       placeholder="Type to search or create tags..."
       autocomplete="off"
     >
-    <div class="autocomplete-dropdown position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-sm"
+    <div class="autocomplete-dropdown absolute w-full bg-background border border-t-0 rounded-b-md shadow-sm"
          id="autocomplete-{{ field_name|default:'tags' }}"
          style="display: none; max-height: 200px; overflow-y: auto; z-index: 1050;">
     </div>
   </div>
 
-  <div class="form-text mt-2">
+  <p class="text-muted-foreground text-sm mt-2">
     <i class="bi bi-info-circle"></i>
     Type tag name and press Enter to add. If the tag doesn't exist, it will be created automatically.
-  </div>
+  </p>
 </div>
 
 <style>
@@ -51,24 +52,16 @@
   .autocomplete-item {
     padding: 0.5rem 0.75rem;
     cursor: pointer;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid hsl(var(--border));
   }
 
   .autocomplete-item:hover,
   .autocomplete-item.active {
-    background-color: #f8f9fa;
+    background-color: hsl(var(--accent));
   }
 
   .autocomplete-item:last-child {
     border-bottom: none;
-  }
-
-  .tag-selector .badge button.btn-close {
-    opacity: 0.8;
-  }
-
-  .tag-selector .badge button.btn-close:hover {
-    opacity: 1;
   }
 </style>
 
@@ -186,7 +179,7 @@
       } else {
         // No tags available and no query - show message
         autocompleteDropdown.innerHTML = `
-          <div class="autocomplete-item text-muted" style="cursor: default;">
+          <div class="autocomplete-item text-muted-foreground" style="cursor: default;">
             <i class="bi bi-info-circle"></i> No tags available
           </div>
         `;
@@ -206,7 +199,7 @@
       const textColor = getContrastColor(tag.color);
       html += `
         <div class="autocomplete-item ${index === activeItemIndex ? 'active' : ''}" onclick="selectTagFrom${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${index})">
-          <span class="badge me-2" style="background-color: ${tag.color}; color: ${textColor};">${escapeHtml(tag.name)}</span>
+          <span class="inline-flex items-center rounded-md text-sm font-medium px-2 py-1 mr-2" style="background-color: ${tag.color}; color: ${textColor};">${escapeHtml(tag.name)}</span>
         </div>
       `;
       visibleCount++;
@@ -227,7 +220,7 @@
     // If all tags are already selected, show a message
     if (visibleCount === 0 && query.trim().length === 0) {
       html = `
-        <div class="autocomplete-item text-muted" style="cursor: default;">
+        <div class="autocomplete-item text-muted-foreground" style="cursor: default;">
           <i class="bi bi-info-circle"></i> All tags already selected
         </div>
       `;
@@ -305,10 +298,12 @@
     selectedTags.forEach(tag => {
       const textColor = getContrastColor(tag.color);
       html += `
-        <span class="badge me-1 mb-1" style="background-color: ${tag.color}; color: ${textColor}; font-size: 0.9rem; padding: 0.4rem 0.6rem;" data-tag-id="${tag.id}" data-tag-name="${escapeHtml(tag.name)}" data-tag-color="${tag.color}">
+        <span class="inline-flex items-center rounded-md text-sm font-medium px-3 py-1.5" style="background-color: ${tag.color}; color: ${textColor};" data-tag-id="${tag.id}" data-tag-name="${escapeHtml(tag.name)}" data-tag-color="${tag.color}">
           ${escapeHtml(tag.name)}
           ${tag.is_new ? ' <i class="bi bi-plus-circle" title="New tag"></i>' : ''}
-          <button type="button" class="btn-close ${textColor === '#000' ? '' : 'btn-close-white'} ms-1" style="font-size: 0.6rem; padding: 0;" onclick="removeTag${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${tag.id})"></button>
+          <button type="button" class="ml-1.5 inline-flex items-center justify-center hover:opacity-100 opacity-80" style="font-size: 0.6rem; padding: 0; background: none; border: none; cursor: pointer;" onclick="removeTag${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}(${tag.id})">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
         </span>
       `;
     });

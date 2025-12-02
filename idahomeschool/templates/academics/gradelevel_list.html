@@ -4,14 +4,14 @@
 {% block title %}Grade Levels{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Grade Levels</h1>
-  <a href="{% url 'academics:gradelevel_create' %}" class="btn btn-success">Create Grade Level</a>
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-3xl font-bold">Grade Levels</h1>
+  <a href="{% url 'academics:gradelevel_create' %}" class="btn-primary">Create Grade Level</a>
 </div>
 
 {% if grade_levels %}
-<div class="table-responsive">
-  <table class="table table-striped table-hover">
+<div class="relative w-full overflow-x-auto">
+  <table class="table">
     <thead>
       <tr>
         <th>Name</th>
@@ -24,13 +24,15 @@
       {% for grade in grade_levels %}
       <tr>
         <td>
-          <a href="{% url 'academics:gradelevel_detail' grade.pk %}">{{ grade.name }}</a>
+          <a href="{% url 'academics:gradelevel_detail' grade.pk %}" class="underline">{{ grade.name }}</a>
         </td>
         <td>{{ grade.order }}</td>
         <td>{{ grade.description|truncatewords:10 }}</td>
         <td>
-          <a href="{% url 'academics:gradelevel_update' grade.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
-          <a href="{% url 'academics:gradelevel_delete' grade.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+          <div class="flex gap-2">
+            <a href="{% url 'academics:gradelevel_update' grade.pk %}" class="btn-sm-outline">Edit</a>
+            <a href="{% url 'academics:gradelevel_delete' grade.pk %}" class="btn-sm-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
+          </div>
         </td>
       </tr>
       {% endfor %}
@@ -38,14 +40,23 @@
   </table>
 </div>
 {% else %}
-<div class="alert alert-info">
-  <h4>No grade levels found</h4>
-  <p>Create grade levels to organize your students and courses by grade.</p>
-  <a href="{% url 'academics:gradelevel_create' %}" class="btn btn-primary">Create Grade Level</a>
-  <form method="post" action="{% url 'academics:gradelevel_create_pk12' %}" class="d-inline">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-outline-primary">Create PK-12 Grades</button>
-  </form>
+<div class="alert">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" x2="12" y1="8" y2="12" />
+    <line x1="12" x2="12.01" y1="16" y2="16" />
+  </svg>
+  <h2>No grade levels found</h2>
+  <section>
+    <p>Create grade levels to organize your students and courses by grade.</p>
+    <div class="flex gap-2 mt-3">
+      <a href="{% url 'academics:gradelevel_create' %}" class="btn-primary">Create Grade Level</a>
+      <form method="post" action="{% url 'academics:gradelevel_create_pk12' %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="btn-outline">Create PK-12 Grades</button>
+      </form>
+    </div>
+  </section>
 </div>
 {% endif %}
 {% endblock academics_content %}

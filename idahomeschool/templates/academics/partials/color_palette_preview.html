@@ -1,40 +1,45 @@
 {% if preview_colors or preview_errors %}
 <div class="mt-3">
   {% if preview_errors %}
-  <div class="alert alert-warning">
-    <h6><i class="bi bi-exclamation-triangle"></i> Errors Found:</h6>
-    <ul class="mb-0">
-      {% for error in preview_errors %}
-      <li>{{ error }}</li>
-      {% endfor %}
-    </ul>
+  <div class="alert">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </svg>
+    <h2><i class="bi bi-exclamation-triangle"></i> Errors Found:</h2>
+    <section>
+      <ul class="mb-0">
+        {% for error in preview_errors %}
+        <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </section>
   </div>
   {% endif %}
 
   {% if preview_colors %}
   <div class="mb-3">
-    <p class="text-muted">
+    <p class="text-muted-foreground">
       Found <strong>{{ preview_colors|length }}</strong> color(s).
-      <strong class="text-success">{{ new_count }}</strong> will be imported,
-      <strong class="text-secondary">{{ existing_count }}</strong> already exist and will be skipped.
+      <strong class="text-green-600">{{ new_count }}</strong> will be imported,
+      <strong class="text-muted-foreground">{{ existing_count }}</strong> already exist and will be skipped.
     </p>
   </div>
 
   <!-- Color Grid Preview -->
-  <div class="row g-2">
+  <div class="flex flex-wrap gap-2">
     {% for color in preview_colors %}
-    <div class="col-auto">
-      <div class="card {% if color.exists %}border-secondary{% endif %}" style="width: 80px;">
-        <div class="card-body text-center p-2">
-          <div class="mb-1" style="height: 50px; background-color: {{ color.hex_code }}; border-radius: 4px; border: 1px solid #dee2e6;"></div>
-          <small class="d-block" style="font-size: 0.7rem;">{{ color.hex_code }}</small>
-          {% if color.exists %}
-          <span class="badge bg-secondary mt-1" style="font-size: 0.6rem;">Exists</span>
-          {% else %}
-          <span class="badge bg-success mt-1" style="font-size: 0.6rem;">New</span>
-          {% endif %}
-        </div>
-      </div>
+    <div class="card {% if color.exists %}border-muted{% endif %}" style="width: 80px;">
+      <section class="text-center p-2">
+        <div class="mb-1" style="height: 50px; background-color: {{ color.hex_code }}; border-radius: 4px; border: 1px solid hsl(var(--border));"></div>
+        <small class="block text-xs">{{ color.hex_code }}</small>
+        {% if color.exists %}
+        <span class="badge-secondary mt-1 text-xs">Exists</span>
+        {% else %}
+        <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-600 text-white mt-1">New</span>
+        {% endif %}
+      </section>
     </div>
     {% endfor %}
   </div>

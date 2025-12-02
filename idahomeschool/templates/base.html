@@ -147,11 +147,6 @@
               </a>
             </li>
             <li>
-              <a href="{% url 'academics:coursetemplate_list' %}" {% if 'coursetemplate' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
-                <span>Course Templates</span>
-              </a>
-            </li>
-            <li>
               <a href="{% url 'academics:courseenrollment_list' %}" {% if 'courseenrollment' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
                 <span>Enrollments</span>
               </a>
@@ -165,7 +160,7 @@
           <ul>
             <li>
               <a href="{% url 'academics:attendance_calendar' %}" {% if 'attendance_calendar' in request.resolver_match.url_name %}class="active" aria-current="page"{% endif %}>
-                <span>Calendar View</span>
+                <span>Calendar</span>
               </a>
             </li>
             <li>

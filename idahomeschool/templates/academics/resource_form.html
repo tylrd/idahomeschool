@@ -6,87 +6,87 @@
 
 {% block academics_content %}
 <div class="card">
-  <div class="card-header">
-    <h3 class="mb-0">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Resource</h3>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>{% if form.instance.pk %}Edit{% else %}Add{% endif %} Resource</h2>
+  </header>
+  <section>
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
 
       {# Title field #}
-      <div class="mb-3">
-        <label for="id_title" class="form-label">Title *</label>
+      <div class="grid gap-2">
+        <label for="id_title">Title *</label>
         {{ form.title }}
         {% if form.title.errors %}
-          <div class="invalid-feedback d-block">{{ form.title.errors.0 }}</div>
+          <p class="text-destructive text-sm">{{ form.title.errors.0 }}</p>
         {% endif %}
       </div>
 
       {# Author and Publisher #}
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label for="id_author" class="form-label">Author</label>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div class="grid gap-2">
+          <label for="id_author">Author</label>
           {{ form.author }}
           {% if form.author.errors %}
-            <div class="invalid-feedback d-block">{{ form.author.errors.0 }}</div>
+            <p class="text-destructive text-sm">{{ form.author.errors.0 }}</p>
           {% endif %}
         </div>
-        <div class="col-md-6 mb-3">
-          <label for="id_publisher" class="form-label">Publisher</label>
+        <div class="grid gap-2">
+          <label for="id_publisher">Publisher</label>
           {{ form.publisher }}
           {% if form.publisher.errors %}
-            <div class="invalid-feedback d-block">{{ form.publisher.errors.0 }}</div>
+            <p class="text-destructive text-sm">{{ form.publisher.errors.0 }}</p>
           {% endif %}
         </div>
       </div>
 
       {# ISBN and Resource Type #}
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label for="id_isbn" class="form-label">ISBN</label>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div class="grid gap-2">
+          <label for="id_isbn">ISBN</label>
           {{ form.isbn }}
           {% if form.isbn.errors %}
-            <div class="invalid-feedback d-block">{{ form.isbn.errors.0 }}</div>
+            <p class="text-destructive text-sm">{{ form.isbn.errors.0 }}</p>
           {% endif %}
         </div>
-        <div class="col-md-6 mb-3">
-          <label for="id_resource_type" class="form-label">Resource Type</label>
+        <div class="grid gap-2">
+          <label for="id_resource_type">Resource Type</label>
           {{ form.resource_type }}
           {% if form.resource_type.errors %}
-            <div class="invalid-feedback d-block">{{ form.resource_type.errors.0 }}</div>
+            <p class="text-destructive text-sm">{{ form.resource_type.errors.0 }}</p>
           {% endif %}
         </div>
       </div>
 
       {# Description #}
-      <div class="mb-3">
-        <label for="id_description" class="form-label">Description</label>
+      <div class="grid gap-2 mt-4">
+        <label for="id_description">Description</label>
         {{ form.description }}
         {% if form.description.errors %}
-          <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+          <p class="text-destructive text-sm">{{ form.description.errors.0 }}</p>
         {% endif %}
       </div>
 
       {# Image field #}
-      <div class="mb-3">
-        <label for="id_image" class="form-label">Cover Image / Thumbnail</label>
+      <div class="grid gap-2 mt-4">
+        <label for="id_image">Cover Image / Thumbnail</label>
         {% if form.instance.image %}
           <div class="mb-2">
             <img src="{{ form.instance.image.url }}" alt="Current image" class="img-thumbnail" style="max-height: 150px;">
-            <p class="text-muted small">Current image (select a new file to replace)</p>
+            <p class="text-muted-foreground text-sm">Current image (select a new file to replace)</p>
           </div>
         {% endif %}
         {{ form.image }}
         {% if form.image.errors %}
-          <div class="invalid-feedback d-block">{{ form.image.errors.0 }}</div>
+          <p class="text-destructive text-sm">{{ form.image.errors.0 }}</p>
         {% endif %}
-        <div class="form-text">Optional cover image or thumbnail for this resource</div>
+        <p class="text-muted-foreground text-sm">Optional cover image or thumbnail for this resource</p>
       </div>
 
       {# Tags field - use custom tag selector component #}
       {# Note: tag selector creates its own hidden input with name="tags_data" #}
-      <div class="mb-3">
-        <label class="form-label">Tags</label>
+      <div class="grid gap-2 mt-4">
+        <label>Tags</label>
         {% if form.instance.pk %}
           {% include "academics/partials/tag_selector.html" with field_name="tags" selected_tags=form.instance.tags.all selected_tags_json=form.initial.tags_data %}
         {% else %}
@@ -94,11 +94,11 @@
         {% endif %}
       </div>
 
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Save Resource</button>
-        <a href="{% url 'academics:resource_list' %}" class="btn btn-secondary">Cancel</a>
+      <div class="flex gap-2 mt-6">
+        <button type="submit" class="btn-primary">Save Resource</button>
+        <a href="{% url 'academics:resource_list' %}" class="btn-secondary">Cancel</a>
       </div>
     </form>
-  </div>
+  </section>
 </div>
 {% endblock academics_content %}

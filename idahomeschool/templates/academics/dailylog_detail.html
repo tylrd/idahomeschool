@@ -4,51 +4,51 @@
 {% block title %}Daily Log - {{ daily_log.student.name }} - {{ daily_log.date }}{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Daily Log Details</h1>
-  <div>
-    <a href="{% url 'academics:dailylog_entry_date' daily_log.student.pk daily_log.date|date:'Y-m-d' %}" class="btn btn-primary">Edit</a>
-    <a href="{% url 'academics:dailylog_list' %}" class="btn btn-outline-secondary">Back to List</a>
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-3xl font-bold">Daily Log Details</h1>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:dailylog_entry_date' daily_log.student.pk daily_log.date|date:'Y-m-d' %}" class="btn-primary">Edit</a>
+    <a href="{% url 'academics:dailylog_list' %}" class="btn-outline">Back to List</a>
   </div>
 </div>
 
 <!-- Daily Log Info -->
 <div class="card mb-4">
-  <div class="card-header">
-    <h5 class="mb-0">{{ daily_log.student.name }} - {{ daily_log.date|date:"l, F j, Y" }}</h5>
-  </div>
-  <div class="card-body">
-    <div class="row">
-      <div class="col-md-6 mb-3">
+  <header>
+    <h2>{{ daily_log.student.name }} - {{ daily_log.date|date:"l, F j, Y" }}</h2>
+  </header>
+  <section>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
         <label class="text-muted">Student:</label><br>
         <a href="{% url 'academics:student_detail' daily_log.student.pk %}">{{ daily_log.student.name }}</a>
       </div>
-      <div class="col-md-6 mb-3">
+      <div>
         <label class="text-muted">Date:</label><br>
         {{ daily_log.date|date:"F j, Y (l)" }}
       </div>
-      <div class="col-md-6 mb-3">
+      <div>
         <label class="text-muted">Status:</label><br>
-        <span class="badge
-          {% if daily_log.status == 'PRESENT' %}bg-success
-          {% elif daily_log.status == 'ABSENT' %}bg-danger
-          {% elif daily_log.status == 'SICK' %}bg-warning
-          {% elif daily_log.status == 'HOLIDAY' %}bg-info
-          {% elif daily_log.status == 'FIELD_TRIP' %}bg-primary
+        <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium
+          {% if daily_log.status == 'PRESENT' %}bg-green-600 text-white
+          {% elif daily_log.status == 'ABSENT' %}bg-red-600 text-white
+          {% elif daily_log.status == 'SICK' %}bg-yellow-600 text-white
+          {% elif daily_log.status == 'HOLIDAY' %}bg-blue-600 text-white
+          {% elif daily_log.status == 'FIELD_TRIP' %}bg-blue-600 text-white
           {% endif %}">
           {{ daily_log.get_status_display }}
         </span>
       </div>
-      <div class="col-md-6 mb-3">
+      <div>
         <label class="text-muted">Instructional Day:</label><br>
         {% if daily_log.is_instructional_day %}
-          <span class="badge bg-success">Yes</span>
+          <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-600 text-white">Yes</span>
         {% else %}
-          <span class="badge bg-secondary">No</span>
+          <span class="badge-secondary">No</span>
         {% endif %}
       </div>
       {% if daily_log.general_notes %}
-      <div class="col-12">
+      <div class="md:col-span-2">
         <label class="text-muted">General Notes:</label>
         <div class="border rounded p-3 bg-light">
           {{ daily_log.general_notes|linebreaks }}
@@ -56,21 +56,21 @@
       </div>
       {% endif %}
     </div>
-  </div>
+  </section>
 </div>
 
 <!-- Course Notes -->
 {% if course_notes %}
 <div class="card mb-4">
-  <div class="card-header">
-    <h5 class="mb-0">Course Notes</h5>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>Course Notes</h2>
+  </header>
+  <section>
     {% for note in course_notes %}
     <div class="mb-4">
       <h6>
         {{ note.course_enrollment.course.name }}
-        <span class="badge bg-secondary">{{ note.course_enrollment.school_year.name }}</span>
+        <span class="badge-secondary">{{ note.course_enrollment.school_year.name }}</span>
       </h6>
       <div class="border-start border-4 border-primary ps-3">
         {{ note.notes|linebreaks }}
@@ -78,7 +78,7 @@
       <small class="text-muted">Last updated: {{ note.updated_at|date:"F j, Y g:i A" }}</small>
     </div>
     {% endfor %}
-  </div>
+  </section>
 </div>
 {% else %}
 <div class="alert alert-info">
@@ -89,18 +89,18 @@
 
 <!-- Metadata -->
 <div class="card">
-  <div class="card-body">
+  <section>
     <small class="text-muted">
       Created: {{ daily_log.created_at|date:"F j, Y g:i A" }} |
       Last Updated: {{ daily_log.updated_at|date:"F j, Y g:i A" }}
     </small>
-  </div>
+  </section>
 </div>
 
 <!-- Actions -->
-<div class="mt-4">
-  <a href="{% url 'academics:dailylog_entry_date' daily_log.student.pk daily_log.date|date:'Y-m-d' %}" class="btn btn-primary">Edit</a>
-  <a href="{% url 'academics:dailylog_delete' daily_log.pk %}" class="btn btn-danger">Delete</a>
-  <a href="{% url 'academics:dailylog_list' %}" class="btn btn-outline-secondary">Back to List</a>
+<div class="mt-4 flex gap-2">
+  <a href="{% url 'academics:dailylog_entry_date' daily_log.student.pk daily_log.date|date:'Y-m-d' %}" class="btn-primary">Edit</a>
+  <a href="{% url 'academics:dailylog_delete' daily_log.pk %}" class="btn-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
+  <a href="{% url 'academics:dailylog_list' %}" class="btn-outline">Back to List</a>
 </div>
 {% endblock academics_content %}

@@ -1,3 +1,3 @@
-<span class="badge bg-{{ entry.status_badge_class }}">
+<span class="badge {% if entry.status_badge_class == 'success' %}bg-green-600 text-white{% elif entry.status_badge_class == 'warning' %}bg-yellow-500 text-black{% elif entry.status_badge_class == 'danger' %}bg-destructive text-destructive-foreground{% elif entry.status_badge_class == 'primary' %}bg-primary text-primary-foreground{% elif entry.status_badge_class == 'secondary' %}badge-secondary{% else %}badge{% endif %}">
   {{ entry.get_status_display }}
 </span>

@@ -5,37 +5,37 @@
 {% block title %}{{ resource.title }}{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>{{ resource.title }}</h1>
-  <div>
-    <a href="{% url 'academics:library_update' resource.pk %}" class="btn btn-primary">Edit</a>
-    <a href="{% url 'academics:library_delete' resource.pk %}" class="btn btn-danger">Delete</a>
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-3xl font-bold">{{ resource.title }}</h1>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:library_update' resource.pk %}" class="btn-primary">Edit</a>
+    <a href="{% url 'academics:library_delete' resource.pk %}" class="btn-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
   </div>
 </div>
 
 <div class="card">
-  <div class="card-header">
-    <h5 class="mb-0">Resource Information</h5>
-  </div>
-  <div class="card-body">
-    <dl class="row">
-      <dt class="col-sm-3">Title:</dt>
-      <dd class="col-sm-9">{{ resource.title }}</dd>
+  <header>
+    <h2>Resource Information</h2>
+  </header>
+  <section>
+    <dl class="grid grid-cols-3 gap-2">
+      <dt class="font-semibold">Title:</dt>
+      <dd class="col-span-2">{{ resource.title }}</dd>
 
-      <dt class="col-sm-3">Author:</dt>
-      <dd class="col-sm-9">{{ resource.author|default:"-" }}</dd>
+      <dt class="font-semibold">Author:</dt>
+      <dd class="col-span-2">{{ resource.author|default:"-" }}</dd>
 
-      <dt class="col-sm-3">Publisher:</dt>
-      <dd class="col-sm-9">{{ resource.publisher|default:"-" }}</dd>
+      <dt class="font-semibold">Publisher:</dt>
+      <dd class="col-span-2">{{ resource.publisher|default:"-" }}</dd>
 
-      <dt class="col-sm-3">ISBN:</dt>
-      <dd class="col-sm-9">{{ resource.isbn|default:"-" }}</dd>
+      <dt class="font-semibold">ISBN:</dt>
+      <dd class="col-span-2">{{ resource.isbn|default:"-" }}</dd>
 
-      <dt class="col-sm-3">Resource Type:</dt>
-      <dd class="col-sm-9"><span class="badge bg-secondary">{{ resource.get_resource_type_display }}</span></dd>
+      <dt class="font-semibold">Resource Type:</dt>
+      <dd class="col-span-2"><span class="badge-secondary">{{ resource.get_resource_type_display }}</span></dd>
 
-      <dt class="col-sm-3">Tags:</dt>
-      <dd class="col-sm-9">
+      <dt class="font-semibold">Tags:</dt>
+      <dd class="col-span-2">
         {% for tag in resource.tags.all %}
           {% tag_badge tag link_to_detail=True %}
         {% empty %}
@@ -44,20 +44,20 @@
       </dd>
 
       {% if resource.description %}
-      <dt class="col-sm-3">Description:</dt>
-      <dd class="col-sm-9">{{ resource.description|linebreaks }}</dd>
+      <dt class="font-semibold">Description:</dt>
+      <dd class="col-span-2">{{ resource.description|linebreaks }}</dd>
       {% endif %}
 
-      <dt class="col-sm-3">Created:</dt>
-      <dd class="col-sm-9">{{ resource.created_at|date:"F d, Y" }}</dd>
+      <dt class="font-semibold">Created:</dt>
+      <dd class="col-span-2">{{ resource.created_at|date:"F d, Y" }}</dd>
 
-      <dt class="col-sm-3">Last Updated:</dt>
-      <dd class="col-sm-9">{{ resource.updated_at|date:"F d, Y" }}</dd>
+      <dt class="font-semibold">Last Updated:</dt>
+      <dd class="col-span-2">{{ resource.updated_at|date:"F d, Y" }}</dd>
     </dl>
-  </div>
+  </section>
 </div>
 
 <div class="mt-3">
-  <a href="{% url 'academics:resource_list' %}" class="btn btn-secondary">Back to Library</a>
+  <a href="{% url 'academics:resource_list' %}" class="btn-outline">Back to Library</a>
 </div>
 {% endblock academics_content %}

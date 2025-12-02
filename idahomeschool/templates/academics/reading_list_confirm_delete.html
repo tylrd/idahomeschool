@@ -4,24 +4,32 @@
 {% block title %}Remove from Reading List{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Remove from Reading List</h1>
+<div class="mb-4">
+  <h1 class="text-2xl font-bold">Remove from Reading List</h1>
 </div>
 
-<div class="alert alert-warning" role="alert">
-  <h4 class="alert-heading">Are you sure?</h4>
-  <p>
-    Are you sure you want to remove <strong>"{{ object.resource.title }}"</strong>
-    from {{ object.student.name }}'s reading list?
-  </p>
-  <hr>
-  <p class="mb-0">This action cannot be undone.</p>
+<div class="card max-w-2xl">
+  <section>
+    <div class="alert">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+      <h2>Are you sure?</h2>
+      <section>
+        <p>
+          Are you sure you want to remove <strong>"{{ object.resource.title }}"</strong>
+          from {{ object.student.name }}'s reading list?
+        </p>
+        <hr class="my-3">
+        <p>This action cannot be undone.</p>
+      </section>
+    </div>
+  </section>
+  <footer>
+    <form method="post" class="flex gap-2">
+      {% csrf_token %}
+      <button type="submit" class="btn-destructive">Yes, Remove</button>
+      <a href="{% url 'academics:student_reading_list' object.student.pk %}" class="btn-outline">Cancel</a>
+    </form>
+  </footer>
 </div>
-
-<form method="post">
-  {% csrf_token %}
-  <button type="submit" class="btn btn-danger">Yes, Remove</button>
-  <a href="{% url 'academics:student_reading_list' object.student.pk %}" class="btn btn-secondary">Cancel</a>
-</form>
 
 {% endblock %}

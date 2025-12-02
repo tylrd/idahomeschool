@@ -9,7 +9,7 @@ Context variables:
   - link_to_detail: Boolean to wrap in link to tag detail page
 {% endcomment %}
 {% if link_to_detail %}
-<a href="{% url 'academics:tag_detail' tag.pk %}" class="text-decoration-none">
+<a href="{% url 'academics:tag_detail' tag.pk %}" class="no-underline">
   <span class="badge {{ size_class }}" style="background-color: {{ tag.color }}; color: {{ text_color }}; {% if clickable %}cursor: pointer;{% endif %}">{{ tag.name }}</span>
 </a>
 {% else %}

@@ -6,66 +6,66 @@ Variables expected:
 - current_status: Current status string (or None)
 {% endcomment %}
 
-<div class="modal fade show d-block" id="status-modal" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{{ student.name }} - {{ date|date:"F j, Y" }}</h5>
-        <button type="button"
-                class="btn-close"
-                onclick="document.getElementById('status-selector-container').innerHTML = ''"
-                aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form hx-post="{% url 'academics:attendance_quick_update' student.id date_str %}"
-              hx-target="#cell-{{ student.id }}-{{ date_str }}"
-              hx-swap="outerHTML">
-          {% csrf_token %}
+<div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" id="status-modal" tabindex="-1" role="dialog">
+  <div class="bg-background rounded-lg shadow-lg max-w-md w-full mx-4">
+    <div class="flex items-center justify-between p-4 border-b border-border">
+      <h2 class="text-lg font-semibold">{{ student.name }} - {{ date|date:"F j, Y" }}</h2>
+      <button type="button"
+              class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground h-10 w-10"
+              onclick="document.getElementById('status-selector-container').innerHTML = ''"
+              aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="p-4">
+      <form hx-post="{% url 'academics:attendance_quick_update' student.id date_str %}"
+            hx-target="#cell-{{ student.id }}-{{ date_str }}"
+            hx-swap="outerHTML">
+        {% csrf_token %}
 
-          <div class="d-grid gap-2">
-            {% for status in attendance_statuses %}
-            <button type="submit"
-                    name="status"
-                    value="{{ status.code }}"
-                    class="btn {% if current_status == status.code %}btn{% else %}btn-outline{% endif %}"
-                    style="{% if current_status == status.code %}background-color: {{ status.color }}; border-color: {{ status.color }};{% else %}color: {{ status.color }}; border-color: {{ status.color }};{% endif %} {% if status.color|slice:':4' == '#ffc' or status.color|slice:':4' == '#ff0' or status.color|slice:':4' == '#fff' %}{% if current_status == status.code %}color: #000;{% endif %}{% else %}{% if current_status == status.code %}color: #fff;{% endif %}{% endif %}">
-              <strong>{{ status.abbreviation }}</strong> {{ status.label }}
-            </button>
-            {% endfor %}
-          </div>
-        </form>
-
-        {% if current_status %}
-        <hr class="my-3">
-        <div class="d-grid">
-          <button type="button"
-                  hx-delete="{% url 'academics:attendance_quick_delete' student.id date_str %}"
-                  hx-target="#cell-{{ student.id }}-{{ date_str }}"
-                  hx-swap="outerHTML"
-                  hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                  hx-confirm="Delete this attendance log?"
-                  onclick="setTimeout(() => document.getElementById('status-selector-container').innerHTML = '', 100);"
-                  class="btn btn-outline-secondary">
-            Delete Log
+        <div class="grid gap-2">
+          {% for status in attendance_statuses %}
+          <button type="submit"
+                  name="status"
+                  value="{{ status.code }}"
+                  class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 {% if current_status == status.code %}border-2{% else %}border-2{% endif %}"
+                  style="{% if current_status == status.code %}background-color: {{ status.color }}; border-color: {{ status.color }};{% else %}background-color: transparent; border-color: {{ status.color }}; color: {{ status.color }};{% endif %} {% if status.color|slice:':4' == '#ffc' or status.color|slice:':4' == '#ff0' or status.color|slice:':4' == '#fff' %}{% if current_status == status.code %}color: #000;{% endif %}{% else %}{% if current_status == status.code %}color: #fff;{% endif %}{% endif %}">
+            <strong>{{ status.abbreviation }}</strong> {{ status.label }}
           </button>
+          {% endfor %}
         </div>
-        {% endif %}
+      </form>
 
-        <hr class="my-3">
-
+      {% if current_status %}
+      <hr class="my-3 border-border">
+      <div class="grid gap-2">
         <button type="button"
-                class="btn btn-outline-primary w-100"
-                data-course-notes-url="{% url 'academics:attendance_course_notes' student.id date_str %}"
-                onclick="openCourseNotesFromModal(this)">
-          <i class="bi bi-journal-text"></i> Add Course Notes
+                hx-delete="{% url 'academics:attendance_quick_delete' student.id date_str %}"
+                hx-target="#cell-{{ student.id }}-{{ date_str }}"
+                hx-swap="outerHTML"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-confirm="Delete this attendance log?"
+                onclick="setTimeout(() => document.getElementById('status-selector-container').innerHTML = '', 100);"
+                class="btn-secondary">
+          Delete Log
         </button>
+      </div>
+      {% endif %}
 
-        <div class="mt-2">
-          <a href="{% url 'academics:dailylog_entry_date' student.id date_str %}"
-             class="btn btn-link w-100">
-            Full Entry Form →
-          </a>
-        </div>
+      <hr class="my-3 border-border">
+
+      <button type="button"
+              class="btn-outline w-full"
+              data-course-notes-url="{% url 'academics:attendance_course_notes' student.id date_str %}"
+              onclick="openCourseNotesFromModal(this)">
+        <i class="bi bi-journal-text"></i> Add Course Notes
+      </button>
+
+      <div class="mt-2">
+        <a href="{% url 'academics:dailylog_entry_date' student.id date_str %}"
+           class="btn-link w-full">
+          Full Entry Form →
+        </a>
       </div>
     </div>
   </div>

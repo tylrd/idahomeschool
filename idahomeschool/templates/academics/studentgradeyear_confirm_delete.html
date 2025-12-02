@@ -3,20 +3,21 @@
 {% block title %}Delete Grade Assignment{% endblock %}
 
 {% block academics_content %}
-<div class="card">
-  <div class="card-header bg-danger text-white">
-    <h3 class="mb-0">Delete Grade Assignment</h3>
-  </div>
-  <div class="card-body">
+<div class="card max-w-2xl">
+  <header>
+    <h2>Delete Grade Assignment</h2>
+  </header>
+  <section class="grid gap-4">
     <p>Are you sure you want to delete the grade assignment:</p>
     <p><strong>{{ studentgradeyear.student.name }}</strong> - <strong>{{ studentgradeyear.grade_level.name }}</strong> for <strong>{{ studentgradeyear.school_year.name }}</strong>?</p>
-    <p class="text-muted">This action cannot be undone.</p>
-
-    <form method="post">
+    <p class="text-muted-foreground text-sm">This action cannot be undone.</p>
+  </section>
+  <footer>
+    <form method="post" class="flex gap-2">
       {% csrf_token %}
-      <button type="submit" class="btn btn-danger">Yes, Delete</button>
-      <a href="{% url 'academics:student_detail' studentgradeyear.student.pk %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn-destructive">Yes, Delete</button>
+      <a href="{% url 'academics:student_detail' studentgradeyear.student.pk %}" class="btn-outline">Cancel</a>
     </form>
-  </div>
+  </footer>
 </div>
 {% endblock academics_content %}

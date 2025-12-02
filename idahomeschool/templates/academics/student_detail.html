@@ -4,87 +4,87 @@
 {% block title %}{{ student.name }}{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div class="d-flex align-items-center">
+<div class="flex justify-between items-center mb-4">
+  <div class="flex items-center">
     <div class="flex-shrink-0 me-3">
       {% if student.photo %}
-        <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+        <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="rounded-full" style="width: 80px; height: 80px; object-fit: cover;">
       {% else %}
-        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; color: white; font-size: 32px; font-weight: bold;">
+        <div class="rounded-full bg-secondary flex items-center justify-center" style="width: 80px; height: 80px; color: white; font-size: 32px; font-weight: bold;">
           {{ student.name.0 }}
         </div>
       {% endif %}
     </div>
-    <h1 class="mb-0">{{ student.name }}</h1>
+    <h1 class="text-3xl font-bold mb-0">{{ student.name }}</h1>
   </div>
-  <div>
-    <a href="{% url 'academics:student_update' student.pk %}" class="btn btn-primary">Edit</a>
-    <a href="{% url 'academics:student_delete' student.pk %}" class="btn btn-danger">Delete</a>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:student_update' student.pk %}" class="btn-primary">Edit</a>
+    <a href="{% url 'academics:student_delete' student.pk %}" class="btn-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
   </div>
 </div>
 
-<div class="row mb-4">
-  <div class="col-md-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+  <div>
     <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Student Information</h5>
-      </div>
-      <div class="card-body">
-        <dl class="row">
-          <dt class="col-sm-4">Name:</dt>
-          <dd class="col-sm-8">{{ student.name }}</dd>
+      <header>
+        <h2>Student Information</h2>
+      </header>
+      <section>
+        <dl class="grid grid-cols-3 gap-2">
+          <dt class="font-semibold">Name:</dt>
+          <dd class="col-span-2">{{ student.name }}</dd>
 
-          <dt class="col-sm-4">Date of Birth:</dt>
-          <dd class="col-sm-8">{{ student.date_of_birth }}</dd>
+          <dt class="font-semibold">Date of Birth:</dt>
+          <dd class="col-span-2">{{ student.date_of_birth }}</dd>
 
-          <dt class="col-sm-4">Age:</dt>
-          <dd class="col-sm-8">{{ student.age }}</dd>
+          <dt class="font-semibold">Age:</dt>
+          <dd class="col-span-2">{{ student.age }}</dd>
 
           {% if student.paperless_tag_id %}
-          <dt class="col-sm-4">Paperless Tag ID:</dt>
-          <dd class="col-sm-8">{{ student.paperless_tag_id }}</dd>
+          <dt class="font-semibold">Paperless Tag ID:</dt>
+          <dd class="col-span-2">{{ student.paperless_tag_id }}</dd>
           {% endif %}
 
-          <dt class="col-sm-4">Created:</dt>
-          <dd class="col-sm-8">{{ student.created_at|date:"F d, Y" }}</dd>
+          <dt class="font-semibold">Created:</dt>
+          <dd class="col-span-2">{{ student.created_at|date:"F d, Y" }}</dd>
         </dl>
-      </div>
+      </section>
     </div>
   </div>
 
-  <div class="col-md-6">
+  <div>
     <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Enrollment</h5>
-      </div>
-      <div class="card-body">
+      <header>
+        <h2>Enrollment</h2>
+      </header>
+      <section>
         {% if school_years %}
           <h6>Enrolled School Years:</h6>
           <ul class="list-unstyled">
             {% for year in school_years %}
             <li>
               <a href="{% url 'academics:schoolyear_detail' year.pk %}">{{ year.name }}</a>
-              {% if year.is_active %}<span class="badge bg-success">Active</span>{% endif %}
+              {% if year.is_active %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-600 text-white">Active</span>{% endif %}
             </li>
             {% endfor %}
           </ul>
         {% else %}
           <p class="text-muted">Not enrolled in any school years yet.</p>
         {% endif %}
-      </div>
+      </section>
     </div>
   </div>
 </div>
 
 <div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">Grade Assignments</h5>
-    <a href="{% url 'academics:studentgradeyear_create_for_student' student.pk %}" class="btn btn-sm btn-success">Assign Grade</a>
-  </div>
-  <div class="card-body">
+  <header class="flex justify-between items-center">
+    <h2>Grade Assignments</h2>
+    <a href="{% url 'academics:studentgradeyear_create_for_student' student.pk %}" class="btn-sm-outline">Assign Grade</a>
+  </header>
+  <section>
     {% if grade_years %}
-      <div class="table-responsive">
-        <table class="table table-striped">
+      <div class="relative w-full overflow-x-auto">
+        <table class="table">
           <thead>
             <tr>
               <th>School Year</th>
@@ -97,14 +97,14 @@
             <tr>
               <td>
                 <a href="{% url 'academics:schoolyear_detail' grade_year.school_year.pk %}">{{ grade_year.school_year.name }}</a>
-                {% if grade_year.school_year.is_active %}<span class="badge bg-success">Active</span>{% endif %}
+                {% if grade_year.school_year.is_active %}<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-600 text-white">Active</span>{% endif %}
               </td>
               <td>
                 <a href="{% url 'academics:gradelevel_detail' grade_year.grade_level.pk %}">{{ grade_year.grade_level.name }}</a>
               </td>
               <td>
-                <a href="{% url 'academics:studentgradeyear_update' grade_year.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                <a href="{% url 'academics:studentgradeyear_delete' grade_year.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                <a href="{% url 'academics:studentgradeyear_update' grade_year.pk %}" class="btn-sm-outline">Edit</a>
+                <a href="{% url 'academics:studentgradeyear_delete' grade_year.pk %}" class="btn-sm-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
               </td>
             </tr>
             {% endfor %}
@@ -113,20 +113,20 @@
       </div>
     {% else %}
       <p class="text-muted">No grade assignments yet.</p>
-      <a href="{% url 'academics:studentgradeyear_create_for_student' student.pk %}" class="btn btn-primary">Assign First Grade</a>
+      <a href="{% url 'academics:studentgradeyear_create_for_student' student.pk %}" class="btn-primary">Assign First Grade</a>
     {% endif %}
-  </div>
+  </section>
 </div>
 
 <div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">Course Enrollments</h5>
-    <a href="{% url 'academics:courseenrollment_create' %}" class="btn btn-sm btn-success">Add Enrollment</a>
-  </div>
-  <div class="card-body">
+  <header class="flex justify-between items-center">
+    <h2>Course Enrollments</h2>
+    <a href="{% url 'academics:courseenrollment_create' %}" class="btn-sm-outline">Add Enrollment</a>
+  </header>
+  <section>
     {% if enrollments %}
-      <div class="table-responsive">
-        <table class="table table-striped">
+      <div class="relative w-full overflow-x-auto">
+        <table class="table">
           <thead>
             <tr>
               <th>Course Name</th>
@@ -143,18 +143,18 @@
               <td><a href="{% url 'academics:schoolyear_detail' enrollment.school_year.pk %}">{{ enrollment.school_year.name }}</a></td>
               <td>
                 {% if enrollment.status == 'COMPLETED' %}
-                  <span class="badge bg-success">{{ enrollment.get_status_display }}</span>
+                  <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-600 text-white">{{ enrollment.get_status_display }}</span>
                 {% elif enrollment.status == 'PAUSED' %}
-                  <span class="badge bg-warning">{{ enrollment.get_status_display }}</span>
+                  <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-yellow-600 text-white">{{ enrollment.get_status_display }}</span>
                 {% else %}
-                  <span class="badge bg-primary">{{ enrollment.get_status_display }}</span>
+                  <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-blue-600 text-white">{{ enrollment.get_status_display }}</span>
                 {% endif %}
               </td>
               <td>
                 {% if enrollment.completion_percentage %}{{ enrollment.completion_percentage }}%{% else %}-{% endif %}
               </td>
               <td>
-                <a href="{% url 'academics:courseenrollment_update' enrollment.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <a href="{% url 'academics:courseenrollment_update' enrollment.pk %}" class="btn-sm-outline">Edit</a>
               </td>
             </tr>
             {% endfor %}
@@ -163,27 +163,27 @@
       </div>
     {% else %}
       <p class="text-muted">No course enrollments yet.</p>
-      <a href="{% url 'academics:courseenrollment_create' %}" class="btn btn-primary">Add First Enrollment</a>
+      <a href="{% url 'academics:courseenrollment_create' %}" class="btn-primary">Add First Enrollment</a>
     {% endif %}
-  </div>
+  </section>
 </div>
 
 <div class="card">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">Recent Books</h5>
-    <a href="{% url 'academics:student_reading_list' student.pk %}" class="btn btn-sm btn-primary">View All</a>
-  </div>
-  <div class="card-body">
+  <header class="flex justify-between items-center">
+    <h2>Recent Books</h2>
+    <a href="{% url 'academics:student_reading_list' student.pk %}" class="btn-sm-outline">View All</a>
+  </header>
+  <section>
     {% if recent_books %}
       <div class="list-group list-group-flush">
         {% for entry in recent_books %}
         <div class="list-group-item">
-          <div class="d-flex w-100 justify-content-between align-items-start">
-            <div class="d-flex">
+          <div class="flex w-full justify-between items-start">
+            <div class="flex">
               {% if entry.resource.image %}
               <img src="{{ entry.resource.image.url }}" alt="{{ entry.resource.title }}" class="me-3 img-thumbnail" style="width: 60px; height: 80px; object-fit: cover;">
               {% else %}
-              <div class="me-3 bg-light border rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 80px;">
+              <div class="me-3 bg-light border rounded flex items-center justify-center" style="width: 60px; height: 80px;">
                 <i class="bi bi-book text-muted"></i>
               </div>
               {% endif %}
@@ -205,19 +205,19 @@
               </div>
             </div>
             <div>
-              <a href="{% url 'academics:readinglist_update' entry.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+              <a href="{% url 'academics:readinglist_update' entry.pk %}" class="btn-sm-outline">Edit</a>
             </div>
           </div>
         </div>
         {% endfor %}
       </div>
       <div class="mt-3">
-        <a href="{% url 'academics:student_reading_list' student.pk %}" class="btn btn-outline-primary">View Full Reading List</a>
+        <a href="{% url 'academics:student_reading_list' student.pk %}" class="btn-outline">View Full Reading List</a>
       </div>
     {% else %}
       <p class="text-muted">No books in reading list yet.</p>
-      <a href="{% url 'academics:readinglist_create' %}?student={{ student.pk }}" class="btn btn-primary">Add First Book</a>
+      <a href="{% url 'academics:readinglist_create' %}?student={{ student.pk }}" class="btn-primary">Add First Book</a>
     {% endif %}
-  </div>
+  </section>
 </div>
 {% endblock academics_content %}

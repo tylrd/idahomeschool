@@ -4,19 +4,20 @@
 {% block title %}Delete Tag{% endblock %}
 
 {% block academics_content %}
-<div class="card">
-  <div class="card-header bg-danger text-white">
-    <h3 class="mb-0">Delete Tag</h3>
-  </div>
-  <div class="card-body">
+<div class="card max-w-2xl">
+  <header>
+    <h2>Delete Tag</h2>
+  </header>
+  <section class="grid gap-4">
     <p>Are you sure you want to delete the tag <strong>{% tag_badge tag %}</strong>?</p>
-    <p class="text-muted">This action cannot be undone. The tag will be removed from all resources.</p>
-
-    <form method="post">
+    <p class="text-muted-foreground text-sm">This action cannot be undone. The tag will be removed from all resources.</p>
+  </section>
+  <footer>
+    <form method="post" class="flex gap-2">
       {% csrf_token %}
-      <button type="submit" class="btn btn-danger">Yes, Delete</button>
-      <a href="{% url 'academics:tag_detail' tag.pk %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn-destructive">Yes, Delete</button>
+      <a href="{% url 'academics:tag_detail' tag.pk %}" class="btn-outline">Cancel</a>
     </form>
-  </div>
+  </footer>
 </div>
 {% endblock academics_content %}

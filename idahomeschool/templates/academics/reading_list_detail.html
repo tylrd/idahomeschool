@@ -5,9 +5,9 @@
 {% block title %}{{ entry.resource.title }} - {{ entry.student.name }}{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="flex justify-between items-center mb-4">
   <div>
-    <h1>{{ entry.resource.title }}</h1>
+    <h1 class="text-3xl font-bold">{{ entry.resource.title }}</h1>
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'academics:reading_list' %}">Reading List</a></li>
@@ -18,48 +18,48 @@
       </ol>
     </nav>
   </div>
-  <div>
-    <a href="{% url 'academics:readinglist_update' entry.pk %}" class="btn btn-primary">Edit</a>
-    <a href="{% url 'academics:readinglist_delete' entry.pk %}" class="btn btn-danger">Remove</a>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:readinglist_update' entry.pk %}" class="btn-primary">Edit</a>
+    <a href="{% url 'academics:readinglist_delete' entry.pk %}" class="btn-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Remove</a>
   </div>
 </div>
 
-<div class="row">
-  <div class="col-md-8">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="md:col-span-2">
     <div class="card mb-3">
-      <div class="card-header">
-        <h5 class="mb-0">Book Information</h5>
-      </div>
-      <div class="card-body">
-        <dl class="row">
-          <dt class="col-sm-3">Title:</dt>
-          <dd class="col-sm-9">
+      <header>
+        <h2>Book Information</h2>
+      </header>
+      <section>
+        <dl class="grid grid-cols-3 gap-2">
+          <dt class="font-semibold">Title:</dt>
+          <dd class="col-span-2">
             <a href="{% url 'academics:resource_detail' entry.resource.pk %}">{{ entry.resource.title }}</a>
           </dd>
 
           {% if entry.resource.author %}
-          <dt class="col-sm-3">Author:</dt>
-          <dd class="col-sm-9">{{ entry.resource.author }}</dd>
+          <dt class="font-semibold">Author:</dt>
+          <dd class="col-span-2">{{ entry.resource.author }}</dd>
           {% endif %}
 
           {% if entry.resource.publisher %}
-          <dt class="col-sm-3">Publisher:</dt>
-          <dd class="col-sm-9">{{ entry.resource.publisher }}</dd>
+          <dt class="font-semibold">Publisher:</dt>
+          <dd class="col-span-2">{{ entry.resource.publisher }}</dd>
           {% endif %}
 
           {% if entry.resource.isbn %}
-          <dt class="col-sm-3">ISBN:</dt>
-          <dd class="col-sm-9">{{ entry.resource.isbn }}</dd>
+          <dt class="font-semibold">ISBN:</dt>
+          <dd class="col-span-2">{{ entry.resource.isbn }}</dd>
           {% endif %}
 
-          <dt class="col-sm-3">Type:</dt>
-          <dd class="col-sm-9">
-            <span class="badge bg-secondary">{{ entry.resource.get_resource_type_display }}</span>
+          <dt class="font-semibold">Type:</dt>
+          <dd class="col-span-2">
+            <span class="badge-secondary">{{ entry.resource.get_resource_type_display }}</span>
           </dd>
 
           {% if entry.resource.tags.all %}
-          <dt class="col-sm-3">Tags:</dt>
-          <dd class="col-sm-9">
+          <dt class="font-semibold">Tags:</dt>
+          <dd class="col-span-2">
             {% for tag in entry.resource.tags.all %}
               {% tag_badge tag size="sm" link_to_detail=True %}
             {% endfor %}
@@ -67,49 +67,49 @@
           {% endif %}
 
           {% if entry.resource.description %}
-          <dt class="col-sm-3">Description:</dt>
-          <dd class="col-sm-9">{{ entry.resource.description|linebreaks }}</dd>
+          <dt class="font-semibold">Description:</dt>
+          <dd class="col-span-2">{{ entry.resource.description|linebreaks }}</dd>
           {% endif %}
         </dl>
-      </div>
+      </section>
     </div>
   </div>
 
-  <div class="col-md-4">
+  <div>
     <div class="card mb-3">
-      <div class="card-header">
-        <h5 class="mb-0">Reading Progress</h5>
-      </div>
-      <div class="card-body">
-        <dl class="row">
-          <dt class="col-sm-4">Student:</dt>
-          <dd class="col-sm-8">
+      <header>
+        <h2>Reading Progress</h2>
+      </header>
+      <section>
+        <dl class="grid grid-cols-3 gap-2">
+          <dt class="font-semibold">Student:</dt>
+          <dd class="col-span-2">
             <a href="{% url 'academics:student_detail' entry.student.pk %}">{{ entry.student.name }}</a>
           </dd>
 
-          <dt class="col-sm-4">Status:</dt>
-          <dd class="col-sm-8">
+          <dt class="font-semibold">Status:</dt>
+          <dd class="col-span-2">
             {% include "academics/partials/reading_status_badge.html" with entry=entry %}
           </dd>
 
           {% if entry.school_year %}
-          <dt class="col-sm-4">School Year:</dt>
-          <dd class="col-sm-8">{{ entry.school_year.name }}</dd>
+          <dt class="font-semibold">School Year:</dt>
+          <dd class="col-span-2">{{ entry.school_year.name }}</dd>
           {% endif %}
 
           {% if entry.started_date %}
-          <dt class="col-sm-4">Started:</dt>
-          <dd class="col-sm-8">{{ entry.started_date|date:"F j, Y" }}</dd>
+          <dt class="font-semibold">Started:</dt>
+          <dd class="col-span-2">{{ entry.started_date|date:"F j, Y" }}</dd>
           {% endif %}
 
           {% if entry.completed_date %}
-          <dt class="col-sm-4">Completed:</dt>
-          <dd class="col-sm-8">{{ entry.completed_date|date:"F j, Y" }}</dd>
+          <dt class="font-semibold">Completed:</dt>
+          <dd class="col-span-2">{{ entry.completed_date|date:"F j, Y" }}</dd>
           {% endif %}
 
           {% if entry.rating %}
-          <dt class="col-sm-4">Rating:</dt>
-          <dd class="col-sm-8">
+          <dt class="font-semibold">Rating:</dt>
+          <dd class="col-span-2">
             {% for i in "12345" %}
               {% if forloop.counter <= entry.rating %}
                 ⭐
@@ -120,17 +120,17 @@
           </dd>
           {% endif %}
         </dl>
-      </div>
+      </section>
     </div>
 
     {% if entry.notes %}
     <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Notes</h5>
-      </div>
-      <div class="card-body">
+      <header>
+        <h2>Notes</h2>
+      </header>
+      <section>
         {{ entry.notes|linebreaks }}
-      </div>
+      </section>
     </div>
     {% endif %}
   </div>

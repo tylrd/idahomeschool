@@ -5,15 +5,15 @@
 
 {% block academics_content %}
 <div class="card">
-  <div class="card-header">
-    <h3 class="mb-0">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Course Enrollment</h3>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>{% if form.instance.pk %}Edit{% else %}Add{% endif %} Course Enrollment</h2>
+  </header>
+  <section>
     {% crispy form %}
-  </div>
+  </section>
 </div>
 
 <div class="mt-3">
-  <a href="{% url 'academics:courseenrollment_list' %}" class="btn btn-secondary">Cancel</a>
+  <a href="{% url 'academics:courseenrollment_list' %}" class="btn-secondary">Cancel</a>
 </div>
 {% endblock academics_content %}

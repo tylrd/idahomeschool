@@ -1,34 +1,34 @@
 {% load academics_extras %}
 
-<div class="card h-100">
+<div class="card h-full">
   {% if entry.resource.image %}
-  <img src="{{ entry.resource.image.url }}" class="card-img-top" alt="{{ entry.resource.title }}" style="height: 200px; object-fit: cover;">
+  <img src="{{ entry.resource.image.url }}" class="rounded-t-lg w-full" alt="{{ entry.resource.title }}" style="height: 200px; object-fit: cover;">
   {% endif %}
-  <div class="card-body">
-    <h5 class="card-title">
+  <section>
+    <h3 class="text-lg font-semibold">
       <a href="{% url 'academics:resource_detail' entry.resource.pk %}">{{ entry.resource.title }}</a>
-    </h5>
+    </h3>
     {% if entry.resource.author %}
-    <h6 class="card-subtitle mb-2 text-muted">by {{ entry.resource.author }}</h6>
+    <p class="text-muted-foreground mb-2">by {{ entry.resource.author }}</p>
     {% endif %}
 
     <div class="mb-2">
       {% include "academics/partials/reading_status_badge.html" with entry=entry %}
     </div>
 
-    <p class="card-text">
+    <p>
       <strong>Student:</strong>
       <a href="{% url 'academics:student_detail' entry.student.pk %}">{{ entry.student.name }}</a>
     </p>
 
     {% if entry.school_year %}
-    <p class="card-text">
+    <p>
       <strong>School Year:</strong> {{ entry.school_year.name }}
     </p>
     {% endif %}
 
     {% if entry.rating %}
-    <p class="card-text">
+    <p>
       <strong>Rating:</strong>
       {% for i in "12345" %}
         {% if forloop.counter <= entry.rating %}
@@ -41,13 +41,13 @@
     {% endif %}
 
     {% if entry.started_date %}
-    <p class="card-text text-muted small">
+    <p class="text-muted-foreground text-sm">
       Started: {{ entry.started_date|date:"M d, Y" }}
     </p>
     {% endif %}
 
     {% if entry.completed_date %}
-    <p class="card-text text-muted small">
+    <p class="text-muted-foreground text-sm">
       Completed: {{ entry.completed_date|date:"M d, Y" }}
     </p>
     {% endif %}
@@ -59,18 +59,18 @@
       {% endfor %}
     </div>
     {% endif %}
-  </div>
-  <div class="card-footer bg-transparent">
-    <div class="btn-group w-100" role="group">
-      <a href="{% url 'academics:readinglist_update' entry.pk %}" class="btn btn-sm btn-outline-primary">
+  </section>
+  <footer class="bg-transparent">
+    <div class="flex w-full gap-2" role="group">
+      <a href="{% url 'academics:readinglist_update' entry.pk %}" class="btn-sm-outline flex-1">
         Edit
       </a>
-      <a href="{% url 'academics:readinglist_detail' entry.pk %}" class="btn btn-sm btn-outline-info">
+      <a href="{% url 'academics:readinglist_detail' entry.pk %}" class="btn-sm-secondary flex-1">
         View
       </a>
-      <a href="{% url 'academics:readinglist_delete' entry.pk %}" class="btn btn-sm btn-outline-danger">
+      <a href="{% url 'academics:readinglist_delete' entry.pk %}" class="btn-sm-outline flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground">
         Remove
       </a>
     </div>
-  </div>
+  </footer>
 </div>

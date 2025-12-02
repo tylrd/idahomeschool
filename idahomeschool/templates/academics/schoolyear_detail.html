@@ -4,101 +4,95 @@
 {% block title %}{{ school_year.name }}{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>{{ school_year.name }}</h1>
-  <div>
-    <a href="{% url 'academics:schoolyear_update' school_year.pk %}" class="btn btn-primary">Edit</a>
-    <a href="{% url 'academics:schoolyear_delete' school_year.pk %}" class="btn btn-danger">Delete</a>
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-3xl font-bold">{{ school_year.name }}</h1>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:schoolyear_update' school_year.pk %}" class="btn-primary">Edit</a>
+    <a href="{% url 'academics:schoolyear_delete' school_year.pk %}" class="btn-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
   </div>
 </div>
 
-<div class="row mb-4">
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">School Year Details</h5>
-      </div>
-      <div class="card-body">
-        <dl class="row">
-          <dt class="col-sm-4">Name:</dt>
-          <dd class="col-sm-8">{{ school_year.name }}</dd>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+  <div class="card">
+    <header>
+      <h2>School Year Details</h2>
+    </header>
+    <section>
+      <dl class="grid grid-cols-3 gap-2">
+        <dt class="font-semibold">Name:</dt>
+        <dd class="col-span-2">{{ school_year.name }}</dd>
 
-          <dt class="col-sm-4">Start Date:</dt>
-          <dd class="col-sm-8">{{ school_year.start_date }}</dd>
+        <dt class="font-semibold">Start Date:</dt>
+        <dd class="col-span-2">{{ school_year.start_date }}</dd>
 
-          <dt class="col-sm-4">End Date:</dt>
-          <dd class="col-sm-8">{{ school_year.end_date }}</dd>
+        <dt class="font-semibold">End Date:</dt>
+        <dd class="col-span-2">{{ school_year.end_date }}</dd>
 
-          <dt class="col-sm-4">Status:</dt>
-          <dd class="col-sm-8">
-            {% if school_year.is_active %}
-              <span class="badge bg-success">Active</span>
-            {% else %}
-              <span class="badge bg-secondary">Inactive</span>
-            {% endif %}
-          </dd>
+        <dt class="font-semibold">Status:</dt>
+        <dd class="col-span-2">
+          {% if school_year.is_active %}
+            <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-600 text-white">Active</span>
+          {% else %}
+            <span class="badge-secondary">Inactive</span>
+          {% endif %}
+        </dd>
 
-          <dt class="col-sm-4">Created:</dt>
-          <dd class="col-sm-8">{{ school_year.created_at|date:"F d, Y" }}</dd>
-        </dl>
-      </div>
-    </div>
+        <dt class="font-semibold">Created:</dt>
+        <dd class="col-span-2">{{ school_year.created_at|date:"F d, Y" }}</dd>
+      </dl>
+    </section>
   </div>
 
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Statistics</h5>
-      </div>
-      <div class="card-body">
-        <dl class="row">
-          <dt class="col-sm-6">Enrolled Students:</dt>
-          <dd class="col-sm-6">{{ students.count }}</dd>
+  <div class="card">
+    <header>
+      <h2>Statistics</h2>
+    </header>
+    <section>
+      <dl class="grid grid-cols-2 gap-2">
+        <dt class="font-semibold">Enrolled Students:</dt>
+        <dd>{{ students.count }}</dd>
 
-          <dt class="col-sm-6">Total Enrollments:</dt>
-          <dd class="col-sm-6">{{ enrollments.count }}</dd>
-        </dl>
-      </div>
-    </div>
+        <dt class="font-semibold">Total Enrollments:</dt>
+        <dd>{{ enrollments.count }}</dd>
+      </dl>
+    </section>
   </div>
 </div>
 
 <div class="card mb-4">
-  <div class="card-header">
-    <h5 class="mb-0">Enrolled Students</h5>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>Enrolled Students</h2>
+  </header>
+  <section>
     {% if students %}
-      <div class="row">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         {% for student in students %}
-        <div class="col-md-6 mb-3">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="card-title">
-                <a href="{% url 'academics:student_detail' student.pk %}">{{ student.name }}</a>
-              </h6>
-              <p class="card-text">
-                <small class="text-muted">Grade {{ student.grade_level }} | Age {{ student.age }}</small>
-              </p>
-            </div>
-          </div>
+        <div class="card">
+          <section>
+            <h3 class="text-base font-semibold">
+              <a href="{% url 'academics:student_detail' student.pk %}">{{ student.name }}</a>
+            </h3>
+            <p class="text-muted-foreground text-sm">
+              Grade {{ student.grade_level }} | Age {{ student.age }}
+            </p>
+          </section>
         </div>
         {% endfor %}
       </div>
     {% else %}
-      <p class="text-muted">No students enrolled in this school year yet.</p>
+      <p class="text-muted-foreground">No students enrolled in this school year yet.</p>
     {% endif %}
-  </div>
+  </section>
 </div>
 
 <div class="card">
-  <div class="card-header">
-    <h5 class="mb-0">Course Enrollments</h5>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>Course Enrollments</h2>
+  </header>
+  <section>
     {% if enrollments %}
-      <div class="table-responsive">
-        <table class="table table-striped">
+      <div class="relative w-full overflow-x-auto">
+        <table class="table">
           <thead>
             <tr>
               <th>Course Name</th>
@@ -114,15 +108,15 @@
               <td><a href="{% url 'academics:student_detail' enrollment.student.pk %}">{{ enrollment.student.name }}</a></td>
               <td>
                 {% if enrollment.status == 'COMPLETED' %}
-                  <span class="badge bg-success">{{ enrollment.get_status_display }}</span>
+                  <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-green-600 text-white">{{ enrollment.get_status_display }}</span>
                 {% elif enrollment.status == 'PAUSED' %}
-                  <span class="badge bg-warning">{{ enrollment.get_status_display }}</span>
+                  <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium bg-yellow-600 text-white">{{ enrollment.get_status_display }}</span>
                 {% else %}
-                  <span class="badge bg-primary">{{ enrollment.get_status_display }}</span>
+                  <span class="badge">{{ enrollment.get_status_display }}</span>
                 {% endif %}
               </td>
               <td>
-                <a href="{% url 'academics:courseenrollment_update' enrollment.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <a href="{% url 'academics:courseenrollment_update' enrollment.pk %}" class="btn-sm-outline">Edit</a>
               </td>
             </tr>
             {% endfor %}
@@ -130,9 +124,9 @@
         </table>
       </div>
     {% else %}
-      <p class="text-muted">No course enrollments for this school year yet.</p>
-      <a href="{% url 'academics:courseenrollment_create' %}" class="btn btn-primary">Add Enrollment</a>
+      <p class="text-muted-foreground">No course enrollments for this school year yet.</p>
+      <a href="{% url 'academics:courseenrollment_create' %}" class="btn-primary mt-3">Add Enrollment</a>
     {% endif %}
-  </div>
+  </section>
 </div>
 {% endblock academics_content %}

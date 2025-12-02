@@ -3,22 +3,26 @@
 {% block title %}Delete Student{% endblock %}
 
 {% block academics_content %}
-<div class="card">
-  <div class="card-header bg-danger text-white">
-    <h3 class="mb-0">Delete Student</h3>
-  </div>
-  <div class="card-body">
-    <p class="lead">Are you sure you want to delete "{{ object.name }}"?</p>
-    <p class="text-danger">
-      <strong>Warning:</strong> This will also delete all associated courses and records.
-      This action cannot be undone.
-    </p>
-
-    <form method="post">
+<div class="card max-w-2xl">
+  <header>
+    <h2>Delete Student</h2>
+    <p>Are you sure you want to delete "{{ object.name }}"?</p>
+  </header>
+  <section>
+    <div class="alert-destructive">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></svg>
+      <h2>Warning</h2>
+      <section>
+        <p>This will also delete all associated courses and records. This action cannot be undone.</p>
+      </section>
+    </div>
+  </section>
+  <footer>
+    <form method="post" class="flex gap-2">
       {% csrf_token %}
-      <button type="submit" class="btn btn-danger">Yes, Delete</button>
-      <a href="{% url 'academics:student_detail' object.pk %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn-destructive">Yes, Delete</button>
+      <a href="{% url 'academics:student_detail' object.pk %}" class="btn-outline">Cancel</a>
     </form>
-  </div>
+  </footer>
 </div>
 {% endblock academics_content %}

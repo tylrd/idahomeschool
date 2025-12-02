@@ -5,22 +5,22 @@
 
 {% block academics_content %}
 <div class="card">
-  <div class="card-header">
-    <h3 class="mb-0">
+  <header>
+    <h2>
       {% if studentgradeyear %}
         Edit Grade Assignment{% if student %} for {{ student.name }}{% endif %}
       {% else %}
         Assign Grade{% if student %} to {{ student.name }}{% endif %}
       {% endif %}
-    </h3>
-  </div>
-  <div class="card-body">
+    </h2>
+  </header>
+  <section>
     {% crispy form %}
     {% if student %}
-      <a href="{% url 'academics:student_detail' student.pk %}" class="btn btn-secondary">Cancel</a>
+      <a href="{% url 'academics:student_detail' student.pk %}" class="btn-secondary mt-3">Cancel</a>
     {% else %}
-      <a href="{% url 'academics:student_list' %}" class="btn btn-secondary">Cancel</a>
+      <a href="{% url 'academics:student_list' %}" class="btn-secondary mt-3">Cancel</a>
     {% endif %}
-  </div>
+  </section>
 </div>
 {% endblock academics_content %}

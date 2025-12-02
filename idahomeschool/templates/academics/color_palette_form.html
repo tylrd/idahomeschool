@@ -5,42 +5,45 @@
 
 {% block academics_content %}
 <div class="card">
-  <div class="card-header">
-    <h3 class="mb-0">{% if form.instance.pk %}Edit Palette{% else %}Create Color Palette{% endif %}</h3>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>{% if form.instance.pk %}Edit Palette{% else %}Create Color Palette{% endif %}</h2>
+  </header>
+  <section>
     <form method="post">
       {% csrf_token %}
 
-      <div class="mb-3">
-        <label for="id_name" class="form-label">Palette Name *</label>
-        <input type="text" class="form-control" id="id_name" name="name" value="{{ form.name.value|default:'' }}" required maxlength="100" placeholder="e.g., Ocean Blues, Earth Tones">
-        <div class="form-text">Give your color palette a descriptive name</div>
+      <div class="grid gap-2">
+        <label for="id_name">Palette Name *</label>
+        <input type="text" id="id_name" name="name" value="{{ form.name.value|default:'' }}" required maxlength="100" placeholder="e.g., Ocean Blues, Earth Tones">
+        <p class="text-muted-foreground text-sm">Give your color palette a descriptive name</p>
       </div>
 
-      <div class="mb-3">
-        <div class="form-check">
-          <input type="checkbox" class="form-check-input" id="id_is_active" name="is_active" {% if form.is_active.value %}checked{% endif %}>
-          <label class="form-check-label" for="id_is_active">
-            Set as active palette
-          </label>
-          <div class="form-text">The active palette is used for random tag color generation. Only one palette can be active at a time.</div>
-        </div>
+      <div class="flex items-center gap-2 mt-4">
+        <input type="checkbox" id="id_is_active" name="is_active" {% if form.is_active.value %}checked{% endif %}>
+        <label for="id_is_active">
+          Set as active palette
+        </label>
       </div>
+      <p class="text-muted-foreground text-sm mt-1">The active palette is used for random tag color generation. Only one palette can be active at a time.</p>
 
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-success">{% if form.instance.pk %}Save Changes{% else %}Create Palette{% endif %}</button>
-        <a href="{% url 'academics:color_palette_list' %}" class="btn btn-secondary">Cancel</a>
+      <div class="flex gap-2 mt-6">
+        <button type="submit" class="btn-primary">{% if form.instance.pk %}Save Changes{% else %}Create Palette{% endif %}</button>
+        <a href="{% url 'academics:color_palette_list' %}" class="btn-secondary">Cancel</a>
       </div>
     </form>
 
     {% if form.instance.pk %}
     <hr class="my-4">
-    <div class="alert alert-info">
-      <i class="bi bi-info-circle"></i>
-      <strong>Note:</strong> To add colors to this palette, use the "Import Palette" feature or create colors individually.
+    <div class="alert">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" x2="12" y1="8" y2="12" />
+        <line x1="12" x2="12.01" y1="16" y2="16" />
+      </svg>
+      <h2><strong>Note:</strong></h2>
+      <section>To add colors to this palette, use the "Import Palette" feature or create colors individually.</section>
     </div>
     {% endif %}
-  </div>
+  </section>
 </div>
 {% endblock academics_content %}

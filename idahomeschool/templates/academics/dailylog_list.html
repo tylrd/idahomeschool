@@ -4,21 +4,21 @@
 {% block title %}Daily Logs{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Daily Logs</h1>
-  <div>
-    <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-success">Log Attendance</a>
-    <a href="{% url 'academics:attendance_calendar' %}" class="btn btn-outline-primary">Calendar View</a>
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-3xl font-bold">Daily Logs</h1>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:dailylog_entry' %}" class="btn-primary">Log Attendance</a>
+    <a href="{% url 'academics:attendance_calendar' %}" class="btn-outline">Calendar View</a>
   </div>
 </div>
 
 <!-- Filters -->
 <div class="card mb-4">
-  <div class="card-body">
-    <form method="get" class="row g-3">
-      <div class="col-md-4">
-        <label for="student" class="form-label">Student:</label>
-        <select name="student" id="student" class="form-select" onchange="this.form.submit()">
+  <section>
+    <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="grid gap-2">
+        <label for="student">Student:</label>
+        <select name="student" id="student" onchange="this.form.submit()">
           <option value="">All Students</option>
           {% for s in students %}
             <option value="{{ s.id }}" {% if request.GET.student == s.id|stringformat:"s" %}selected{% endif %}>
@@ -27,27 +27,27 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-4">
-        <label for="start_date" class="form-label">Start Date:</label>
-        <input type="date" name="start_date" id="start_date" class="form-control" value="{{ request.GET.start_date }}">
+      <div class="grid gap-2">
+        <label for="start_date">Start Date:</label>
+        <input type="date" name="start_date" id="start_date" value="{{ request.GET.start_date }}">
       </div>
-      <div class="col-md-4">
-        <label for="end_date" class="form-label">End Date:</label>
-        <input type="date" name="end_date" id="end_date" class="form-control" value="{{ request.GET.end_date }}">
+      <div class="grid gap-2">
+        <label for="end_date">End Date:</label>
+        <input type="date" name="end_date" id="end_date" value="{{ request.GET.end_date }}">
       </div>
-      <div class="col-12">
-        <button type="submit" class="btn btn-primary">Filter</button>
-        <a href="{% url 'academics:dailylog_list' %}" class="btn btn-outline-secondary">Clear</a>
+      <div class="col-span-full flex gap-2">
+        <button type="submit" class="btn-primary">Filter</button>
+        <a href="{% url 'academics:dailylog_list' %}" class="btn-outline">Clear</a>
       </div>
     </form>
-  </div>
+  </section>
 </div>
 
 <!-- Daily Logs List -->
 <div class="card">
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-striped table-hover">
+  <section>
+    <div class="relative w-full overflow-x-auto">
+      <table class="table">
         <thead>
           <tr>
             <th>Date</th>
@@ -65,12 +65,12 @@
               <a href="{% url 'academics:student_detail' log.student.pk %}">{{ log.student.name }}</a>
             </td>
             <td>
-              <span class="badge
-                {% if log.status == 'PRESENT' %}bg-success
-                {% elif log.status == 'ABSENT' %}bg-danger
-                {% elif log.status == 'SICK' %}bg-warning
-                {% elif log.status == 'HOLIDAY' %}bg-info
-                {% elif log.status == 'FIELD_TRIP' %}bg-primary
+              <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium
+                {% if log.status == 'PRESENT' %}bg-green-600 text-white
+                {% elif log.status == 'ABSENT' %}bg-red-600 text-white
+                {% elif log.status == 'SICK' %}bg-yellow-600 text-white
+                {% elif log.status == 'HOLIDAY' %}bg-blue-600 text-white
+                {% elif log.status == 'FIELD_TRIP' %}bg-purple-600 text-white
                 {% endif %}">
                 {{ log.get_status_display }}
               </span>
@@ -79,52 +79,54 @@
               {% if log.general_notes %}
                 {{ log.general_notes|truncatewords:10 }}
               {% else %}
-                <span class="text-muted">-</span>
+                <span class="text-muted-foreground">-</span>
               {% endif %}
             </td>
             <td>
-              <a href="{% url 'academics:dailylog_detail' log.pk %}" class="btn btn-sm btn-outline-info">View</a>
-              <a href="{% url 'academics:dailylog_entry_date' log.student.pk log.date|date:'Y-m-d' %}" class="btn btn-sm btn-outline-primary">Edit</a>
-              <a href="{% url 'academics:dailylog_delete' log.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+              <div class="flex gap-2">
+                <a href="{% url 'academics:dailylog_detail' log.pk %}" class="btn-sm-secondary">View</a>
+                <a href="{% url 'academics:dailylog_entry_date' log.student.pk log.date|date:'Y-m-d' %}" class="btn-sm-outline">Edit</a>
+                <a href="{% url 'academics:dailylog_delete' log.pk %}" class="btn-sm-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
+              </div>
             </td>
           </tr>
           {% empty %}
           <tr>
             <td colspan="5" class="text-center">
-              <p class="mb-0 text-muted">No daily logs found.</p>
-              <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-sm btn-primary mt-2">Create First Log</a>
+              <p class="mb-0 text-muted-foreground">No daily logs found.</p>
+              <a href="{% url 'academics:dailylog_entry' %}" class="btn-sm-primary mt-2">Create First Log</a>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
 </div>
 
 <!-- Pagination -->
 {% if is_paginated %}
-<nav aria-label="Page navigation" class="mt-4">
-  <ul class="pagination justify-content-center">
+<nav role="navigation" aria-label="pagination" class="mx-auto flex w-full justify-center mt-4">
+  <ul class="flex flex-row items-center gap-1">
     {% if page_obj.has_previous %}
-      <li class="page-item">
-        <a class="page-link" href="?page=1{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">First</a>
+      <li>
+        <a href="?page=1{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost">First</a>
       </li>
-      <li class="page-item">
-        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Previous</a>
+      <li>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost">Previous</a>
       </li>
     {% endif %}
 
-    <li class="page-item active">
-      <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    <li>
+      <span class="btn-outline size-auto px-4">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
     </li>
 
     {% if page_obj.has_next %}
-      <li class="page-item">
-        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Next</a>
+      <li>
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost">Next</a>
       </li>
-      <li class="page-item">
-        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}">Last</a>
+      <li>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost">Last</a>
       </li>
     {% endif %}
   </ul>

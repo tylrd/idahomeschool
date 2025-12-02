@@ -5,25 +5,25 @@
 {% block title %}{{ tag.name }}{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="flex justify-between items-center mb-4">
   <h1>
     {% tag_badge tag size="lg" %}
   </h1>
-  <div>
-    <a href="{% url 'academics:tag_update' tag.pk %}" class="btn btn-primary">Edit</a>
-    <a href="{% url 'academics:tag_delete' tag.pk %}" class="btn btn-danger">Delete</a>
-    <a href="{% url 'academics:tag_list' %}" class="btn btn-outline-secondary">Back to Tags</a>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:tag_update' tag.pk %}" class="btn-primary">Edit</a>
+    <a href="{% url 'academics:tag_delete' tag.pk %}" class="btn-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
+    <a href="{% url 'academics:tag_list' %}" class="btn-outline">Back to Tags</a>
   </div>
 </div>
 
 <div class="card">
-  <div class="card-header">
-    <h5 class="mb-0">Resources with this Tag ({{ resources.count }})</h5>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>Resources with this Tag ({{ resources.count }})</h2>
+  </header>
+  <section>
     {% if resources %}
-      <div class="table-responsive">
-        <table class="table table-striped">
+      <div class="relative w-full overflow-x-auto">
+        <table class="table">
           <thead>
             <tr>
               <th>Title</th>
@@ -41,9 +41,9 @@
               </td>
               <td>{{ resource.author|default:"-" }}</td>
               <td>{{ resource.publisher|default:"-" }}</td>
-              <td><span class="badge bg-secondary">{{ resource.get_resource_type_display }}</span></td>
+              <td><span class="badge-secondary">{{ resource.get_resource_type_display }}</span></td>
               <td>
-                <a href="{% url 'academics:library_update' resource.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <a href="{% url 'academics:library_update' resource.pk %}" class="btn-sm-outline">Edit</a>
               </td>
             </tr>
             {% endfor %}
@@ -51,8 +51,8 @@
         </table>
       </div>
     {% else %}
-      <p class="text-muted">No resources have this tag yet.</p>
+      <p class="text-muted-foreground">No resources have this tag yet.</p>
     {% endif %}
-  </div>
+  </section>
 </div>
 {% endblock academics_content %}

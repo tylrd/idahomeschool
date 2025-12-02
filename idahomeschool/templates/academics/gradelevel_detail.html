@@ -4,45 +4,43 @@
 {% block title %}{{ grade_level.name }}{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>{{ grade_level.name }}</h1>
-  <div>
-    <a href="{% url 'academics:gradelevel_update' grade_level.pk %}" class="btn btn-primary">Edit</a>
-    <a href="{% url 'academics:gradelevel_delete' grade_level.pk %}" class="btn btn-danger">Delete</a>
-    <a href="{% url 'academics:gradelevel_list' %}" class="btn btn-outline-secondary">Back to Grade Levels</a>
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-3xl font-bold">{{ grade_level.name }}</h1>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:gradelevel_update' grade_level.pk %}" class="btn-primary">Edit</a>
+    <a href="{% url 'academics:gradelevel_delete' grade_level.pk %}" class="btn-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
+    <a href="{% url 'academics:gradelevel_list' %}" class="btn-outline">Back to Grade Levels</a>
   </div>
 </div>
 
-<div class="row mb-4">
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Grade Information</h5>
-      </div>
-      <div class="card-body">
-        <dl class="row">
-          <dt class="col-sm-4">Name:</dt>
-          <dd class="col-sm-8">{{ grade_level.name }}</dd>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+  <div class="card">
+    <header>
+      <h2>Grade Information</h2>
+    </header>
+    <section>
+      <dl class="grid grid-cols-3 gap-2">
+        <dt class="font-semibold">Name:</dt>
+        <dd class="col-span-2">{{ grade_level.name }}</dd>
 
-          <dt class="col-sm-4">Order:</dt>
-          <dd class="col-sm-8">{{ grade_level.order }}</dd>
+        <dt class="font-semibold">Order:</dt>
+        <dd class="col-span-2">{{ grade_level.order }}</dd>
 
-          <dt class="col-sm-4">Description:</dt>
-          <dd class="col-sm-8">{{ grade_level.description|default:"-" }}</dd>
-        </dl>
-      </div>
-    </div>
+        <dt class="font-semibold">Description:</dt>
+        <dd class="col-span-2">{{ grade_level.description|default:"-" }}</dd>
+      </dl>
+    </section>
   </div>
 </div>
 
 {% if current_students %}
 <div class="card mb-4">
-  <div class="card-header">
-    <h5 class="mb-0">Current Students ({{ current_students.count }})</h5>
-  </div>
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-striped">
+  <header>
+    <h2>Current Students ({{ current_students.count }})</h2>
+  </header>
+  <section>
+    <div class="relative w-full overflow-x-auto">
+      <table class="table">
         <thead>
           <tr>
             <th>Student</th>
@@ -56,25 +54,25 @@
               <a href="{% url 'academics:student_detail' student.pk %}">{{ student.name }}</a>
             </td>
             <td>
-              <a href="{% url 'academics:student_detail' student.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+              <a href="{% url 'academics:student_detail' student.pk %}" class="btn-sm-outline">View</a>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
 </div>
 {% endif %}
 
 <div class="card mb-4">
-  <div class="card-header">
-    <h5 class="mb-0">Courses for this Grade ({{ courses.count }})</h5>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>Courses for this Grade ({{ courses.count }})</h2>
+  </header>
+  <section>
     {% if courses %}
-      <div class="table-responsive">
-        <table class="table table-striped">
+      <div class="relative w-full overflow-x-auto">
+        <table class="table">
           <thead>
             <tr>
               <th>Course Name</th>
@@ -88,7 +86,7 @@
                 <a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a>
               </td>
               <td>
-                <a href="{% url 'academics:course_update' course.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <a href="{% url 'academics:course_update' course.pk %}" class="btn-sm-outline">Edit</a>
               </td>
             </tr>
             {% endfor %}
@@ -96,19 +94,19 @@
         </table>
       </div>
     {% else %}
-      <p class="text-muted">No courses assigned to this grade level yet.</p>
+      <p class="text-muted-foreground">No courses assigned to this grade level yet.</p>
     {% endif %}
-  </div>
+  </section>
 </div>
 
 <div class="card">
-  <div class="card-header">
-    <h5 class="mb-0">All Student Assignments ({{ student_assignments.count }})</h5>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>All Student Assignments ({{ student_assignments.count }})</h2>
+  </header>
+  <section>
     {% if student_assignments %}
-      <div class="table-responsive">
-        <table class="table table-striped">
+      <div class="relative w-full overflow-x-auto">
+        <table class="table">
           <thead>
             <tr>
               <th>Student</th>
@@ -124,8 +122,10 @@
               </td>
               <td>{{ assignment.school_year.name }}</td>
               <td>
-                <a href="{% url 'academics:studentgradeyear_update' assignment.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                <a href="{% url 'academics:studentgradeyear_delete' assignment.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                <div class="flex gap-2">
+                  <a href="{% url 'academics:studentgradeyear_update' assignment.pk %}" class="btn-sm-outline">Edit</a>
+                  <a href="{% url 'academics:studentgradeyear_delete' assignment.pk %}" class="btn-sm-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
+                </div>
               </td>
             </tr>
             {% endfor %}
@@ -133,8 +133,8 @@
         </table>
       </div>
     {% else %}
-      <p class="text-muted">No students have been assigned to this grade level yet.</p>
+      <p class="text-muted-foreground">No students have been assigned to this grade level yet.</p>
     {% endif %}
-  </div>
+  </section>
 </div>
 {% endblock academics_content %}

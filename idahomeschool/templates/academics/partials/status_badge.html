@@ -7,28 +7,27 @@ Variables expected:
 - has_notes: Boolean indicating if course notes exist
 {% endcomment %}
 
-<div id="cell-{{ student.id }}-{{ date_str }}" class="d-inline-block">
+<div id="cell-{{ student.id }}-{{ date_str }}" class="inline-block">
   {% if log and log.attendance_status %}
-    <span class="badge position-relative"
+    <span class="badge relative inline-flex items-center justify-center cursor-pointer px-2 py-2 min-w-[40px]"
           hx-get="{% url 'academics:attendance_quick_toggle' student.id date_str %}"
           hx-target="#status-selector-container"
           hx-swap="innerHTML"
-          style="cursor: pointer; display: inline-block; padding: 8px; min-width: 40px; background-color: {{ log.attendance_status.color }}; {% if log.attendance_status.color|slice:':4' == '#ffc' or log.attendance_status.color|slice:':4' == '#ff0' or log.attendance_status.color|slice:':4' == '#fff' %}color: #000;{% endif %}"
+          style="background-color: {{ log.attendance_status.color }}; {% if log.attendance_status.color|slice:':4' == '#ffc' or log.attendance_status.color|slice:':4' == '#ff0' or log.attendance_status.color|slice:':4' == '#fff' %}color: #000;{% endif %}"
           title="{{ log.attendance_status.label }} - Click to change">
       {{ log.attendance_status.abbreviation }}
       {% if has_notes %}
-        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" style="font-size: 0.6em;">
-          <i class="bi bi-pencil-fill"></i>
-          <span class="visually-hidden">Has notes</span>
+        <span class="absolute -top-1 -right-1 translate-x-1/2 -translate-y-1/2 badge-secondary rounded-full text-xs px-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          <span class="sr-only">Has notes</span>
         </span>
       {% endif %}
     </span>
   {% else %}
-    <span class="badge bg-light text-muted position-relative"
+    <span class="badge bg-muted text-muted-foreground relative inline-flex items-center justify-center cursor-pointer px-2 py-2 min-w-[40px]"
           hx-get="{% url 'academics:attendance_quick_toggle' student.id date_str %}"
           hx-target="#status-selector-container"
           hx-swap="innerHTML"
-          style="cursor: pointer; display: inline-block; padding: 8px; min-width: 40px;"
           title="No log - Click to add">
       -
     </span>
@@ -38,13 +37,12 @@ Variables expected:
   Note icon for adding/viewing course notes - shown on hover or always
   {% endcomment %}
   <button type="button"
-          class="btn btn-sm btn-link text-muted p-0 ms-1"
+          class="btn-link text-muted-foreground p-0 ml-1 text-xs align-middle"
           hx-get="{% url 'academics:attendance_course_notes' student.id date_str %}"
           hx-target="#course-notes-modal-container"
           hx-swap="innerHTML"
           onclick="document.getElementById('status-selector-container').innerHTML = '';"
-          title="Add/view course notes"
-          style="font-size: 0.8em; vertical-align: middle;">
-    <i class="bi bi-journal-text"></i>
+          title="Add/view course notes">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h4" /><path d="M2 10h4" /><path d="M2 14h4" /><path d="M2 18h4" /><rect width="16" height="20" x="4" y="2" rx="2" /><path d="M16 2v20" /></svg>
   </button>
 </div>

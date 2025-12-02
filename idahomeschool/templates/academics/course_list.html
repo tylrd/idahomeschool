@@ -4,19 +4,19 @@
 {% block title %}Courses{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Courses</h1>
-  <a href="{% url 'academics:course_create' %}" class="btn btn-success">Add Course</a>
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-3xl font-bold">Courses</h1>
+  <a href="{% url 'academics:course_create' %}" class="btn-primary">Add Course</a>
 </div>
 
 <div class="card mb-3">
-  <div class="card-body">
-    <form method="get" class="row g-3">
-      <div class="col-md-4">
-        <input type="text" name="search" class="form-control" placeholder="Search courses by name..." value="{{ search_query }}">
+  <section>
+    <form method="get" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div class="md:col-span-2">
+        <input type="text" name="search" placeholder="Search courses by name..." value="{{ search_query }}">
       </div>
-      <div class="col-md-3">
-        <select name="grade" class="form-select">
+      <div>
+        <select name="grade">
           <option value="">All Grades</option>
           {% for grade in grade_levels %}
             <option value="{{ grade.id }}" {% if grade_filter == grade.id|stringformat:"s" %}selected{% endif %}>
@@ -25,162 +25,153 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">Filter</button>
+      <div>
+        <button type="submit" class="btn-primary w-full">Filter</button>
       </div>
       {% if search_query or grade_filter %}
-      <div class="col-md-2">
-        <a href="{% url 'academics:course_list' %}" class="btn btn-secondary w-100">Clear</a>
+      <div>
+        <a href="{% url 'academics:course_list' %}" class="btn-secondary w-full">Clear</a>
       </div>
       {% endif %}
     </form>
-  </div>
+  </section>
 </div>
 
 {% if grouped_courses or unassigned_courses %}
 <!-- Grouped by Grade Level -->
 {% for grade_level, courses_list in grouped_courses %}
 <div class="card mb-3">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">
-      <button class="btn btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#grade-{{ grade_level.id }}" aria-expanded="true" aria-controls="grade-{{ grade_level.id }}">
-        <i class="bi bi-chevron-down"></i> {{ grade_level.name }}
-      </button>
-      <span class="badge bg-secondary ms-2">{{ courses_list|length }} course{{ courses_list|length|pluralize }}</span>
-    </h5>
-  </div>
-  <div id="grade-{{ grade_level.id }}" class="collapse show">
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
-          <thead>
-            <tr>
-              <th>Course Name</th>
-              <th>Template</th>
-              <th>Enrollments</th>
-              <th>Resources</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for course in courses_list %}
-            <tr>
-              <td><a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a></td>
-              <td>
-                {% if course.course_template %}
-                  <a href="{% url 'academics:coursetemplate_detail' course.course_template.pk %}">{{ course.course_template.name }}</a>
-                {% else %}
-                  -
-                {% endif %}
-              </td>
-              <td>{{ course.enrollments.count }}</td>
-              <td>{{ course.resources.count }}</td>
-              <td>
-                <a href="{% url 'academics:course_update' course.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                <a href="{% url 'academics:course_delete' course.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+  <header class="flex justify-between items-center cursor-pointer" onclick="toggleCollapse('grade-{{ grade_level.id }}')">
+    <h3 class="flex items-center">
+      <svg id="chevron-grade-{{ grade_level.id }}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+      {{ grade_level.name }}
+      <span class="badge-secondary ml-2">{{ courses_list|length }} course{{ courses_list|length|pluralize }}</span>
+    </h3>
+  </header>
+  <section id="grade-{{ grade_level.id }}" class="block">
+    <div class="relative w-full overflow-x-auto">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Course Name</th>
+            <th>Template</th>
+            <th>Enrollments</th>
+            <th>Resources</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in courses_list %}
+          <tr>
+            <td><a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a></td>
+            <td>
+              {% if course.course_template %}
+                <a href="{% url 'academics:coursetemplate_detail' course.course_template.pk %}">{{ course.course_template.name }}</a>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ course.enrollments.count }}</td>
+            <td>{{ course.resources.count }}</td>
+            <td>
+              <div class="flex gap-2">
+                <a href="{% url 'academics:course_update' course.pk %}" class="btn-sm-outline">Edit</a>
+                <a href="{% url 'academics:course_delete' course.pk %}" class="btn-sm-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-  </div>
+  </section>
 </div>
 {% endfor %}
 
 <!-- Unassigned Courses (no grade level) -->
 {% if unassigned_courses %}
 <div class="card mb-3">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">
-      <button class="btn btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#unassigned-courses" aria-expanded="true" aria-controls="unassigned-courses">
-        <i class="bi bi-chevron-down"></i> Unassigned Grade Level
-      </button>
-      <span class="badge bg-secondary ms-2">{{ unassigned_courses|length }} course{{ unassigned_courses|length|pluralize }}</span>
-    </h5>
-  </div>
-  <div id="unassigned-courses" class="collapse show">
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
-          <thead>
-            <tr>
-              <th>Course Name</th>
-              <th>Template</th>
-              <th>Enrollments</th>
-              <th>Resources</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for course in unassigned_courses %}
-            <tr>
-              <td><a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a></td>
-              <td>
-                {% if course.course_template %}
-                  <a href="{% url 'academics:coursetemplate_detail' course.course_template.pk %}">{{ course.course_template.name }}</a>
-                {% else %}
-                  -
-                {% endif %}
-              </td>
-              <td>{{ course.enrollments.count }}</td>
-              <td>{{ course.resources.count }}</td>
-              <td>
-                <a href="{% url 'academics:course_update' course.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
-                <a href="{% url 'academics:course_delete' course.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+  <header class="flex justify-between items-center cursor-pointer" onclick="toggleCollapse('unassigned-courses')">
+    <h3 class="flex items-center">
+      <svg id="chevron-unassigned-courses" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+      Unassigned Grade Level
+      <span class="badge-secondary ml-2">{{ unassigned_courses|length }} course{{ unassigned_courses|length|pluralize }}</span>
+    </h3>
+  </header>
+  <section id="unassigned-courses" class="block">
+    <div class="relative w-full overflow-x-auto">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Course Name</th>
+            <th>Template</th>
+            <th>Enrollments</th>
+            <th>Resources</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in unassigned_courses %}
+          <tr>
+            <td><a href="{% url 'academics:course_detail' course.pk %}">{{ course.name }}</a></td>
+            <td>
+              {% if course.course_template %}
+                <a href="{% url 'academics:coursetemplate_detail' course.course_template.pk %}">{{ course.course_template.name }}</a>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ course.enrollments.count }}</td>
+            <td>{{ course.resources.count }}</td>
+            <td>
+              <div class="flex gap-2">
+                <a href="{% url 'academics:course_update' course.pk %}" class="btn-sm-outline">Edit</a>
+                <a href="{% url 'academics:course_delete' course.pk %}" class="btn-sm-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-  </div>
+  </section>
 </div>
 {% endif %}
 
 {% else %}
-<div class="alert alert-info">
-  <h4>No courses found</h4>
-  {% if search_query %}
-    <p>No courses match your search criteria.</p>
-    <a href="{% url 'academics:course_list' %}" class="btn btn-secondary">Clear Search</a>
-  {% else %}
-    <p>Get started by adding your first course.</p>
-    <a href="{% url 'academics:course_create' %}" class="btn btn-primary">Add Course</a>
-  {% endif %}
+<div class="alert">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" x2="12" y1="8" y2="12" />
+    <line x1="12" x2="12.01" y1="16" y2="16" />
+  </svg>
+  <h2>No courses found</h2>
+  <section>
+    {% if search_query %}
+      <p>No courses match your search criteria.</p>
+      <a href="{% url 'academics:course_list' %}" class="btn-secondary mt-3">Clear Search</a>
+    {% else %}
+      <p>Get started by adding your first course.</p>
+      <a href="{% url 'academics:course_create' %}" class="btn-primary mt-3">Add Course</a>
+    {% endif %}
+  </section>
 </div>
 {% endif %}
 {% endblock academics_content %}
 
 {% block extra_js %}
-<style>
-  .btn-link i {
-    transition: transform 0.2s ease;
-  }
-  .btn-link[aria-expanded="false"] i {
-    transform: rotate(-90deg);
-  }
-</style>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Handle chevron rotation on collapse/expand
-    const collapseElements = document.querySelectorAll('.collapse');
-    collapseElements.forEach(function(element) {
-      element.addEventListener('show.bs.collapse', function() {
-        const button = document.querySelector('[data-bs-target="#' + element.id + '"]');
-        if (button) {
-          button.setAttribute('aria-expanded', 'true');
-        }
-      });
-      element.addEventListener('hide.bs.collapse', function() {
-        const button = document.querySelector('[data-bs-target="#' + element.id + '"]');
-        if (button) {
-          button.setAttribute('aria-expanded', 'false');
-        }
-      });
-    });
-  });
+  function toggleCollapse(id) {
+    const element = document.getElementById(id);
+    const chevron = document.getElementById('chevron-' + id);
+
+    if (element.classList.contains('hidden')) {
+      element.classList.remove('hidden');
+      chevron.style.transform = 'rotate(0deg)';
+    } else {
+      element.classList.add('hidden');
+      chevron.style.transform = 'rotate(-90deg)';
+    }
+  }
 </script>
 {% endblock extra_js %}

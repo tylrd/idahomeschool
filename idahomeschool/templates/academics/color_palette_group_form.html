@@ -5,29 +5,29 @@
 
 {% block academics_content %}
 <div class="card">
-  <div class="card-header">
-    <h3 class="mb-0">{% if object.pk %}Edit Group{% else %}Create Group{% endif %}</h3>
-  </div>
-  <div class="card-body">
+  <header>
+    <h2>{% if object.pk %}Edit Group{% else %}Create Group{% endif %}</h2>
+  </header>
+  <section>
     <form method="post">
       {% csrf_token %}
 
-      <div class="mb-3">
-        <label for="id_name" class="form-label">Group Name *</label>
-        <input type="text" class="form-control" id="id_name" name="name" value="{{ form.name.value|default:'' }}" required maxlength="100">
+      <div class="grid gap-2">
+        <label for="id_name">Group Name *</label>
+        <input type="text" id="id_name" name="name" value="{{ form.name.value|default:'' }}" required maxlength="100">
         {% if form.name.errors %}
-          <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+          <p class="text-destructive text-sm">{{ form.name.errors.0 }}</p>
         {% endif %}
-        <div class="form-text">Give your color group a descriptive name (e.g., "Pastels", "Earth Tones", "Bright Colors")</div>
+        <p class="text-muted-foreground text-sm">Give your color group a descriptive name (e.g., "Pastels", "Earth Tones", "Bright Colors")</p>
       </div>
 
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">
+      <div class="flex gap-2 mt-6">
+        <button type="submit" class="btn-primary">
           <i class="bi bi-save"></i> Save Group
         </button>
-        <a href="{% url 'academics:color_palette_list' %}" class="btn btn-secondary">Cancel</a>
+        <a href="{% url 'academics:color_palette_list' %}" class="btn-secondary">Cancel</a>
       </div>
     </form>
-  </div>
+  </section>
 </div>
 {% endblock academics_content %}
