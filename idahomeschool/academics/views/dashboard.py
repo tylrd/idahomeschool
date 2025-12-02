@@ -1,4 +1,8 @@
+from datetime import datetime
+from datetime import timedelta
+
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils import timezone
 from django.views.generic import TemplateView
 
 from idahomeschool.academics.models import Course
@@ -54,5 +58,31 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             .prefetch_related("enrollments")
             .order_by("-created_at")[:5]
         )
+
+        # Weekly summary
+        today = timezone.now().date()
+        week_start = today - timedelta(days=today.weekday())  # Monday
+        week_end = week_start + timedelta(days=6)  # Sunday
+
+        week_logs = DailyLog.objects.filter(
+            user=user,
+            date__gte=week_start,
+            date__lte=week_end,
+        )
+
+        context["week_days_logged"] = week_logs.values("date").distinct().count()
+        context["week_instructional_days"] = week_logs.filter(
+            status__in=["PRESENT", "FIELD_TRIP"],
+        ).values("date").distinct().count()
+        context["week_students_count"] = week_logs.values("student").distinct().count()
+
+        if active_year:
+            context["active_courses_count"] = Course.objects.filter(
+                user=user,
+                enrollments__school_year=active_year,
+                enrollments__status="IN_PROGRESS",
+            ).distinct().count()
+            # For template conditional check
+            context["active_courses"] = context["active_enrollments"].exists()
 
         return context

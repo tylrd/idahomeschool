@@ -22,12 +22,35 @@
     </section>
   </div>
   {% if active_year %}
-  <div class="md:col-span-2 card text-center">
+  <div class="card">
     <section class="py-3">
-      <h5 class="font-semibold text-base mb-2">Quick Actions</h5>
-      <div class="flex flex-col gap-2">
+      <h5 class="font-semibold text-base mb-2 text-center">Quick Actions</h5>
+      <div class="flex flex-col gap-2 px-3">
         <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-sm">Log Today's Attendance</a>
         <a href="{% url 'academics:attendance_calendar' %}" class="btn-outline btn-sm">View Calendar</a>
+      </div>
+    </section>
+  </div>
+  <div class="card text-center">
+    <section class="py-3">
+      <h5 class="font-semibold text-base mb-3">This Week</h5>
+      <div class="grid grid-cols-2 gap-3 px-3">
+        <div>
+          <div class="text-2xl font-bold text-primary">{{ week_instructional_days }}</div>
+          <small class="text-muted-foreground text-xs">School Days</small>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-primary">{{ week_students_count }}</div>
+          <small class="text-muted-foreground text-xs">Students</small>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-primary">{{ active_courses_count|default:0 }}</div>
+          <small class="text-muted-foreground text-xs">Active Courses</small>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-primary">{{ week_days_logged }}</div>
+          <small class="text-muted-foreground text-xs">Days Logged</small>
+        </div>
       </div>
     </section>
   </div>
@@ -40,7 +63,8 @@
     <h5 class="text-base font-semibold">Active Courses ({{ active_year.name }})</h5>
   </header>
   <section class="p-0">
-    <div class="overflow-x-auto">
+    <!-- Desktop table view (900px and up) -->
+    <div class="hidden min-[900px]:block overflow-x-auto">
       <table class="table [&_th]:py-2 [&_td]:py-2 text-sm">
         <thead>
           <tr>
@@ -75,11 +99,38 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Mobile card view (below 900px) -->
+    <div class="min-[900px]:hidden divide-y">
+      {% for enrollment in active_enrollments %}
+      <div class="p-3">
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <div class="flex-1">
+            <h6 class="font-medium text-sm mb-1">
+              <a href="{% url 'academics:course_detail' enrollment.course.pk %}" class="link">{{ enrollment.course.name }}</a>
+            </h6>
+            <div class="flex items-center gap-2">
+              {% if enrollment.student.photo %}
+                <img src="{{ enrollment.student.photo.url }}" alt="{{ enrollment.student.name }}" class="rounded-full size-6 object-cover">
+              {% else %}
+                <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-6 text-xs font-bold">
+                  {{ enrollment.student.name.0 }}
+                </div>
+              {% endif %}
+              <a href="{% url 'academics:student_detail' enrollment.student.pk %}" class="link text-sm">{{ enrollment.student.name }}</a>
+            </div>
+          </div>
+          <span class="badge badge-sm shrink-0">{{ enrollment.get_status_display }}</span>
+        </div>
+        <a href="{% url 'academics:courseenrollment_detail' enrollment.pk %}" class="btn-outline btn-sm w-full">View Details</a>
+      </div>
+      {% endfor %}
+    </div>
   </section>
 </div>
 {% endif %}
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
   <div class="card">
     <header>
       <h5 class="text-base font-semibold">Recent Students</h5>

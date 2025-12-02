@@ -47,7 +47,8 @@
 </div>
 
 <!-- Daily Log Entry Form Container -->
-<div id="dailylog-form-container">
+<div id="dailylog-form-container"
+     hx-on::after-swap="document.querySelectorAll('.sidebar a.active').forEach(link => { link.classList.remove('active'); link.removeAttribute('aria-current'); }); const dailyLogLink = document.querySelector('.sidebar a[href*=\'dailylog_entry\']'); if (dailyLogLink) { dailyLogLink.classList.add('active'); dailyLogLink.setAttribute('aria-current', 'page'); }">
   {% include "academics/partials/dailylog_entry_form.html" %}
 </div>
 {% endblock academics_content %}
