@@ -38,7 +38,7 @@
   <!-- Card View -->
   <div x-show="view === 'cards'" x-cloak class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     {% for student in students %}
-    <div class="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+    <div id="student-card-{{ student.pk }}" class="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
       <div class="flex items-start mb-3">
         <div class="flex-shrink-0 mr-3">
           {% if student.photo %}
@@ -79,14 +79,20 @@
         </div>
       </div>
       <div class="flex gap-1 pt-3 border-t">
-        <a href="{% url 'academics:student_update' student.pk %}"
+        <a href="{% url 'academics:student_detail' student.pk %}"
            class="btn-icon-outline size-8">
+          <i data-lucide="eye"></i>
+        </a>
+        <button type="button"
+                onclick="document.getElementById('dialog-edit-{{ student.pk }}').showModal()"
+                class="btn-icon-outline size-8">
           <i data-lucide="pencil"></i>
-        </a>
-        <a href="{% url 'academics:student_delete' student.pk %}"
-           class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
+        </button>
+        <button type="button"
+                onclick="document.getElementById('dialog-delete-{{ student.pk }}').showModal()"
+                class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
           <i data-lucide="trash-2"></i>
-        </a>
+        </button>
       </div>
     </div>
     {% endfor %}
@@ -107,7 +113,7 @@
     </thead>
     <tbody>
       {% for student in students %}
-      <tr>
+      <tr id="student-row-{{ student.pk }}">
         <td>
           <div class="flex items-center gap-3">
             {% if student.photo %}
@@ -134,14 +140,20 @@
         <td>{{ student.course_count }}</td>
         <td>
           <div class="flex gap-1 justify-end">
-            <a href="{% url 'academics:student_update' student.pk %}"
+            <a href="{% url 'academics:student_detail' student.pk %}"
                class="btn-icon-outline size-8">
+              <i data-lucide="eye"></i>
+            </a>
+            <button type="button"
+                    onclick="document.getElementById('dialog-edit-{{ student.pk }}').showModal()"
+                    class="btn-icon-outline size-8">
               <i data-lucide="pencil"></i>
-            </a>
-            <a href="{% url 'academics:student_delete' student.pk %}"
-               class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
+            </button>
+            <button type="button"
+                    onclick="document.getElementById('dialog-delete-{{ student.pk }}').showModal()"
+                    class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
               <i data-lucide="trash-2"></i>
-            </a>
+            </button>
           </div>
         </td>
       </tr>
@@ -149,6 +161,115 @@
     </tbody>
     </table>
   </div>
+
+  <!-- Dialogs - placed outside table/card structure -->
+  {% for student in students %}
+    <!-- Edit Dialog -->
+    <dialog id="dialog-edit-{{ student.pk }}"
+            class="dialog w-full sm:max-w-[500px]"
+            aria-labelledby="dialog-edit-{{ student.pk }}-title"
+            onclick="if (event.target === this) this.close()">
+      <div>
+        <header>
+          <h2 id="dialog-edit-{{ student.pk }}-title">Edit Student</h2>
+          <p>Update the details for {{ student.name }}.</p>
+        </header>
+
+        <form hx-post="{% url 'academics:student_update' student.pk %}"
+              hx-target="#student-row-{{ student.pk }}, #student-card-{{ student.pk }}"
+              hx-swap="outerHTML"
+              hx-on::after-request="if(event.detail.successful) this.closest('dialog').close()"
+              class="form"
+              enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <section class="space-y-4">
+            <div class="grid gap-2">
+              <label for="edit-name-{{ student.pk }}" class="text-sm font-medium">Name</label>
+              <input type="text" name="name" id="edit-name-{{ student.pk }}" value="{{ student.name }}" required>
+            </div>
+
+            <div class="grid gap-2">
+              <label for="edit-date-of-birth-{{ student.pk }}" class="text-sm font-medium">Date of Birth</label>
+              <input type="date" name="date_of_birth" id="edit-date-of-birth-{{ student.pk }}" value="{{ student.date_of_birth|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="grid gap-2">
+              <label for="edit-photo-{{ student.pk }}" class="text-sm font-medium">Photo</label>
+              <input type="file" name="photo" id="edit-photo-{{ student.pk }}" accept="image/*">
+              {% if student.photo %}
+                <p class="text-muted-foreground text-sm">Current photo will be replaced if you select a new one.</p>
+              {% endif %}
+            </div>
+          </section>
+
+          <footer>
+            <button type="button" class="btn-outline" onclick="this.closest('dialog').close()">Cancel</button>
+            <button type="button"
+                    class="btn"
+                    onclick="this.closest('dialog').querySelector('form').requestSubmit()">
+              Save changes
+            </button>
+          </footer>
+        </form>
+
+        <button type="button" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+    </dialog>
+
+    <!-- Delete Dialog -->
+    <dialog id="dialog-delete-{{ student.pk }}"
+            class="dialog w-full sm:max-w-[425px]"
+            aria-labelledby="dialog-delete-{{ student.pk }}-title"
+            aria-describedby="dialog-delete-{{ student.pk }}-description"
+            onclick="if (event.target === this) this.close()">
+      <div>
+        <header>
+          <h2 id="dialog-delete-{{ student.pk }}-title">Delete Student</h2>
+          <p id="dialog-delete-{{ student.pk }}-description">Are you sure you want to delete {{ student.name }}?</p>
+        </header>
+
+        <section>
+          <div class="mb-6 p-4 border-l-4 border-red-600 bg-red-50 dark:bg-red-900/20">
+            <div class="flex items-start gap-3">
+              <i data-lucide="alert-triangle" class="size-5 text-red-600 shrink-0 mt-0.5"></i>
+              <div>
+                <h4 class="font-semibold text-red-900 dark:text-red-200">Warning</h4>
+                <p class="text-sm text-red-800 dark:text-red-300 mt-1">
+                  This will also delete all grade assignments, course enrollments, and attendance records for this student. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer>
+          <button type="button" class="btn-outline" onclick="this.closest('dialog').close()">Cancel</button>
+          <form method="post"
+                action="{% url 'academics:student_delete' student.pk %}"
+                hx-post="{% url 'academics:student_delete' student.pk %}"
+                hx-target="#student-row-{{ student.pk }}, #student-card-{{ student.pk }}"
+                hx-swap="outerHTML swap:1s"
+                style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn bg-destructive hover:bg-destructive/90">Delete</button>
+          </form>
+        </footer>
+
+        <button type="button" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+    </dialog>
+  {% endfor %}
 
   {% if is_paginated %}
   <nav role="navigation" aria-label="pagination" class="mx-auto flex w-full justify-center mt-6">

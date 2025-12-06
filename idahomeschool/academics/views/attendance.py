@@ -350,7 +350,7 @@ class DailyLogEntryView(LoginRequiredMixin, View):
 
 
 class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
-    """Calendar view showing attendance for the current week/month."""
+    """Calendar view showing attendance for the current week (mobile-optimized)."""
 
     template_name = "academics/attendance_calendar.html"
 
@@ -359,7 +359,15 @@ class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
         user = self.request.user
 
         # Get date range (default to current week)
-        view_type = self.request.GET.get("view", "week")  # week or month
+        view_type = self.request.GET.get("view", "week")  # week is now default
+
+        # Get student filter
+        selected_student_id = self.request.GET.get("student")
+        if selected_student_id:
+            try:
+                selected_student_id = int(selected_student_id)
+            except (ValueError, TypeError):
+                selected_student_id = None
 
         # Get the reference date (default to today)
         ref_date_str = self.request.GET.get("date")
@@ -372,39 +380,73 @@ class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
             ref_date = date.today()
 
         if view_type == "week":
-            # Calculate the start of the week (Monday)
-            start_date = ref_date - timedelta(days=ref_date.weekday())
+            # Calculate the start of the week (Sunday)
+            days_since_sunday = (ref_date.weekday() + 1) % 7
+            start_date = ref_date - timedelta(days=days_since_sunday)
             end_date = start_date + timedelta(days=6)
-            date_range = [start_date + timedelta(days=i) for i in range(7)]
+            # Simple date range for week view
+            date_range = [
+                {"date": start_date + timedelta(days=i), "is_current_month": True}
+                for i in range(7)
+            ]
+            calendar_start_date = start_date
+            calendar_end_date = end_date
         else:  # month
             # Calculate the start and end of the month
-            start_date = ref_date.replace(day=1)
+            month_start = ref_date.replace(day=1)
             if ref_date.month == 12:
-                end_date = ref_date.replace(
+                month_end = ref_date.replace(
                     year=ref_date.year + 1, month=1, day=1,
                 ) - timedelta(days=1)
             else:
-                end_date = ref_date.replace(
+                month_end = ref_date.replace(
                     month=ref_date.month + 1, day=1,
                 ) - timedelta(days=1)
-            date_range = [
-                start_date + timedelta(days=i)
-                for i in range((end_date - start_date).days + 1)
-            ]
 
-        # Get students
+            # Calculate calendar grid boundaries (include prev/next month padding)
+            # Start from the Sunday before (or on) the first of the month
+            calendar_start_date = month_start - timedelta(days=month_start.weekday() + 1)
+            if calendar_start_date > month_start:  # Adjust if month starts on Sunday
+                calendar_start_date = month_start - timedelta(days=7)
+
+            # End on the Saturday after (or on) the last of the month
+            days_after = 6 - month_end.weekday()
+            if days_after == 7:  # Month ends on Saturday
+                days_after = 0
+            calendar_end_date = month_end + timedelta(days=days_after)
+
+            # Build date range with is_current_month flag
+            date_range = []
+            current = calendar_start_date
+            while current <= calendar_end_date:
+                date_range.append({
+                    "date": current,
+                    "is_current_month": current.month == ref_date.month and current.year == ref_date.year,
+                })
+                current += timedelta(days=1)
+
+            start_date = month_start
+            end_date = month_end
+
+        # Get students (filtered if needed)
         students = Student.objects.filter(user=user).prefetch_related("daily_logs")
+        if selected_student_id:
+            students = students.filter(id=selected_student_id)
 
-        # Get daily logs for the date range
+        # Get daily logs for the entire calendar date range
         daily_logs = (
             DailyLog.objects.filter(
                 user=user,
-                date__gte=start_date,
-                date__lte=end_date,
+                date__gte=calendar_start_date,
+                date__lte=calendar_end_date,
             )
-            .select_related("student")
+            .select_related("student", "attendance_status")
             .prefetch_related("course_notes")
         )
+
+        # Filter logs by selected student if applicable
+        if selected_student_id:
+            daily_logs = daily_logs.filter(student_id=selected_student_id)
 
         # Organize logs by student and date, and track which logs have course notes
         logs_by_student_date = {}
@@ -422,7 +464,8 @@ class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
         attendance_grid = []
         for student in students:
             row = {"student": student, "dates": []}
-            for d in date_range:
+            for date_info in date_range:
+                d = date_info["date"] if isinstance(date_info, dict) else date_info
                 log = logs_by_student_date.get(student.id, {}).get(d.isoformat())
                 has_notes = log.id in logs_with_notes if log else False
                 row["dates"].append({"date": d, "log": log, "has_notes": has_notes})
@@ -434,6 +477,9 @@ class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
         context["end_date"] = end_date
         context["date_range"] = date_range
         context["attendance_grid"] = attendance_grid
+        context["students"] = Student.objects.filter(user=user)  # All students for filter dropdown
+        context["selected_student_id"] = selected_student_id
+        context["today"] = date.today()
         context["prev_date"] = (
             start_date - timedelta(days=7 if view_type == "week" else 30)
         ).isoformat()
@@ -443,6 +489,10 @@ class AttendanceCalendarView(LoginRequiredMixin, TemplateView):
         context["attendance_statuses"] = AttendanceStatus.objects.filter(
             user=user,
         ).order_by("display_order")
+
+        # If this is an HTMX request, return just the grid partial
+        if self.request.headers.get("HX-Request"):
+            self.template_name = "academics/partials/calendar_week_grid.html"
 
         return context
 

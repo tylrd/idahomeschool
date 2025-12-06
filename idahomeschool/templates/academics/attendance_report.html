@@ -5,72 +5,83 @@
 {% block title %}Attendance Report{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Attendance Report</h1>
-  <div>
-    <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-success">Log Attendance</a>
-    <a href="{% url 'academics:attendance_calendar' %}" class="btn btn-outline-secondary">Calendar View</a>
+
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+  <h1 class="text-3xl font-bold tracking-tight">Attendance Report</h1>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:dailylog_entry' %}" class="btn">
+      <i data-lucide="plus-circle"></i> Log Attendance
+    </a>
+    <a href="{% url 'academics:attendance_calendar' %}" class="btn-outline">
+      <i data-lucide="calendar"></i> <span class="hidden sm:inline">Calendar View</span>
+    </a>
     {% if report_data %}
       <a href="{% url 'academics:attendance_report_pdf' %}?{% if school_year %}year={{ school_year.id }}{% endif %}{% if selected_student_id %}&student={{ selected_student_id }}{% endif %}"
-         class="btn btn-primary"
+         class="btn-outline"
          target="_blank">
-        <i class="bi bi-file-earmark-pdf"></i> Export PDF
+        <i data-lucide="file-text"></i> <span class="hidden sm:inline">Export PDF</span>
       </a>
     {% endif %}
   </div>
 </div>
 
 <!-- Filters -->
-<div class="card mb-4">
-  <div class="card-body">
-    <form method="get" class="row g-3">
-      <div class="col-md-6">
-        <label for="year" class="form-label">School Year:</label>
-        <select name="year" id="year" class="form-select" onchange="this.form.submit()">
-          <option value="">All Years</option>
-          {% for year in school_years %}
-            <option value="{{ year.id }}" {% if school_year and year.id == school_year.id %}selected{% endif %}>
-              {{ year.name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label for="student" class="form-label">Student:</label>
-        <select name="student" id="student" class="form-select" onchange="this.form.submit()">
-          <option value="">All Students</option>
-          {% for s in students %}
-            <option value="{{ s.id }}" {% if selected_student_id == s.id %}selected{% endif %}>
-              {{ s.name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-    </form>
-  </div>
+<div class="mb-6 p-4 border rounded-lg bg-muted/20">
+  <form method="get" class="form grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid gap-2">
+      <label for="year" class="text-sm font-medium">School Year</label>
+      <select name="year" id="year" class="w-full" onchange="this.form.submit()">
+        <option value="">All Years</option>
+        {% for year in school_years %}
+          <option value="{{ year.id }}" {% if school_year and year.id == school_year.id %}selected{% endif %}>
+            {{ year.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="grid gap-2">
+      <label for="student" class="text-sm font-medium">Student</label>
+      <select name="student" id="student" class="w-full" onchange="this.form.submit()">
+        <option value="">All Students</option>
+        {% for s in students %}
+          <option value="{{ s.id }}" {% if selected_student_id == s.id %}selected{% endif %}>
+            {{ s.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
 </div>
 
 <!-- Report Header -->
 {% if school_year %}
-<div class="alert alert-info">
-  <strong>Report Period:</strong> {{ school_year.name }}
-  ({{ school_year.start_date|date:"F j, Y" }} - {{ school_year.end_date|date:"F j, Y" }})
+<div class="mb-6 p-4 border-l-4 border-blue-600 bg-blue-50 dark:bg-blue-900/20">
+  <div class="flex items-start gap-3">
+    <i data-lucide="info" class="size-5 text-blue-600 shrink-0 mt-0.5"></i>
+    <div>
+      <h4 class="font-semibold text-blue-900 dark:text-blue-200">Report Period</h4>
+      <p class="text-sm text-blue-800 dark:text-blue-300 mt-1">
+        {{ school_year.name }} ({{ school_year.start_date|date:"F j, Y" }} - {{ school_year.end_date|date:"F j, Y" }})
+      </p>
+    </div>
+  </div>
 </div>
 {% endif %}
 
 <!-- Report Data -->
 {% if report_data %}
-<div class="card">
-  <div class="card-header">
-    <h5 class="mb-0">Attendance Statistics</h5>
+<div class="border rounded-lg overflow-hidden bg-background mb-6">
+  <div class="p-4 border-b bg-muted/30">
+    <h2 class="text-lg font-semibold">Attendance Statistics</h2>
   </div>
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-striped">
+  <div class="p-4">
+    <div class="relative w-full overflow-x-auto">
+      <table class="table">
         <thead>
           <tr>
             <th>Student</th>
-            <th class="text-center">Total Days Logged</th>
+            <th class="text-center">Total Days</th>
             <th class="text-center">Instructional Days</th>
             {% for status in attendance_statuses %}
             <th class="text-center">{{ status.label }}</th>
@@ -81,17 +92,31 @@
           {% for data in report_data %}
           <tr>
             <td>
-              <strong>{{ data.student.name }}</strong><br>
-              <small class="text-muted">Grade {{ data.student.grade_level }}</small>
+              <div class="flex items-center gap-2">
+                {% if data.student.photo %}
+                  <img src="{{ data.student.photo.url }}"
+                       alt="{{ data.student.name }}"
+                       class="rounded-full size-8 object-cover shrink-0">
+                {% else %}
+                  <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-8 text-xs font-bold shrink-0">
+                    {{ data.student.name.0 }}
+                  </div>
+                {% endif %}
+                <div>
+                  <div class="font-medium">{{ data.student.name }}</div>
+                  <div class="text-sm text-muted-foreground">Grade {{ data.student.grade_level }}</div>
+                </div>
+              </div>
             </td>
             <td class="text-center">{{ data.total_days }}</td>
             <td class="text-center">
-              <strong class="text-success">{{ data.instructional_days }}</strong>
+              <span class="font-semibold text-green-600">{{ data.instructional_days }}</span>
             </td>
             {% for status in attendance_statuses %}
             <td class="text-center">
               {% with count_data=data.status_counts|get_item:status.code %}
-                <span class="badge" style="background-color: {{ status.color }}; color: {{ status.color|contrast_text_color }};">
+                <span class="badge px-3 py-1 font-semibold"
+                      style="background-color: {{ status.color }}; {% if status.color|slice:':4' == '#ffc' or status.color|slice:':4' == '#ff0' or status.color|slice:':4' == '#fff' %}color: #000;{% else %}color: #fff;{% endif %}">
                   {% if count_data %}{{ count_data.count }}{% else %}0{% endif %}
                 </span>
               {% endwith %}
@@ -106,45 +131,61 @@
 </div>
 
 <!-- Idaho Compliance Note -->
-<div class="alert alert-light mt-4">
-  <h6>Idaho Homeschool Compliance Note:</h6>
-  <p class="mb-0">
-    <strong>Instructional Days</strong> include days marked with instructional status types
-    {% if attendance_statuses %}
-      ({% for status in attendance_statuses %}{% if status.is_instructional %}{{ status.label }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}).
-    {% endif %}
-    Idaho recommends homeschools provide instruction for a comparable number of days as public schools
-    (typically 150-180 days per school year).
+<div class="mb-6 p-4 border-l-4 border-green-600 bg-green-50 dark:bg-green-900/20">
+  <div class="flex items-start gap-3">
+    <i data-lucide="check-circle" class="size-5 text-green-600 shrink-0 mt-0.5"></i>
+    <div>
+      <h4 class="font-semibold text-green-900 dark:text-green-200">Idaho Homeschool Compliance Note</h4>
+      <p class="text-sm text-green-800 dark:text-green-300 mt-1">
+        <strong>Instructional Days</strong> include days marked with instructional status types
+        {% if attendance_statuses %}
+          ({% for status in attendance_statuses %}{% if status.is_instructional %}{{ status.label }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}).
+        {% endif %}
+        Idaho recommends homeschools provide instruction for a comparable number of days as public schools
+        (typically 150-180 days per school year).
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Export Options -->
+<div class="border rounded-lg p-4">
+  <h3 class="text-lg font-semibold mb-2">Export Options</h3>
+  <p class="text-sm text-muted-foreground mb-4">Download this attendance report for your records or compliance documentation.</p>
+  <div class="flex gap-2">
+    <a href="{% url 'academics:attendance_report_pdf' %}?{% if school_year %}year={{ school_year.id }}{% endif %}{% if selected_student_id %}&student={{ selected_student_id }}{% endif %}"
+       class="btn"
+       target="_blank">
+      <i data-lucide="file-text"></i> Download PDF Report
+    </a>
+  </div>
+  <p class="text-muted-foreground text-sm mt-3">
+    CSV export functionality coming soon.
   </p>
 </div>
 
 {% else %}
-<div class="alert alert-warning">
-  <strong>No attendance data found.</strong>
-  {% if school_year %}
-    Start logging attendance for {{ school_year.name }}.
-  {% else %}
-    Please select a school year and start logging attendance.
-  {% endif %}
-  <a href="{% url 'academics:dailylog_entry' %}" class="alert-link">Log Attendance</a>
-</div>
-{% endif %}
 
-<!-- Export Options -->
-{% if report_data %}
-<div class="card mt-4">
-  <div class="card-body">
-    <h6>Export Options</h6>
-    <p class="text-muted">Download this attendance report for your records or compliance documentation.</p>
-    <a href="{% url 'academics:attendance_report_pdf' %}?{% if school_year %}year={{ school_year.id }}{% endif %}{% if selected_student_id %}&student={{ selected_student_id }}{% endif %}"
-       class="btn btn-primary"
-       target="_blank">
-      <i class="bi bi-file-earmark-pdf"></i> Download PDF Report
-    </a>
-    <p class="text-muted mt-3 mb-0">
-      <small>CSV export functionality coming soon.</small>
+<!-- Empty State -->
+<div class="p-12 text-center border rounded-lg">
+  <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+    <div class="flex size-12 items-center justify-center rounded-full bg-muted">
+      <i data-lucide="file-text" class="size-6 text-muted-foreground"></i>
+    </div>
+    <h2 class="text-xl font-semibold">No Attendance Data Found</h2>
+    <p class="text-sm text-muted-foreground mb-2">
+      {% if school_year %}
+        Start logging attendance for {{ school_year.name }}.
+      {% else %}
+        Please select a school year and start logging attendance.
+      {% endif %}
     </p>
+    <a href="{% url 'academics:dailylog_entry' %}" class="btn">
+      <i data-lucide="plus-circle"></i> Log Attendance
+    </a>
   </div>
 </div>
+
 {% endif %}
+
 {% endblock academics_content %}

@@ -1,0 +1,102 @@
+{% load static %}
+
+<div class="border rounded-lg overflow-hidden bg-background">
+
+  <!-- Calendar Header (Days of Week) -->
+  <div class="grid grid-cols-7 bg-muted border-b">
+    <div class="p-2 text-center text-sm font-semibold text-muted-foreground border-r">
+      <span class="hidden sm:inline">Sunday</span>
+      <span class="sm:hidden">S</span>
+    </div>
+    <div class="p-2 text-center text-sm font-semibold text-muted-foreground border-r">
+      <span class="hidden sm:inline">Monday</span>
+      <span class="sm:hidden">M</span>
+    </div>
+    <div class="p-2 text-center text-sm font-semibold text-muted-foreground border-r">
+      <span class="hidden sm:inline">Tuesday</span>
+      <span class="sm:hidden">T</span>
+    </div>
+    <div class="p-2 text-center text-sm font-semibold text-muted-foreground border-r">
+      <span class="hidden sm:inline">Wednesday</span>
+      <span class="sm:hidden">W</span>
+    </div>
+    <div class="p-2 text-center text-sm font-semibold text-muted-foreground border-r">
+      <span class="hidden sm:inline">Thursday</span>
+      <span class="sm:hidden">T</span>
+    </div>
+    <div class="p-2 text-center text-sm font-semibold text-muted-foreground border-r">
+      <span class="hidden sm:inline">Friday</span>
+      <span class="sm:hidden">F</span>
+    </div>
+    <div class="p-2 text-center text-sm font-semibold text-muted-foreground">
+      <span class="hidden sm:inline">Saturday</span>
+      <span class="sm:hidden">S</span>
+    </div>
+  </div>
+
+  <!-- Calendar Grid -->
+  <div class="grid grid-cols-7">
+    {% for date_info in date_range %}
+      {% with date=date_info.date is_current_month=date_info.is_current_month %}
+      <div class="relative border-r border-b last:border-r-0 min-h-[80px] sm:min-h-[100px] p-1 sm:p-2 {% if not is_current_month %}bg-muted/30{% endif %}">
+
+        <!-- Date Number -->
+        <div class="text-right mb-1">
+          <span class="text-xs sm:text-sm {% if date == today %}inline-flex items-center justify-center bg-primary text-primary-foreground rounded-full size-6 font-semibold{% else %}text-muted-foreground{% if not is_current_month %}/50{% endif %}{% endif %}">
+            {{ date.day }}
+          </span>
+        </div>
+
+        <!-- Student Status Badges -->
+        <div class="space-y-1">
+          {% for row in attendance_grid %}
+            {% if not selected_student_id or row.student.id == selected_student_id %}
+              {% for date_cell in row.dates %}
+                {% if date_cell.date == date %}
+                  <div class="flex items-center gap-1">
+                    <!-- Student Avatar (only show if all students) -->
+                    {% if not selected_student_id %}
+                    <div class="shrink-0">
+                      {% if row.student.photo %}
+                        <img src="{{ row.student.photo.url }}"
+                             alt="{{ row.student.name }}"
+                             class="rounded-full size-5 object-cover">
+                      {% else %}
+                        <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-5 text-[10px] font-bold">
+                          {{ row.student.name.0 }}
+                        </div>
+                      {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Status Badge (clickable) -->
+                    {% include "academics/partials/status_badge.html" with student=row.student date_str=date|date:"Y-m-d" log=date_cell.log has_notes=date_cell.has_notes %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+        </div>
+
+      </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- Empty State (if no students) -->
+{% if not attendance_grid %}
+<div class="p-12 text-center border rounded-lg">
+  <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+    <div class="flex size-12 items-center justify-center rounded-full bg-muted">
+      <i data-lucide="users" class="size-6 text-muted-foreground"></i>
+    </div>
+    <h2 class="text-xl font-semibold">No Students Found</h2>
+    <p class="text-sm text-muted-foreground mb-2">Add students to start tracking attendance.</p>
+    <a href="{% url 'academics:student_create' %}" class="btn">
+      <i data-lucide="plus-circle"></i> Add Student
+    </a>
+  </div>
+</div>
+{% endif %}

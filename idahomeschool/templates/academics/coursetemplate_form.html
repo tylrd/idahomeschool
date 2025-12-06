@@ -48,7 +48,6 @@
 
     <!-- Tag Filter UI -->
     <div class="mb-2">
-      <label class="text-sm mb-1">Filter by Tags:</label>
       <div id="tag-filter-container">
         {% load static %}
         {% comment %}Tags will be loaded here via JavaScript{% endcomment %}
@@ -100,7 +99,11 @@
 
   <style>
     /* Tag filter hover effect */
-    .tag-filter-btn:hover .badge {
+    .tag-filter-btn {
+      background: transparent;
+      cursor: pointer;
+    }
+    .tag-filter-btn:hover {
       opacity: 1 !important;
       transform: scale(1.05);
     }
@@ -212,15 +215,16 @@
       if (tags.length === 0) {
         html = '<p class="text-muted small mb-0">No tags available. <a href="/academics/tags/create/">Create a tag</a> to filter resources.</p>';
       } else {
+        html += '<div class="flex flex-wrap gap-2 items-center">';
         tags.forEach(tag => {
-          const textColor = getContrastColor(tag.color);
           html += `
             <button type="button"
-                    class="btn btn-sm me-1 mb-1 tag-filter-btn p-0 border-0"
+                    class="tag-filter-btn px-3 py-1 rounded-full border-2 transition-all"
+                    style="border-color: ${tag.color}; background-color: ${tag.color}20; color: hsl(var(--foreground));"
                     data-tag-id="${tag.id}"
                     data-tag-name="${escapeHtml(tag.name)}"
                     data-tag-color="${tag.color}">
-              <span class="badge" style="background-color: ${tag.color}; color: ${textColor}; cursor: pointer; opacity: 0.7; transition: all 0.2s ease;">${escapeHtml(tag.name)}</span>
+              ${escapeHtml(tag.name)}
             </button>
           `;
         });
@@ -230,6 +234,7 @@
             <i data-lucide="x-circle"></i> Clear Filters
           </button>
         `;
+        html += '</div>';
       }
 
       container.innerHTML = html;
@@ -275,16 +280,18 @@
       const buttons = document.querySelectorAll('.tag-filter-btn');
       buttons.forEach(button => {
         const tagId = parseInt(button.getAttribute('data-tag-id'));
-        const badge = button.querySelector('.badge');
+        const tagColor = button.getAttribute('data-tag-color');
 
         if (selectedTagIds.includes(tagId)) {
-          // Selected: add a subtle ring around the badge
-          badge.style.boxShadow = '0 0 0 2px rgba(255, 255, 255, 0.5), 0 0 0 4px currentColor';
-          badge.style.opacity = '1';
+          // Selected: fill with solid color
+          button.style.backgroundColor = tagColor;
+          button.style.color = getContrastColor(tagColor);
+          button.style.opacity = '1';
         } else {
-          // Not selected: remove ring and make slightly transparent
-          badge.style.boxShadow = 'none';
-          badge.style.opacity = '0.7';
+          // Not selected: light tint background
+          button.style.backgroundColor = tagColor + '20';
+          button.style.color = 'hsl(var(--foreground))';
+          button.style.opacity = '0.8';
         }
       });
     }
@@ -293,6 +300,22 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    function getContrastColor(hexColor) {
+      // Remove # if present
+      const hex = hexColor.replace('#', '');
+
+      // Convert to RGB
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+
+      // Calculate luminance
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+      // Return black or white based on luminance
+      return luminance > 0.5 ? '#000000' : '#ffffff';
     }
   </script>
 

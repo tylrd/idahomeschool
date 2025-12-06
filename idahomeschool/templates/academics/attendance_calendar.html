@@ -4,185 +4,166 @@
 {% block title %}Attendance Calendar{% endblock %}
 
 {% block academics_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1>Attendance Calendar</h1>
-  <div>
-    <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-success">Log Attendance</a>
-    <a href="{% url 'academics:attendance_report' %}" class="btn btn-outline-primary">View Report</a>
-  </div>
-</div>
+<div x-data="{
+  currentDate: new Date('{{ ref_date|date:"Y-m-d" }}'),
+  selectedStudent: {{ selected_student_id|default:'null' }},
 
-<!-- View Type and Navigation -->
-<div class="card mb-4">
-  <div class="card-body">
-    <div class="row align-items-center">
-      <div class="col-md-4">
-        <div class="btn-group" role="group">
-          <a href="?view=week&date={{ ref_date|date:'Y-m-d' }}" class="btn btn-outline-primary {% if view_type == 'week' %}active{% endif %}">Week</a>
-          <a href="?view=month&date={{ ref_date|date:'Y-m-d' }}" class="btn btn-outline-primary {% if view_type == 'month' %}active{% endif %}">Month</a>
-        </div>
-      </div>
-      <div class="col-md-4 text-center">
-        <h5 class="mb-0">
-          {% if view_type == 'week' %}
-            Week of {{ start_date|date:"F j" }} - {{ end_date|date:"j, Y" }}
-          {% else %}
-            {{ ref_date|date:"F Y" }}
-          {% endif %}
-        </h5>
-      </div>
-      <div class="col-md-4 text-end">
-        <div class="btn-group" role="group">
-          <a href="?view={{ view_type }}&date={{ prev_date }}" class="btn btn-outline-secondary">← Previous</a>
-          <a href="?view={{ view_type }}" class="btn btn-outline-primary">Today</a>
-          <a href="?view={{ view_type }}&date={{ next_date }}" class="btn btn-outline-secondary">Next →</a>
-        </div>
-      </div>
+  get weekRange() {
+    const start = new Date(this.currentDate);
+    start.setDate(start.getDate() - start.getDay()); // Go to Sunday
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6); // Go to Saturday
+
+    const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return `${startStr} - ${endStr}`;
+  },
+
+  prevWeek() {
+    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.currentDate.getDate() - 7);
+    this.loadWeekData();
+  },
+
+  nextWeek() {
+    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.currentDate.getDate() + 7);
+    this.loadWeekData();
+  },
+
+  today() {
+    this.currentDate = new Date();
+    this.loadWeekData();
+  },
+
+  loadWeekData() {
+    const params = new URLSearchParams({
+      date: this.currentDate.toISOString().split('T')[0],
+      view: 'week'
+    });
+    if (this.selectedStudent) {
+      params.append('student', this.selectedStudent);
+    }
+    htmx.ajax('GET', '{% url "academics:attendance_calendar" %}?' + params.toString(), {
+      target: '#calendar-grid',
+      swap: 'innerHTML'
+    });
+  }
+}">
+
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+    <h1 class="text-3xl font-bold tracking-tight">Attendance Calendar</h1>
+    <div class="flex gap-2">
+      <a href="{% url 'academics:attendance_report' %}" class="btn-outline">
+        <i data-lucide="file-text"></i> Report
+      </a>
+      <a href="{% url 'academics:attendance_status_list' %}" class="btn-outline">
+        <i data-lucide="settings"></i> Settings
+      </a>
     </div>
   </div>
-</div>
 
-<!-- Attendance Grid -->
-<div class="card">
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-bordered table-hover">
-        <thead>
-          <tr>
-            <th>Student</th>
-            {% for d in date_range %}
-              <th class="text-center {% if d == ref_date %}table-primary{% endif %}">
-                <div>{{ d|date:"D" }}</div>
-                <div><small>{{ d|date:"M j" }}</small></div>
-              </th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in attendance_grid %}
-          <tr>
-            <td>
-              <div class="d-flex align-items-center">
-                <div class="flex-shrink-0 me-2">
-                  {% if row.student.photo %}
-                    <img src="{{ row.student.photo.url }}" alt="{{ row.student.name }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
-                  {% else %}
-                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; color: white; font-size: 16px; font-weight: bold;">
-                      {{ row.student.name.0 }}
-                    </div>
-                  {% endif %}
-                </div>
-                <div>
-                  <strong>{{ row.student.name }}</strong><br>
-                  <small class="text-muted">Grade {{ row.student.grade_level }}</small>
-                </div>
-              </div>
-            </td>
-            {% for date_info in row.dates %}
-              <td class="text-center attendance-cell {% if date_info.date == ref_date %}table-light{% endif %}"
-                  data-student-id="{{ row.student.id }}"
-                  data-date="{{ date_info.date|date:'Y-m-d' }}"
-                  style="position: relative;">
-                {% include "academics/partials/status_badge.html" with student=row.student date_str=date_info.date|date:'Y-m-d' log=date_info.log has_notes=date_info.has_notes %}
-              </td>
-            {% endfor %}
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="{{ date_range|length|add:1 }}" class="text-center">
-              <p class="mb-0 text-muted">No students found.</p>
-              <a href="{% url 'academics:student_create' %}" class="btn btn-sm btn-primary mt-2">Add First Student</a>
-            </td>
-          </tr>
+  <!-- Controls Bar -->
+  <div class="mb-6 p-4 border rounded-lg bg-muted/20">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- Week Navigation -->
+      <div class="flex items-center gap-2">
+        <button @click="prevWeek" class="btn-icon-outline size-9" aria-label="Previous week">
+          <i data-lucide="chevron-left"></i>
+        </button>
+
+        <div class="flex-1 text-center">
+          <h2 class="text-base sm:text-lg font-semibold" x-text="weekRange"></h2>
+        </div>
+
+        <button @click="nextWeek" class="btn-icon-outline size-9" aria-label="Next week">
+          <i data-lucide="chevron-right"></i>
+        </button>
+
+        <button @click="today" class="btn-outline whitespace-nowrap">
+          <i data-lucide="calendar"></i> <span class="hidden sm:inline">Today</span>
+        </button>
+      </div>
+
+      <!-- Student Filter -->
+      <div class="grid gap-2">
+        <label for="student-filter" class="text-sm font-medium sr-only">Filter by Student</label>
+        <select id="student-filter"
+                x-model="selectedStudent"
+                @change="loadWeekData()"
+                class="w-full">
+          <option value="">All Students</option>
+          {% for student in students %}
+          <option value="{{ student.id }}" {% if selected_student_id == student.id %}selected{% endif %}>
+            {{ student.name }}
+          </option>
           {% endfor %}
-        </tbody>
-      </table>
+        </select>
+      </div>
+
     </div>
   </div>
+
+  <!-- Calendar Grid Container -->
+  <div id="calendar-grid" class="mb-6">
+    {% include "academics/partials/calendar_week_grid.html" %}
+  </div>
+
+  <!-- Legend -->
+  <div class="border rounded-lg p-4">
+    <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
+      <i data-lucide="info" class="size-4"></i>
+      Status Legend
+    </h3>
+    <div class="flex flex-wrap gap-3">
+      {% for status in attendance_statuses %}
+      <div class="flex items-center gap-2">
+        <span class="badge px-3 py-1.5 min-w-[40px] text-center font-semibold"
+              style="background-color: {{ status.color }}; {% if status.color|slice:':4' == '#ffc' or status.color|slice:':4' == '#ff0' or status.color|slice:':4' == '#fff' %}color: #000;{% endif %}">
+          {{ status.abbreviation }}
+        </span>
+        <span class="text-sm text-muted-foreground">{{ status.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Quick Actions (Mobile Optimized) -->
+  <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <a href="{% url 'academics:dailylog_entry' %}" class="btn">
+      <i data-lucide="plus-circle"></i> Log Today's Attendance
+    </a>
+    <a href="{% url 'academics:dailylog_list' %}" class="btn-outline">
+      <i data-lucide="list"></i> View All Logs
+    </a>
+  </div>
+
 </div>
 
-<!-- Legend and Help -->
-<div class="row mt-3">
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="mb-0">Legend:</h6>
-          <a href="{% url 'academics:attendance_status_list' %}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-gear"></i> Customize
-          </a>
-        </div>
-        <div class="row">
-          {% for status in attendance_statuses %}
-          <div class="col-auto mb-2">
-            <span class="badge" style="background-color: {{ status.color }}; {% if status.color|slice:':4' == '#ffc' or status.color|slice:':4' == '#ff0' or status.color|slice:':4' == '#fff' %}color: #000;{% endif %}">
-              {{ status.abbreviation }}
-            </span>
-            {{ status.label }}
-          </div>
-          {% endfor %}
-          <div class="col-auto mb-2">
-            <span class="text-muted">-</span> No log
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-body">
-        <h6>Batch Mode:</h6>
-        <div class="small">
-          <div class="mb-2">Enable batch mode to quickly update multiple cells at once:</div>
-          <ul class="mb-0">
-            <li><strong>Click</strong> to select cells</li>
-            <li><strong>Shift+Click</strong> to select a range</li>
-            <li><strong>Ctrl/Cmd+Click</strong> to toggle individual cells</li>
-            <li><kbd>Space</kbd> Toggle batch mode on/off</li>
-            <li><kbd>Esc</kbd> Close modals</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- HTMX Containers -->
+<!-- Modal Containers (for HTMX-loaded modals) -->
 <div id="status-selector-container"></div>
 <div id="course-notes-modal-container"></div>
 
-<!-- HTMX Event Handlers -->
+<!-- Script for closing status selector on HX-Trigger -->
 <script>
-  // Close modal when closeDropdown event is triggered
   document.body.addEventListener('closeDropdown', function() {
     document.getElementById('status-selector-container').innerHTML = '';
   });
 
-  // Open course notes modal from status selector modal
+  // Function to open course notes modal from status selector
   function openCourseNotesFromModal(button) {
     const url = button.dataset.courseNotesUrl;
-
-    // Close the status selector modal first
+    // Close status selector first
     document.getElementById('status-selector-container').innerHTML = '';
 
-    // Fetch and display course notes modal
-    fetch(url)
-      .then(response => response.text())
-      .then(html => {
-        document.getElementById('course-notes-modal-container').innerHTML = html;
-        // Process HTMX attributes in the loaded content
-        if (typeof htmx !== 'undefined') {
-          htmx.process(document.getElementById('course-notes-modal-container'));
-        }
-      })
-      .catch(error => console.error('Error loading course notes:', error));
+    // Wait a moment, then load course notes modal
+    setTimeout(() => {
+      htmx.ajax('GET', url, {
+        target: '#course-notes-modal-container',
+        swap: 'innerHTML'
+      });
+    }, 100);
   }
 </script>
-
-<!-- Attendance Grid Advanced Features -->
-<script src="{% static 'js/attendance-grid.js' %}" defer></script>
-
-<!-- Bootstrap Icons CDN for note icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 {% endblock academics_content %}

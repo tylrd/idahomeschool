@@ -1,0 +1,247 @@
+{% load static %}
+
+<!-- Desktop: Horizontal Grid, Mobile: Vertical Scrollable List -->
+<div class="space-y-4">
+
+  <!-- Desktop View: Horizontal Grid (only shown on xl screens and up) -->
+  <div class="hidden xl:block">
+    <div class="border rounded-lg overflow-hidden bg-background">
+
+      <!-- Calendar Header (Days of Week) -->
+      <div class="grid grid-cols-7 bg-muted border-b">
+        <div class="p-3 text-center text-sm font-semibold text-muted-foreground border-r">
+          Sunday
+        </div>
+        <div class="p-3 text-center text-sm font-semibold text-muted-foreground border-r">
+          Monday
+        </div>
+        <div class="p-3 text-center text-sm font-semibold text-muted-foreground border-r">
+          Tuesday
+        </div>
+        <div class="p-3 text-center text-sm font-semibold text-muted-foreground border-r">
+          Wednesday
+        </div>
+        <div class="p-3 text-center text-sm font-semibold text-muted-foreground border-r">
+          Thursday
+        </div>
+        <div class="p-3 text-center text-sm font-semibold text-muted-foreground border-r">
+          Friday
+        </div>
+        <div class="p-3 text-center text-sm font-semibold text-muted-foreground">
+          Saturday
+        </div>
+      </div>
+
+      <!-- Calendar Grid -->
+      <div class="grid grid-cols-7">
+        {% for date_info in date_range %}
+          {% with date=date_info.date is_current_month=date_info.is_current_month %}
+          <div class="relative border-r border-b last:border-r-0 min-h-[120px] p-3">
+
+            <!-- Date Number -->
+            <div class="text-right mb-2">
+              <span class="{% if date == today %}inline-flex items-center justify-center bg-primary text-primary-foreground rounded-full size-7 font-semibold text-sm{% else %}text-sm text-muted-foreground{% endif %}">
+                {{ date.day }}
+              </span>
+            </div>
+
+            <!-- Student Status Badges -->
+            <div class="space-y-2">
+              {% for row in attendance_grid %}
+                {% if not selected_student_id or row.student.id == selected_student_id %}
+                  {% for date_cell in row.dates %}
+                    {% if date_cell.date == date %}
+                      <div class="flex items-center gap-1">
+                        <!-- Student Avatar (only show if all students) -->
+                        {% if not selected_student_id %}
+                        <div class="shrink-0">
+                          {% if row.student.photo %}
+                            <img src="{{ row.student.photo.url }}"
+                                 alt="{{ row.student.name }}"
+                                 class="rounded-full size-6 object-cover"
+                                 title="{{ row.student.name }}">
+                          {% else %}
+                            <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-6 text-xs font-bold"
+                                 title="{{ row.student.name }}">
+                              {{ row.student.name.0 }}
+                            </div>
+                          {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Status Badge (clickable) -->
+                        {% include "academics/partials/status_badge.html" with student=row.student date_str=date|date:"Y-m-d" log=date_cell.log has_notes=date_cell.has_notes %}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            </div>
+
+          </div>
+          {% endwith %}
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Mobile View: Vertical Scrollable Cards (shown below xl breakpoint) -->
+  <div class="xl:hidden" x-data="{ showPastDays: false }">
+
+    <!-- Previous Days (Collapsible) -->
+    {% with past_days=date_range|slice:":0" %}
+    {% for date_info in date_range %}
+      {% if date_info.date < today %}
+        {% if forloop.first %}
+        <div class="mb-3">
+          <button @click="showPastDays = !showPastDays"
+                  class="w-full flex items-center justify-between p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200 hover:shadow-sm active:scale-[0.98]">
+            <div class="flex items-center gap-2">
+              <i data-lucide="chevron-down"
+                 class="size-4 transition-transform duration-300 ease-in-out"
+                 :class="{ 'rotate-180': showPastDays }"></i>
+              <span class="text-sm font-medium text-muted-foreground transition-colors">Previous Days</span>
+            </div>
+            <span class="text-xs text-muted-foreground transition-opacity duration-200"
+                  x-text="showPastDays ? 'Hide' : 'Show'"></span>
+          </button>
+        </div>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+    {% endwith %}
+
+    <div x-show="showPastDays"
+         x-collapse.duration.500ms
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="space-y-3 mb-3">
+      {% for date_info in date_range %}
+        {% with date=date_info.date %}
+        {% if date < today %}
+        <div class="border rounded-lg bg-background p-4">
+          <!-- Date Header -->
+          <div class="flex items-center justify-between mb-3 pb-3 border-b">
+            <div>
+              <div class="text-lg font-semibold">{{ date|date:"l" }}</div>
+              <div class="text-sm text-muted-foreground">{{ date|date:"F j, Y" }}</div>
+            </div>
+          </div>
+
+          <!-- Students for this day -->
+          <div class="space-y-3">
+            {% for row in attendance_grid %}
+              {% if not selected_student_id or row.student.id == selected_student_id %}
+                {% for date_cell in row.dates %}
+                  {% if date_cell.date == date %}
+                    <div class="flex items-center gap-3">
+                      {% if not selected_student_id %}
+                      <div class="flex items-center gap-2 flex-1">
+                        {% if row.student.photo %}
+                          <img src="{{ row.student.photo.url }}" alt="{{ row.student.name }}" class="rounded-full size-10 object-cover">
+                        {% else %}
+                          <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-10 text-sm font-bold">
+                            {{ row.student.name.0 }}
+                          </div>
+                        {% endif %}
+                        <span class="font-medium">{{ row.student.name }}</span>
+                      </div>
+                      {% endif %}
+                      <div class="flex items-center gap-2">
+                        {% include "academics/partials/status_badge.html" with student=row.student date_str=date|date:"Y-m-d" log=date_cell.log has_notes=date_cell.has_notes %}
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+      {% endfor %}
+    </div>
+
+    <!-- Today and Future Days (Always Visible) -->
+    <div class="space-y-3">
+      {% for date_info in date_range %}
+        {% with date=date_info.date %}
+        {% if date >= today %}
+        <div class="border rounded-lg bg-background p-4 {% if date == today %}border-primary border-2 bg-primary/5{% endif %}">
+          <!-- Date Header -->
+          <div class="flex items-center justify-between mb-3 pb-3 border-b">
+            <div>
+              <div class="text-lg font-semibold">{{ date|date:"l" }}</div>
+              <div class="text-sm text-muted-foreground">{{ date|date:"F j, Y" }}</div>
+            </div>
+            {% if date == today %}
+            <span class="badge bg-primary text-primary-foreground">Today</span>
+            {% endif %}
+          </div>
+
+          <!-- Students for this day -->
+          <div class="space-y-3">
+            {% for row in attendance_grid %}
+              {% if not selected_student_id or row.student.id == selected_student_id %}
+                {% for date_cell in row.dates %}
+                  {% if date_cell.date == date %}
+                    <div class="flex items-center gap-3">
+                      {% if not selected_student_id %}
+                      <div class="flex items-center gap-2 flex-1">
+                        {% if row.student.photo %}
+                          <img src="{{ row.student.photo.url }}" alt="{{ row.student.name }}" class="rounded-full size-10 object-cover">
+                        {% else %}
+                          <div class="rounded-full bg-secondary text-secondary-foreground flex items-center justify-center size-10 text-sm font-bold">
+                            {{ row.student.name.0 }}
+                          </div>
+                        {% endif %}
+                        <span class="font-medium">{{ row.student.name }}</span>
+                      </div>
+                      {% endif %}
+                      <div class="flex items-center gap-2">
+                        {% include "academics/partials/status_badge.html" with student=row.student date_str=date|date:"Y-m-d" log=date_cell.log has_notes=date_cell.has_notes %}
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+
+            <!-- Empty State for no students on this day -->
+            {% if not attendance_grid %}
+            <div class="text-center py-4 text-muted-foreground">
+              <i data-lucide="users" class="size-8 mx-auto mb-2 opacity-50"></i>
+              <p class="text-sm">No students</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+      {% endfor %}
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Empty State (if no students at all) -->
+{% if not attendance_grid %}
+<div class="p-12 text-center border rounded-lg">
+  <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+    <div class="flex size-12 items-center justify-center rounded-full bg-muted">
+      <i data-lucide="users" class="size-6 text-muted-foreground"></i>
+    </div>
+    <h2 class="text-xl font-semibold">No Students Found</h2>
+    <p class="text-sm text-muted-foreground mb-2">Add students to start tracking attendance.</p>
+    <a href="{% url 'academics:student_create' %}" class="btn">
+      <i data-lucide="plus-circle"></i> Add Student
+    </a>
+  </div>
+</div>
+{% endif %}

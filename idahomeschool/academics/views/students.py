@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from django.views.generic import DeleteView
@@ -130,10 +131,37 @@ class StudentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
+        response = super().form_valid(form)
+
+        # For HTMX requests, return the updated card and row
+        if self.request.htmx:
+            # Get active school year for grade display
+            active_year = SchoolYear.objects.filter(
+                user=self.request.user,
+                is_active=True,
+            ).first()
+
+            # Add current grade to student for display
+            student = self.object
+            if active_year:
+                student.current_grade = student.get_grade_for_year(active_year)
+
+            # Add course count
+            student.course_count = student.course_enrollments.count()
+
+            return render(
+                self.request,
+                "academics/partials/student_row.html",
+                {
+                    "student": student,
+                    "active_year": active_year,
+                },
+            )
+
         messages.success(
             self.request, f"Student '{form.instance.name}' updated successfully!",
         )
-        return super().form_valid(form)
+        return response
 
 
 class StudentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -147,8 +175,15 @@ class StudentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.get_object().user == self.request.user
 
     def delete(self, request, *args, **kwargs):
+        response = super().delete(request, *args, **kwargs)
+
+        # For HTMX requests, return empty content to trigger row removal
+        if self.request.htmx:
+            from django.http import HttpResponse
+            return HttpResponse("")
+
         messages.success(self.request, "Student deleted successfully!")
-        return super().delete(request, *args, **kwargs)
+        return response
 
 
 # StudentGradeYear Views
