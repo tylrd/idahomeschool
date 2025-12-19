@@ -1,0 +1,220 @@
+{% load academics_extras %}
+
+{% for tag in tags %}
+<tr>
+  <td>
+    {% tag_badge tag link_to_detail=True %}
+  </td>
+  <td>
+    <span class="badge" style="background-color: {{ tag.color }}; color: {{ tag.color|contrast_text_color }};">{{ tag.color }}</span>
+  </td>
+  <td>{{ tag.resource_count }}</td>
+  <td class="text-right">
+    <div class="flex gap-1 justify-end">
+      <button type="button"
+              onclick="document.getElementById('dialog-edit-{{ tag.pk }}').showModal()"
+              class="btn-icon-outline size-8">
+        <i data-lucide="pencil"></i>
+      </button>
+      <button type="button"
+              onclick="document.getElementById('dialog-delete-{{ tag.pk }}').showModal()"
+              class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
+        <i data-lucide="trash-2"></i>
+      </button>
+    </div>
+  </td>
+</tr>
+{% endfor %}
+
+<!-- Dialogs for edit and delete -->
+{% for tag in tags %}
+  <!-- Edit Dialog -->
+  <dialog id="dialog-edit-{{ tag.pk }}"
+          class="dialog w-full sm:max-w-md"
+          aria-labelledby="dialog-edit-{{ tag.pk }}-title"
+          onclick="if (event.target === this) this.close()">
+    <div>
+      <header>
+        <h2 id="dialog-edit-{{ tag.pk }}-title">Edit Tag</h2>
+        <p>Update the tag "{{ tag.name }}".</p>
+      </header>
+
+      <form method="post" action="{% url 'academics:tag_update' tag.pk %}" class="form">
+        {% csrf_token %}
+
+        <section class="space-y-4">
+          <div class="grid gap-2">
+            <label for="edit-name-{{ tag.pk }}" class="text-sm font-medium">Name</label>
+            <input type="text" name="name" id="edit-name-{{ tag.pk }}"
+                   value="{{ tag.name }}" required maxlength="50">
+          </div>
+
+          <div class="grid gap-2">
+            <label class="text-sm font-medium">Color</label>
+
+            {# Color Palette Selection #}
+            {% if palette_colors %}
+            <div class="mb-3">
+              <p class="text-muted-foreground text-sm mb-2 flex items-center gap-1">
+                <i data-lucide="palette" class="size-4"></i>
+                <span>Pick from your color palette:</span>
+              </p>
+              <div class="grid grid-cols-5 sm:grid-cols-6 gap-2" id="palette-color-grid-{{ tag.pk }}">
+                {% for palette_color in palette_colors %}
+                <button
+                  type="button"
+                  class="palette-color-btn-{{ tag.pk }} rounded"
+                  data-color="{{ palette_color.color }}"
+                  onclick="selectPaletteColorModal{{ tag.pk }}('{{ palette_color.color }}')"
+                  style="width: 50px; height: 50px; background-color: {{ palette_color.color }}; border: 2px solid #dee2e6;"
+                  title="{{ palette_color.name|default:palette_color.color }}"
+                >
+                  {% if tag.color == palette_color.color %}
+                  <i data-lucide="check" class="size-5" style="color: white; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));"></i>
+                  {% endif %}
+                </button>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            {# Manual Color Input #}
+            <div>
+              <p class="text-muted-foreground text-sm mb-2 flex items-center gap-1">
+                <i data-lucide="pipette" class="size-4"></i>
+                <span>Or choose a custom color:</span>
+              </p>
+              <div class="flex gap-2">
+                <input
+                  type="color"
+                  id="edit-color-picker-{{ tag.pk }}"
+                  value="{{ tag.color }}"
+                  onchange="updateColorFromPickerModal{{ tag.pk }}()"
+                  title="Pick a color"
+                >
+                <input
+                  type="text"
+                  class="flex-1"
+                  id="edit-color-hex-{{ tag.pk }}"
+                  name="color"
+                  placeholder="#007bff"
+                  maxlength="7"
+                  pattern="^#[0-9A-Fa-f]{6}$"
+                  value="{{ tag.color }}"
+                  required
+                  oninput="updatePickerFromHexModal{{ tag.pk }}()"
+                >
+              </div>
+              <p class="text-muted-foreground text-sm mt-1">Enter a hex color code (e.g., #007bff) or use the color picker</p>
+            </div>
+          </div>
+        </section>
+
+        <footer>
+          <button type="button" class="btn-outline" onclick="this.closest('dialog').close()">Cancel</button>
+          <button type="submit" class="btn">Save Changes</button>
+        </footer>
+      </form>
+
+      <button type="button" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+  </dialog>
+
+  <!-- Delete Dialog -->
+  <dialog id="dialog-delete-{{ tag.pk }}"
+          class="dialog w-full sm:max-w-[425px]"
+          aria-labelledby="dialog-delete-{{ tag.pk }}-title"
+          aria-describedby="dialog-delete-{{ tag.pk }}-description"
+          onclick="if (event.target === this) this.close()">
+    <div>
+      <header>
+        <h2 id="dialog-delete-{{ tag.pk }}-title">Delete Tag</h2>
+        <p id="dialog-delete-{{ tag.pk }}-description">Are you sure you want to delete "{{ tag.name }}"?</p>
+      </header>
+
+      <section>
+        <div class="mb-6 p-4 border-l-4 border-red-600 bg-red-50 dark:bg-red-900/20">
+          <div class="flex items-start gap-3">
+            <i data-lucide="alert-triangle" class="size-5 text-red-600 shrink-0 mt-0.5"></i>
+            <div>
+              <h4 class="font-semibold text-red-900 dark:text-red-200">Warning</h4>
+              <p class="text-sm text-red-800 dark:text-red-300 mt-1">
+                This will delete the tag. This tag is currently used by {{ tag.resource_count }} resource{{ tag.resource_count|pluralize }}. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <button type="button" class="btn-outline" onclick="this.closest('dialog').close()">Cancel</button>
+        <form method="post" action="{% url 'academics:tag_delete' tag.pk %}" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn bg-destructive hover:bg-destructive/90">Delete</button>
+        </form>
+      </footer>
+
+      <button type="button" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+  </dialog>
+
+  <script>
+    // Color picker functions for tag {{ tag.pk }} edit modal
+    function selectPaletteColorModal{{ tag.pk }}(color) {
+      document.getElementById('edit-color-hex-{{ tag.pk }}').value = color;
+      document.getElementById('edit-color-picker-{{ tag.pk }}').value = color;
+      updatePaletteSelectionModal{{ tag.pk }}(color);
+    }
+
+    function updateColorFromPickerModal{{ tag.pk }}() {
+      const color = document.getElementById('edit-color-picker-{{ tag.pk }}').value;
+      document.getElementById('edit-color-hex-{{ tag.pk }}').value = color;
+      updatePaletteSelectionModal{{ tag.pk }}(color);
+    }
+
+    function updatePickerFromHexModal{{ tag.pk }}() {
+      const hex = document.getElementById('edit-color-hex-{{ tag.pk }}').value.trim();
+      if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        document.getElementById('edit-color-picker-{{ tag.pk }}').value = hex;
+        updatePaletteSelectionModal{{ tag.pk }}(hex);
+      }
+    }
+
+    function updatePaletteSelectionModal{{ tag.pk }}(color) {
+      // Remove check marks from all buttons for this modal
+      document.querySelectorAll('.palette-color-btn-{{ tag.pk }}').forEach(btn => {
+        btn.innerHTML = '';
+      });
+
+      // Add check mark to matching button
+      const matchingBtn = document.querySelector(`.palette-color-btn-{{ tag.pk }}[data-color="${color}"]`);
+      if (matchingBtn) {
+        matchingBtn.innerHTML = '<i data-lucide="check" class="size-5" style="color: white; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));"></i>';
+        // Re-initialize Lucide icons for the newly added icon
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      }
+    }
+
+    // Initialize on dialog open
+    document.getElementById('dialog-edit-{{ tag.pk }}').addEventListener('click', function(event) {
+      if (event.target === this) {
+        const currentColor = document.getElementById('edit-color-hex-{{ tag.pk }}').value;
+        if (currentColor) {
+          updatePaletteSelectionModal{{ tag.pk }}(currentColor);
+        }
+      }
+    });
+  </script>
+{% endfor %}

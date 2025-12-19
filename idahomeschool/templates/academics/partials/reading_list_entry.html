@@ -61,16 +61,21 @@
     {% endif %}
   </section>
   <footer class="bg-transparent">
-    <div class="flex w-full gap-2" role="group">
-      <a href="{% url 'academics:readinglist_update' entry.pk %}" class="btn-sm-outline flex-1">
-        Edit
+    <div class="flex gap-1 pt-3 border-t">
+      <a href="{% url 'academics:readinglist_detail' entry.pk %}"
+         class="btn-icon-outline size-8">
+        <i data-lucide="eye"></i>
       </a>
-      <a href="{% url 'academics:readinglist_detail' entry.pk %}" class="btn-sm-secondary flex-1">
-        View
-      </a>
-      <a href="{% url 'academics:readinglist_delete' entry.pk %}" class="btn-sm-outline flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground">
-        Remove
-      </a>
+      <button type="button"
+              onclick="document.getElementById('dialog-edit-{{ entry.pk }}').showModal()"
+              class="btn-icon-outline size-8">
+        <i data-lucide="pencil"></i>
+      </button>
+      <button type="button"
+              onclick="document.getElementById('dialog-delete-{{ entry.pk }}').showModal()"
+              class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
+        <i data-lucide="trash-2"></i>
+      </button>
     </div>
   </footer>
 </div>

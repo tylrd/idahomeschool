@@ -5,9 +5,16 @@
 {% block title %}Tags{% endblock %}
 
 {% block academics_content %}
-<div class="flex justify-between items-center mb-4">
-  <h1 class="text-3xl font-bold">Tags</h1>
-  <a href="{% url 'academics:tag_create' %}" class="btn-primary">Create Tag</a>
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+  <h1 class="text-3xl font-bold tracking-tight">Tags</h1>
+  <button type="button"
+          hx-get="{% url 'academics:tag_create_modal_htmx' %}"
+          hx-target="#dialog-create-tag-content"
+          hx-swap="innerHTML"
+          onclick="document.getElementById('dialog-create-tag').showModal()"
+          class="btn">
+    <i data-lucide="plus-circle"></i> Create Tag
+  </button>
 </div>
 
 {% if tags %}
@@ -18,42 +25,63 @@
         <th>Name</th>
         <th>Color</th>
         <th>Resources</th>
-        <th>Actions</th>
+        <th class="text-right">Actions</th>
       </tr>
     </thead>
-    <tbody>
-      {% for tag in tags %}
-      <tr>
-        <td>
-          {% tag_badge tag link_to_detail=True %}
-        </td>
-        <td>
-          <span class="badge" style="background-color: {{ tag.color }}; color: {{ tag.color|contrast_text_color }};">{{ tag.color }}</span>
-        </td>
-        <td>{{ tag.resource_count }}</td>
-        <td>
-          <div class="flex gap-2">
-            <a href="{% url 'academics:tag_update' tag.pk %}" class="btn-sm-outline">Edit</a>
-            <a href="{% url 'academics:tag_delete' tag.pk %}" class="btn-sm-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
-          </div>
-        </td>
-      </tr>
-      {% endfor %}
+    <tbody id="tag-table-content">
+      {% include "academics/partials/tag_table_body.html" %}
     </tbody>
   </table>
 </div>
 {% else %}
-<div class="alert">
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" x2="12" y1="8" y2="12" />
-    <line x1="12" x2="12.01" y1="16" y2="16" />
-  </svg>
-  <h2>No tags found</h2>
-  <section>
-    <p>Create tags to organize your resources.</p>
-    <a href="{% url 'academics:tag_create' %}" class="btn-primary mt-3">Create Tag</a>
-  </section>
+<div class="p-12 text-center">
+  <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+    <div class="flex size-12 items-center justify-center rounded-full bg-muted">
+      <i data-lucide="tags" class="size-6 text-muted-foreground"></i>
+    </div>
+    <h2 class="text-xl font-semibold">No Tags Found</h2>
+    <p class="text-sm text-muted-foreground mb-2">Create tags to organize your resources.</p>
+    <button type="button"
+            hx-get="{% url 'academics:tag_create_modal_htmx' %}"
+            hx-target="#dialog-create-tag-content"
+            hx-swap="innerHTML"
+            onclick="document.getElementById('dialog-create-tag').showModal()"
+            class="btn">
+      <i data-lucide="plus-circle"></i> Create Tag
+    </button>
+  </div>
 </div>
 {% endif %}
+
+<!-- Create Tag Dialog -->
+<dialog id="dialog-create-tag"
+        class="dialog w-full sm:max-w-md"
+        aria-labelledby="dialog-create-tag-title"
+        onclick="if (event.target === this) this.close()">
+  <div id="dialog-create-tag-content">
+    <header>
+      <h2 id="dialog-create-tag-title" class="text-lg font-semibold">Create Tag</h2>
+      <p class="text-sm text-muted-foreground">Create a new tag to organize your resources.</p>
+    </header>
+    <!-- Form content will be loaded here via HTMX -->
+  </div>
+
+  <button type="button" class="dialog-close" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 6 6 18"/>
+      <path d="m6 6 12 12"/>
+    </svg>
+  </button>
+</dialog>
+
+<script>
+  // Listen for closeModal event from HTMX
+  document.body.addEventListener('closeModal', function() {
+    document.getElementById('dialog-create-tag').close();
+    // Re-initialize Lucide icons for newly added tags
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  });
+</script>
 {% endblock academics_content %}

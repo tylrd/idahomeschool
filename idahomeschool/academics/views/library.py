@@ -281,6 +281,57 @@ def resource_create_modal_htmx(request):
     )
 
 
+@login_required
+def tag_create_modal_htmx(request):
+    """HTMX endpoint for creating a tag in a modal."""
+    if request.method == "POST":
+        form = TagForm(request.POST, user=request.user)
+        if form.is_valid():
+            tag = form.save()
+
+            # Return updated tag list
+            tags = Tag.objects.filter(user=request.user).annotate(
+                resource_count=Count("resources", distinct=True),
+            )
+
+            # Get palette colors for the edit modals
+            palette_colors_list = Tag.get_palette_colors_for_user(request.user)
+            palette_colors = Color.objects.filter(
+                user=request.user,
+                color__in=palette_colors_list,
+            )
+
+            response = render(
+                request,
+                "academics/partials/tag_table_body.html",
+                {
+                    "tags": tags,
+                    "palette_colors": palette_colors,
+                },
+            )
+            # Tell the modal to close after successful submission
+            response["HX-Trigger"] = "closeModal"
+            return response
+    else:
+        form = TagForm(user=request.user)
+
+    # Get colors from active palette for color picker
+    palette_colors_list = Tag.get_palette_colors_for_user(request.user)
+    palette_colors = Color.objects.filter(
+        user=request.user,
+        color__in=palette_colors_list,
+    )
+
+    return render(
+        request,
+        "academics/partials/tag_create_modal.html",
+        {
+            "form": form,
+            "palette_colors": palette_colors,
+        },
+    )
+
+
 # Tag Views
 class TagListView(LoginRequiredMixin, ListView):
     """List all tags for the current user."""
@@ -294,6 +345,16 @@ class TagListView(LoginRequiredMixin, ListView):
         return Tag.objects.filter(user=self.request.user).annotate(
             resource_count=Count("resources", distinct=True),
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get colors from active palette for edit modal color picker
+        palette_colors = Tag.get_palette_colors_for_user(self.request.user)
+        context["palette_colors"] = Color.objects.filter(
+            user=self.request.user,
+            color__in=palette_colors,
+        )
+        return context
 
 
 class TagDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):

@@ -4,54 +4,58 @@
 {% block title %}{% if tag %}Edit Tag{% else %}Create Tag{% endif %}{% endblock %}
 
 {% block academics_content %}
-<div class="card">
-  <header>
-    <h2>{% if tag %}Edit Tag{% else %}Create Tag{% endif %}</h2>
-  </header>
-  <section>
-    <form method="post">
+<div class="border rounded-lg overflow-hidden bg-background mb-6 max-w-2xl">
+  <div class="p-4 border-b bg-muted/30">
+    <h2 class="text-lg font-semibold">{% if tag %}Edit Tag{% else %}Create Tag{% endif %}</h2>
+  </div>
+  <div class="p-4">
+    <form method="post" class="form space-y-6">
       {% csrf_token %}
 
       {# Tag Name Field #}
       <div class="grid gap-2">
-        <label for="id_name">Tag Name *</label>
-        {{ form.name }}
+        <label for="id_name" class="text-sm font-medium">Tag Name</label>
+        <input type="text"
+               name="name"
+               id="id_name"
+               value="{{ form.name.value|default:'' }}"
+               maxlength="50"
+               required>
         {% if form.name.errors %}
           <p class="text-destructive text-sm">{{ form.name.errors.0 }}</p>
         {% endif %}
       </div>
 
       {# Color Selection #}
-      <div class="grid gap-2 mt-4">
-        <label>Color *</label>
+      <div class="grid gap-2">
+        <label class="text-sm font-medium">Color</label>
 
         {# Color Palette Selection #}
         {% if palette_colors %}
         <div class="mb-3">
-          <p class="text-muted-foreground text-sm mb-2">
-            <i class="bi bi-palette"></i> Pick from your color palette:
+          <p class="text-muted-foreground text-sm mb-2 flex items-center gap-1">
+            <i data-lucide="palette" class="size-4"></i>
+            <span>Pick from your color palette:</span>
           </p>
-          <div class="grid grid-cols-auto-fill gap-2" id="palette-color-grid">
+          <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2" id="palette-color-grid">
             {% for palette_color in palette_colors %}
-            <div>
-              <button
-                type="button"
-                class="palette-color-btn"
-                data-color="{{ palette_color.color }}"
-                onclick="selectPaletteColor('{{ palette_color.color }}')"
-                style="width: 50px; height: 50px; background-color: {{ palette_color.color }}; border: 2px solid #dee2e6;"
-                title="{{ palette_color.name|default:palette_color.color }}"
-              >
-                {% if form.color.value == palette_color.color %}
-                <i class="bi bi-check-lg text-white" style="text-shadow: 0 0 3px rgba(0,0,0,0.5);"></i>
-                {% endif %}
-              </button>
-            </div>
+            <button
+              type="button"
+              class="palette-color-btn rounded"
+              data-color="{{ palette_color.color }}"
+              onclick="selectPaletteColor('{{ palette_color.color }}')"
+              style="width: 50px; height: 50px; background-color: {{ palette_color.color }}; border: 2px solid #dee2e6;"
+              title="{{ palette_color.name|default:palette_color.color }}"
+            >
+              {% if form.color.value == palette_color.color %}
+              <i data-lucide="check" class="size-5" style="color: white; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));"></i>
+              {% endif %}
+            </button>
             {% endfor %}
           </div>
           <div class="mt-2">
-            <a href="{% url 'academics:color_palette_list' %}" class="btn-sm btn-link">
-              <i class="bi bi-gear"></i> Manage Color Palette
+            <a href="{% url 'academics:color_palette_list' %}" class="btn-outline btn-sm">
+              <i data-lucide="settings"></i> Manage Color Palette
             </a>
           </div>
         </div>
@@ -72,8 +76,9 @@
 
         {# Manual Color Input #}
         <div class="mb-2">
-          <p class="text-muted-foreground text-sm mb-2">
-            <i class="bi bi-eyedropper"></i> Or choose a custom color:
+          <p class="text-muted-foreground text-sm mb-2 flex items-center gap-1">
+            <i data-lucide="pipette" class="size-4"></i>
+            <span>Or choose a custom color:</span>
           </p>
           <div class="flex gap-2">
             <input
@@ -97,11 +102,11 @@
             >
             <button
               type="button"
-              class="btn-secondary"
+              class="btn-outline"
               onclick="randomPaletteColor()"
               title="Random color from palette"
             >
-              <i class="bi bi-shuffle"></i> Random
+              <i data-lucide="shuffle"></i> Random
             </button>
           </div>
           {% if form.color.errors %}
@@ -112,7 +117,7 @@
 
         {# Color Preview #}
         <div class="mt-3">
-          <label class="text-sm">Preview:</label>
+          <label class="text-sm font-medium">Preview:</label>
           <div class="flex items-center gap-2">
             <div>
               <span class="badge" id="color-preview-badge" style="background-color: {{ form.color.value|default:'#007bff' }}; font-size: 1rem; padding: 0.5rem 1rem;">
@@ -123,14 +128,16 @@
         </div>
       </div>
 
-      <div class="flex gap-2 mt-6">
-        <button type="submit" class="btn-primary">
-          <i class="bi bi-save"></i> Save Tag
+      <div class="flex gap-2">
+        <button type="submit" class="btn">
+          <i data-lucide="save"></i> Save Tag
         </button>
-        <a href="{% url 'academics:tag_list' %}" class="btn-secondary">Cancel</a>
+        <a href="{% url 'academics:tag_list' %}" class="btn-outline">
+          <i data-lucide="x"></i> Cancel
+        </a>
       </div>
     </form>
-  </section>
+  </div>
 </div>
 
 <script>
@@ -191,7 +198,11 @@
     // Add check mark to matching button
     const matchingBtn = document.querySelector(`.palette-color-btn[data-color="${color}"]`);
     if (matchingBtn) {
-      matchingBtn.innerHTML = '<i class="bi bi-check-lg text-white" style="text-shadow: 0 0 3px rgba(0,0,0,0.5);"></i>';
+      matchingBtn.innerHTML = '<i data-lucide="check" class="size-5" style="color: white; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));"></i>';
+      // Re-initialize Lucide icons for the newly added icon
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
     }
   }
 

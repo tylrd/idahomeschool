@@ -75,6 +75,11 @@ urlpatterns = [
         views.tag_autocomplete_htmx,
         name="tag_autocomplete_htmx",
     ),
+    path(
+        "tags/create-modal/",
+        views.tag_create_modal_htmx,
+        name="tag_create_modal_htmx",
+    ),
     # Color Palette URLs
     path(
         "settings/color-palette/",

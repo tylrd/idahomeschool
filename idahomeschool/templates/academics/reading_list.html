@@ -5,9 +5,30 @@
 {% block title %}Reading List{% endblock %}
 
 {% block academics_content %}
+<div x-data="{
+  viewMode: localStorage.getItem('readingListView') || 'cards',
+  setViewMode(newView) {
+    this.viewMode = newView;
+    localStorage.setItem('readingListView', newView);
+  }
+}">
 <div class="flex justify-between items-center mb-6">
   <h1 class="text-3xl font-bold tracking-tight">Reading List</h1>
-  <div class="flex gap-2">
+  <div class="flex items-center gap-2">
+    {% if reading_list_entries %}
+    <div class="inline-flex rounded-lg border p-1 gap-1">
+      <button @click="setViewMode('cards')"
+              :class="viewMode === 'cards' ? 'bg-primary text-primary-foreground' : 'bg-transparent'"
+              class="btn-icon-ghost size-8">
+        <i data-lucide="layout-grid"></i>
+      </button>
+      <button @click="setViewMode('table')"
+              :class="viewMode === 'table' ? 'bg-primary text-primary-foreground' : 'bg-transparent'"
+              class="btn-icon-ghost size-8">
+        <i data-lucide="table"></i>
+      </button>
+    </div>
+    {% endif %}
     <a href="{% url 'academics:book_tag_preferences' %}" class="btn-outline">
       <i data-lucide="settings"></i> Configure Book Tags
     </a>
@@ -34,7 +55,7 @@
 {% endif %}
 
 <!-- Filters -->
-<div class="mb-6 pb-4 border-b">
+<div class="mb-6 pb-4">
   <form method="get" class="form grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
     <div class="grid gap-2">
       <label for="student" class="text-sm font-medium">Student</label>
@@ -85,23 +106,6 @@
 </div>
 
 {% if reading_list_entries %}
-<div x-data="{ viewMode: localStorage.getItem('readingListView') || 'cards' }" x-init="$watch('viewMode', value => localStorage.setItem('readingListView', value))">
-  <!-- View Toggle -->
-  <div class="flex justify-end mb-6">
-    <div class="inline-flex rounded-lg border p-1 gap-1">
-      <button @click="viewMode = 'cards'"
-              :class="viewMode === 'cards' ? 'bg-primary text-primary-foreground' : 'bg-transparent'"
-              class="btn-icon-ghost size-8">
-        <i data-lucide="layout-grid"></i>
-      </button>
-      <button @click="viewMode = 'table'"
-              :class="viewMode === 'table' ? 'bg-primary text-primary-foreground' : 'bg-transparent'"
-              class="btn-icon-ghost size-8">
-        <i data-lucide="table"></i>
-      </button>
-    </div>
-  </div>
-
   <!-- Cards View -->
   <div x-show="viewMode === 'cards'" x-cloak class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     {% for entry in reading_list_entries %}
@@ -162,10 +166,16 @@
                  class="btn-icon-outline size-8">
                 <i data-lucide="eye"></i>
               </a>
-              <a href="{% url 'academics:readinglist_update' entry.pk %}"
-                 class="btn-icon-outline size-8">
+              <button type="button"
+                      onclick="document.getElementById('dialog-edit-{{ entry.pk }}').showModal()"
+                      class="btn-icon-outline size-8">
                 <i data-lucide="pencil"></i>
-              </a>
+              </button>
+              <button type="button"
+                      onclick="document.getElementById('dialog-delete-{{ entry.pk }}').showModal()"
+                      class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
+                <i data-lucide="trash-2"></i>
+              </button>
             </div>
           </td>
         </tr>
@@ -173,7 +183,126 @@
       </tbody>
     </table>
   </div>
-</div>
+
+  <!-- Dialogs for edit and delete -->
+  {% for entry in reading_list_entries %}
+    <!-- Edit Dialog -->
+    <dialog id="dialog-edit-{{ entry.pk }}"
+            class="dialog w-full sm:max-w-2xl max-h-[90vh]"
+            aria-labelledby="dialog-edit-{{ entry.pk }}-title"
+            onclick="if (event.target === this) this.close()">
+      <div>
+        <header>
+          <h2 id="dialog-edit-{{ entry.pk }}-title">Edit Reading List Entry</h2>
+          <p>Update {{ entry.resource.title }} for {{ entry.student.name }}.</p>
+        </header>
+
+        <form method="post"
+              action="{% url 'academics:readinglist_update' entry.pk %}"
+              class="form">
+          {% csrf_token %}
+
+          <section class="space-y-4 max-h-[60vh] overflow-y-auto">
+            <div class="grid gap-2">
+              <label for="edit-status-{{ entry.pk }}" class="text-sm font-medium">Status</label>
+              <select name="status" id="edit-status-{{ entry.pk }}" required>
+                <option value="not_started" {% if entry.status == 'not_started' %}selected{% endif %}>Not Started</option>
+                <option value="in_progress" {% if entry.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="completed" {% if entry.status == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="abandoned" {% if entry.status == 'abandoned' %}selected{% endif %}>Abandoned</option>
+              </select>
+            </div>
+
+            <div class="grid gap-2">
+              <label for="edit-started-date-{{ entry.pk }}" class="text-sm font-medium">Started Date</label>
+              <input type="date" name="started_date" id="edit-started-date-{{ entry.pk }}"
+                     value="{% if entry.started_date %}{{ entry.started_date|date:'Y-m-d' }}{% endif %}">
+            </div>
+
+            <div class="grid gap-2">
+              <label for="edit-completed-date-{{ entry.pk }}" class="text-sm font-medium">Completed Date</label>
+              <input type="date" name="completed_date" id="edit-completed-date-{{ entry.pk }}"
+                     value="{% if entry.completed_date %}{{ entry.completed_date|date:'Y-m-d' }}{% endif %}">
+            </div>
+
+            <div class="grid gap-2">
+              <label for="edit-rating-{{ entry.pk }}" class="text-sm font-medium">Rating</label>
+              <select name="rating" id="edit-rating-{{ entry.pk }}">
+                <option value="">No rating</option>
+                <option value="1" {% if entry.rating == 1 %}selected{% endif %}>⭐ 1 Star</option>
+                <option value="2" {% if entry.rating == 2 %}selected{% endif %}>⭐⭐ 2 Stars</option>
+                <option value="3" {% if entry.rating == 3 %}selected{% endif %}>⭐⭐⭐ 3 Stars</option>
+                <option value="4" {% if entry.rating == 4 %}selected{% endif %}>⭐⭐⭐⭐ 4 Stars</option>
+                <option value="5" {% if entry.rating == 5 %}selected{% endif %}>⭐⭐⭐⭐⭐ 5 Stars</option>
+              </select>
+            </div>
+
+            <div class="grid gap-2">
+              <label for="edit-notes-{{ entry.pk }}" class="text-sm font-medium">Notes</label>
+              <textarea name="notes" id="edit-notes-{{ entry.pk }}" rows="4">{{ entry.notes|default:'' }}</textarea>
+            </div>
+          </section>
+
+          <footer>
+            <button type="button" class="btn-outline" onclick="this.closest('dialog').close()">Cancel</button>
+            <button type="submit" class="btn">Save changes</button>
+          </footer>
+        </form>
+
+        <button type="button" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+    </dialog>
+
+    <!-- Delete Dialog -->
+    <dialog id="dialog-delete-{{ entry.pk }}"
+            class="dialog w-full sm:max-w-[425px]"
+            aria-labelledby="dialog-delete-{{ entry.pk }}-title"
+            aria-describedby="dialog-delete-{{ entry.pk }}-description"
+            onclick="if (event.target === this) this.close()">
+      <div>
+        <header>
+          <h2 id="dialog-delete-{{ entry.pk }}-title">Remove from Reading List</h2>
+          <p id="dialog-delete-{{ entry.pk }}-description">Are you sure you want to remove "{{ entry.resource.title }}" from {{ entry.student.name }}'s reading list?</p>
+        </header>
+
+        <section>
+          <div class="mb-6 p-4 border-l-4 border-red-600 bg-red-50 dark:bg-red-900/20">
+            <div class="flex items-start gap-3">
+              <i data-lucide="alert-triangle" class="size-5 text-red-600 shrink-0 mt-0.5"></i>
+              <div>
+                <h4 class="font-semibold text-red-900 dark:text-red-200">Warning</h4>
+                <p class="text-sm text-red-800 dark:text-red-300 mt-1">
+                  This will remove this book from the reading list. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer>
+          <button type="button" class="btn-outline" onclick="this.closest('dialog').close()">Cancel</button>
+          <form method="post"
+                action="{% url 'academics:readinglist_delete' entry.pk %}"
+                style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn bg-destructive hover:bg-destructive/90">Remove</button>
+          </form>
+        </footer>
+
+        <button type="button" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+    </dialog>
+  {% endfor %}
 
 {% if is_paginated %}
 <nav role="navigation" aria-label="pagination" class="mx-auto flex w-full justify-center mt-6">
@@ -224,7 +353,6 @@
       </a>
     {% endif %}
   </div>
-</div>
 {% endif %}
-
+</div>
 {% endblock %}

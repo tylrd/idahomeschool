@@ -4,129 +4,152 @@
 {% block title %}Daily Logs{% endblock %}
 
 {% block academics_content %}
-<div class="flex justify-between items-center mb-4">
-  <h1 class="text-3xl font-bold">Daily Logs</h1>
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+  <h1 class="text-3xl font-bold tracking-tight">Daily Logs</h1>
   <div class="flex gap-2">
-    <a href="{% url 'academics:dailylog_entry' %}" class="btn-primary">Log Attendance</a>
-    <a href="{% url 'academics:attendance_calendar' %}" class="btn-outline">Calendar View</a>
+    <a href="{% url 'academics:dailylog_entry' %}" class="btn">
+      <i data-lucide="calendar-check"></i> Log Attendance
+    </a>
+    <a href="{% url 'academics:attendance_calendar' %}" class="btn-outline">
+      <i data-lucide="calendar"></i> Calendar View
+    </a>
   </div>
 </div>
 
 <!-- Filters -->
-<div class="card mb-4">
-  <section>
-    <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div class="grid gap-2">
-        <label for="student">Student:</label>
-        <select name="student" id="student" onchange="this.form.submit()">
-          <option value="">All Students</option>
-          {% for s in students %}
-            <option value="{{ s.id }}" {% if request.GET.student == s.id|stringformat:"s" %}selected{% endif %}>
-              {{ s.name }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="grid gap-2">
-        <label for="start_date">Start Date:</label>
-        <input type="date" name="start_date" id="start_date" value="{{ request.GET.start_date }}">
-      </div>
-      <div class="grid gap-2">
-        <label for="end_date">End Date:</label>
-        <input type="date" name="end_date" id="end_date" value="{{ request.GET.end_date }}">
-      </div>
-      <div class="col-span-full flex gap-2">
-        <button type="submit" class="btn-primary">Filter</button>
-        <a href="{% url 'academics:dailylog_list' %}" class="btn-outline">Clear</a>
-      </div>
-    </form>
-  </section>
+<div class="mb-6 pb-4">
+  <form method="get" class="form grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid gap-2">
+      <label for="student" class="text-sm font-medium">Student</label>
+      <select name="student" id="student" class="w-full" onchange="this.form.submit()">
+        <option value="">All Students</option>
+        {% for s in students %}
+          <option value="{{ s.id }}" {% if request.GET.student == s.id|stringformat:"s" %}selected{% endif %}>
+            {{ s.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="grid gap-2">
+      <label for="start_date" class="text-sm font-medium">Start Date</label>
+      <input type="date" name="start_date" id="start_date" class="w-full" value="{{ request.GET.start_date }}">
+    </div>
+    <div class="grid gap-2">
+      <label for="end_date" class="text-sm font-medium">End Date</label>
+      <input type="date" name="end_date" id="end_date" class="w-full" value="{{ request.GET.end_date }}">
+    </div>
+    <div class="flex items-end gap-2">
+      <button type="submit" class="btn flex-1">
+        <i data-lucide="filter"></i> Filter
+      </button>
+      {% if request.GET.student or request.GET.start_date or request.GET.end_date %}
+      <a href="{% url 'academics:dailylog_list' %}" class="btn-outline flex-1">
+        <i data-lucide="x-circle"></i> Clear
+      </a>
+      {% endif %}
+    </div>
+  </form>
 </div>
 
 <!-- Daily Logs List -->
-<div class="card">
-  <section>
-    <div class="relative w-full overflow-x-auto">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Student</th>
-            <th>Status</th>
-            <th>General Notes</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for log in daily_logs %}
-          <tr>
-            <td>{{ log.date|date:"F j, Y" }}</td>
-            <td>
-              <a href="{% url 'academics:student_detail' log.student.pk %}">{{ log.student.name }}</a>
-            </td>
-            <td>
-              <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium
-                {% if log.status == 'PRESENT' %}bg-green-600 text-white
-                {% elif log.status == 'ABSENT' %}bg-red-600 text-white
-                {% elif log.status == 'SICK' %}bg-yellow-600 text-white
-                {% elif log.status == 'HOLIDAY' %}bg-blue-600 text-white
-                {% elif log.status == 'FIELD_TRIP' %}bg-purple-600 text-white
-                {% endif %}">
-                {{ log.get_status_display }}
-              </span>
-            </td>
-            <td>
-              {% if log.general_notes %}
-                {{ log.general_notes|truncatewords:10 }}
+<div class="relative w-full overflow-x-auto">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Student</th>
+        <th>Status</th>
+        <th>General Notes</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in daily_logs %}
+      <tr>
+        <td>{{ log.date|date:"F j, Y" }}</td>
+        <td>
+          <a href="{% url 'academics:student_detail' log.student.pk %}" class="link">{{ log.student.name }}</a>
+        </td>
+        <td>
+          {% if log.attendance_status %}
+          <span class="badge badge-sm shrink-0"
+                style="background-color: {{ log.attendance_status.color }}; border-color: {{ log.attendance_status.color }}; {% if log.attendance_status.color|slice:':4' == '#ffc' or log.attendance_status.color|slice:':4' == '#ff0' or log.attendance_status.color|slice:':4' == '#fff' %}color: #000;{% else %}color: #fff;{% endif %}">
+            {{ log.attendance_status.label }}
+          </span>
+          {% else %}
+          <span class="text-muted-foreground">-</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if log.general_notes %}
+            <span class="text-muted-foreground">{{ log.general_notes|truncatewords:10 }}</span>
+          {% else %}
+            <span class="text-muted-foreground">-</span>
+          {% endif %}
+        </td>
+        <td class="text-right">
+          <div class="flex gap-1 justify-end">
+            <a href="{% url 'academics:dailylog_detail' log.pk %}" class="btn-icon-outline size-8">
+              <i data-lucide="eye"></i>
+            </a>
+            <a href="{% url 'academics:dailylog_entry_date' log.student.pk log.date|date:'Y-m-d' %}" class="btn-icon-outline size-8">
+              <i data-lucide="pencil"></i>
+            </a>
+            <a href="{% url 'academics:dailylog_delete' log.pk %}" class="btn-icon-outline size-8 text-destructive hover:bg-destructive/10">
+              <i data-lucide="trash-2"></i>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-center py-12">
+          <div class="flex flex-col items-center gap-2">
+            <div class="flex size-12 items-center justify-center rounded-full bg-muted">
+              <i data-lucide="calendar-x" class="size-6 text-muted-foreground"></i>
+            </div>
+            <h3 class="text-lg font-semibold">No Logs Found</h3>
+            <p class="text-sm text-muted-foreground mb-2">
+              {% if request.GET.student or request.GET.start_date or request.GET.end_date %}
+                No logs match your filters.
               {% else %}
-                <span class="text-muted-foreground">-</span>
+                Start logging attendance to track student progress.
               {% endif %}
-            </td>
-            <td>
-              <div class="flex gap-2">
-                <a href="{% url 'academics:dailylog_detail' log.pk %}" class="btn-sm-secondary">View</a>
-                <a href="{% url 'academics:dailylog_entry_date' log.student.pk log.date|date:'Y-m-d' %}" class="btn-sm-outline">Edit</a>
-                <a href="{% url 'academics:dailylog_delete' log.pk %}" class="btn-sm-outline text-destructive hover:bg-destructive hover:text-destructive-foreground">Delete</a>
-              </div>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="5" class="text-center">
-              <p class="mb-0 text-muted-foreground">No daily logs found.</p>
-              <a href="{% url 'academics:dailylog_entry' %}" class="btn-sm-primary mt-2">Create First Log</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
+            </p>
+            <a href="{% url 'academics:dailylog_entry' %}" class="btn btn-sm">
+              <i data-lucide="calendar-check"></i> Log Attendance
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 <!-- Pagination -->
 {% if is_paginated %}
-<nav role="navigation" aria-label="pagination" class="mx-auto flex w-full justify-center mt-4">
+<nav role="navigation" aria-label="pagination" class="mx-auto flex w-full justify-center mt-6">
   <ul class="flex flex-row items-center gap-1">
     {% if page_obj.has_previous %}
       <li>
-        <a href="?page=1{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost">First</a>
+        <a href="?page=1{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost btn-sm">First</a>
       </li>
       <li>
-        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost">Previous</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost btn-sm">Previous</a>
       </li>
     {% endif %}
 
     <li>
-      <span class="btn-outline size-auto px-4">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <span class="btn-outline btn-sm">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
     </li>
 
     {% if page_obj.has_next %}
       <li>
-        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost">Next</a>
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost btn-sm">Next</a>
       </li>
       <li>
-        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost">Last</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.student %}&student={{ request.GET.student }}{% endif %}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}" class="btn-ghost btn-sm">Last</a>
       </li>
     {% endif %}
   </ul>

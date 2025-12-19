@@ -1,0 +1,218 @@
+<form method="post"
+      hx-post="{% url 'academics:tag_create_modal_htmx' %}"
+      hx-target="#tag-table-content"
+      hx-swap="innerHTML"
+      class="form space-y-6">
+  {% csrf_token %}
+
+  <section class="space-y-4">
+    {# Tag Name Field #}
+    <div class="grid gap-2">
+      <label for="id_name" class="text-sm font-medium">Tag Name</label>
+      <input type="text"
+             name="name"
+             id="id_name"
+             value="{{ form.name.value|default:'' }}"
+             maxlength="50"
+             required>
+      {% if form.name.errors %}
+        <p class="text-destructive text-sm">{{ form.name.errors.0 }}</p>
+      {% endif %}
+    </div>
+
+    {# Color Selection #}
+    <div class="grid gap-2">
+      <label class="text-sm font-medium">Color</label>
+
+      {# Color Palette Selection #}
+      {% if palette_colors %}
+      <div class="mb-3">
+        <p class="text-muted-foreground text-sm mb-2 flex items-center gap-1">
+          <i data-lucide="palette" class="size-4"></i>
+          <span>Pick from your color palette:</span>
+        </p>
+        <div class="grid grid-cols-5 sm:grid-cols-6 gap-2" id="palette-color-grid-create">
+          {% for palette_color in palette_colors %}
+          <button
+            type="button"
+            class="palette-color-btn-create rounded"
+            data-color="{{ palette_color.color }}"
+            onclick="selectPaletteColorCreate('{{ palette_color.color }}')"
+            style="width: 50px; height: 50px; background-color: {{ palette_color.color }}; border: 2px solid #dee2e6;"
+            title="{{ palette_color.name|default:palette_color.color }}"
+          >
+            {% if form.color.value == palette_color.color %}
+            <i data-lucide="check" class="size-5" style="color: white; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));"></i>
+            {% endif %}
+          </button>
+          {% endfor %}
+        </div>
+        <div class="mt-2">
+          <a href="{% url 'academics:color_palette_list' %}" class="btn-outline btn-sm">
+            <i data-lucide="settings"></i> Manage Color Palette
+          </a>
+        </div>
+      </div>
+      {% else %}
+      <div class="alert mb-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" x2="12" y1="8" y2="12" />
+          <line x1="12" x2="12.01" y1="16" y2="16" />
+        </svg>
+        <section>
+          You don't have any colors in your palette yet.
+          <a href="{% url 'academics:color_palette_list' %}" class="alert-link">Add colors to your palette</a>
+          or use the color picker below.
+        </section>
+      </div>
+      {% endif %}
+
+      {# Manual Color Input #}
+      <div class="mb-2">
+        <p class="text-muted-foreground text-sm mb-2 flex items-center gap-1">
+          <i data-lucide="pipette" class="size-4"></i>
+          <span>Or choose a custom color:</span>
+        </p>
+        <div class="flex gap-2">
+          <input
+            type="color"
+            id="id_color_picker_create"
+            value="{{ form.color.value|default:'#007bff' }}"
+            onchange="updateColorFromPickerCreate()"
+            title="Pick a color"
+          >
+          <input
+            type="text"
+            class="flex-1"
+            id="id_color_hex_create"
+            name="color"
+            placeholder="#007bff"
+            maxlength="7"
+            pattern="^#[0-9A-Fa-f]{6}$"
+            value="{{ form.color.value|default:'#007bff' }}"
+            required
+            oninput="updatePickerFromHexCreate()"
+          >
+          <button
+            type="button"
+            class="btn-outline"
+            onclick="randomPaletteColorCreate()"
+            title="Random color from palette"
+          >
+            <i data-lucide="shuffle"></i> Random
+          </button>
+        </div>
+        {% if form.color.errors %}
+          <p class="text-destructive text-sm">{{ form.color.errors.0 }}</p>
+        {% endif %}
+        <p class="text-muted-foreground text-sm">Enter a hex color code (e.g., #007bff) or use the color picker</p>
+      </div>
+
+      {# Color Preview #}
+      <div class="mt-3">
+        <label class="text-sm font-medium">Preview:</label>
+        <div class="flex items-center gap-2">
+          <div>
+            <span class="badge" id="color-preview-badge-create" style="background-color: {{ form.color.value|default:'#007bff' }}; font-size: 1rem; padding: 0.5rem 1rem;">
+              {{ form.name.value|default:'Sample Tag' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <button type="button" class="btn-outline" onclick="this.closest('dialog').close()">
+      <i data-lucide="x"></i> Cancel
+    </button>
+    <button type="submit" class="btn">
+      <i data-lucide="save"></i> Create Tag
+    </button>
+  </footer>
+</form>
+
+<script>
+  const paletteColorsCreate = [
+    {% for palette_color in palette_colors %}
+    "{{ palette_color.color }}"{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  function selectPaletteColorCreate(color) {
+    document.getElementById('id_color_hex_create').value = color;
+    document.getElementById('id_color_picker_create').value = color;
+    updatePreviewCreate(color);
+    updatePaletteSelectionCreate(color);
+  }
+
+  function updateColorFromPickerCreate() {
+    const color = document.getElementById('id_color_picker_create').value;
+    document.getElementById('id_color_hex_create').value = color;
+    updatePreviewCreate(color);
+    updatePaletteSelectionCreate(color);
+  }
+
+  function updatePickerFromHexCreate() {
+    const hex = document.getElementById('id_color_hex_create').value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+      document.getElementById('id_color_picker_create').value = hex;
+      updatePreviewCreate(hex);
+      updatePaletteSelectionCreate(hex);
+    }
+  }
+
+  function randomPaletteColorCreate() {
+    if (paletteColorsCreate.length > 0) {
+      const randomColor = paletteColorsCreate[Math.floor(Math.random() * paletteColorsCreate.length)];
+      selectPaletteColorCreate(randomColor);
+    }
+  }
+
+  function updatePreviewCreate(color) {
+    const previewBadge = document.getElementById('color-preview-badge-create');
+    if (previewBadge) {
+      previewBadge.style.backgroundColor = color;
+    }
+  }
+
+  function updatePaletteSelectionCreate(color) {
+    // Remove check marks from all buttons
+    document.querySelectorAll('.palette-color-btn-create').forEach(btn => {
+      btn.innerHTML = '';
+    });
+
+    // Add check mark to matching button
+    const matchingBtn = document.querySelector(`.palette-color-btn-create[data-color="${color}"]`);
+    if (matchingBtn) {
+      matchingBtn.innerHTML = '<i data-lucide="check" class="size-5" style="color: white; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));"></i>';
+      // Re-initialize Lucide icons for the newly added icon
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+  }
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('id_name');
+    const colorHexInput = document.getElementById('id_color_hex_create');
+    const previewBadge = document.getElementById('color-preview-badge-create');
+
+    // Update preview when tag name changes
+    if (nameInput && previewBadge) {
+      nameInput.addEventListener('input', function() {
+        const tagName = this.value || 'Sample Tag';
+        previewBadge.textContent = tagName;
+      });
+    }
+
+    // Initialize preview
+    if (colorHexInput) {
+      const currentColor = colorHexInput.value || '#007bff';
+      updatePreviewCreate(currentColor);
+      updatePaletteSelectionCreate(currentColor);
+    }
+  });
+</script>

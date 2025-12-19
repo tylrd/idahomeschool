@@ -78,6 +78,7 @@ from .library import ResourceListView
 from .library import ResourceUpdateView
 from .library import set_active_palette
 from .library import tag_autocomplete_htmx
+from .library import tag_create_modal_htmx
 from .library import TagCreateView
 from .library import TagDeleteView
 from .library import TagDetailView
@@ -217,4 +218,5 @@ __all__ = [
     "resource_search_htmx",
     "set_active_palette",
     "tag_autocomplete_htmx",
+    "tag_create_modal_htmx",
 ]
